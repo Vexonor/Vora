@@ -1,3 +1,4 @@
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/use-cart";
 import type { Metadata } from "next";
 import "./globals.css";
@@ -17,9 +18,11 @@ export default function RootLayout({
       <body
         className={`antialiased`}
       >
-        <CartProvider>
-          {children}
-        </CartProvider>
+        <TooltipProvider>
+          <CartProvider>
+            {children}
+          </CartProvider>
+        </TooltipProvider>
       </body>
     </html>
   );
