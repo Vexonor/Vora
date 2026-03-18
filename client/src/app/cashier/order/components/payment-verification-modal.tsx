@@ -1,7 +1,11 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Transaction } from "@/lib/constant/order"
-import { CreditCard, Delete, Wallet, X } from "lucide-react"
+import { CreditCard, Delete, Wallet } from "lucide-react"
+import Image from "next/image"
 import { useState } from "react"
 
 type PaymentMethod = "tunai" | "online"
@@ -32,21 +36,19 @@ function Numpad({ total, onPay }: { total: number; onPay: (amount: number) => vo
       </p>
       <div className="grid grid-cols-3 gap-2">
         {KEYS.map((key) => (
-          <button
+          <Button
             key={key}
+            variant="ghost"
             onClick={() => press(key)}
-            className="py-3 rounded-lg text-sm font-semibold bg-muted hover:bg-muted/70 transition-colors flex items-center justify-center"
+            className="py-3 font-semibold"
           >
             {key === "⌫" ? <Delete className="size-4" /> : key}
-          </button>
+          </Button>
         ))}
       </div>
-      <button
-        onClick={() => onPay(displayed)}
-        className="w-full py-3 bg-secondary text-white font-semibold rounded-lg hover:bg-secondary/90 transition-colors"
-      >
+      <Button onClick={() => onPay(displayed)} className="w-full bg-secondary text-primary font-semibold rounded-lg py-2">
         Bayar Sekarang
-      </button>
+      </Button>
     </div>
   )
 }
@@ -66,7 +68,13 @@ function UploadProof({ onVerify }: { onVerify: () => void }) {
     <div className="flex flex-col gap-4">
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-foreground/20 rounded-lg cursor-pointer hover:border-primary transition-colors overflow-hidden min-h-[200px]">
         {preview ? (
-          <img src={preview} alt="Bukti pembayaran" className="w-full object-contain max-h-[280px]" />
+          <Image
+            src={preview}
+            alt="Bukti pembayaran"
+            width={600}
+            height={280}
+            className="w-full object-contain max-h-[280px]"
+          />
         ) : (
           <div className="flex flex-col items-center gap-2 p-6 text-muted-foreground">
             <CreditCard className="size-10" />
@@ -76,13 +84,9 @@ function UploadProof({ onVerify }: { onVerify: () => void }) {
         )}
         <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
       </label>
-      <button
-        onClick={onVerify}
-        disabled={!preview}
-        className="w-full py-3 bg-secondary text-white font-semibold rounded-lg hover:bg-secondary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-      >
+      <Button onClick={onVerify} disabled={!preview} className="w-full">
         Verifikasi Sekarang
-      </button>
+      </Button>
     </div>
   )
 }
@@ -101,21 +105,14 @@ export function PaymentVerificationModal({ transaction, onClose }: Props) {
   }
 
   return (
-    // Backdrop
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl min-w-sm sm:min-w-xl md:min-w-2xl lg:min-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Pembayaran</DialogTitle>
+        </DialogHeader>
 
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-foreground/10">
-          <h3 className="font-bold text-lg">Pembayaran</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
-            <X className="size-5" />
-          </button>
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-          {/* Kiri: Info + Detail */}
           <div className="flex flex-col gap-4">
             <p className="text-sm font-semibold text-muted-foreground">Informasi Pemesanan</p>
             <div className="flex items-center gap-3">
@@ -161,27 +158,25 @@ export function PaymentVerificationModal({ transaction, onClose }: Props) {
             </div>
           </div>
 
-          {/* Kanan: Metode + Action */}
           <div className="flex flex-col gap-4">
             <p className="text-sm font-semibold text-muted-foreground">Metode Pembayaran</p>
 
-            {/* Dropdown */}
-            <div className="relative">
-              <select
-                value={method}
-                onChange={(e) => setMethod(e.target.value as PaymentMethod)}
-                className="w-full border border-foreground/20 rounded-lg px-4 py-2.5 text-sm appearance-none pr-10 outline-none focus:border-primary"
-              >
+            <Select value={method} onValueChange={(val) => setMethod(val as PaymentMethod)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
                 {PAYMENT_METHODS.map((m) => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
+                  <SelectItem key={m.value} value={m.value}>
+                    <div className="flex items-center gap-2">
+                      {m.icon}
+                      {m.label}
+                    </div>
+                  </SelectItem>
                 ))}
-              </select>
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                ▾
-              </div>
-            </div>
+              </SelectContent>
+            </Select>
 
-            {/* Action berdasarkan metode */}
             {method === "tunai" ? (
               <Numpad total={transaction.total} onPay={handleAction} />
             ) : (
@@ -190,7 +185,7 @@ export function PaymentVerificationModal({ transaction, onClose }: Props) {
           </div>
 
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
