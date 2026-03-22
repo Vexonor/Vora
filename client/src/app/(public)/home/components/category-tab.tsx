@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsContents, TabsList, TabsTrigger } from "@/components/animate-ui/components/animate/tabs"
 import useCart from "@/hooks/use-cart"
 import { categories } from "@/lib/constant/categories"
-import { menu } from "@/lib/constant/menu"
+import { MENUS, MenuCategory as MenuCategoryValue } from "@/lib/constant/menu"
 import { Menu } from "@/lib/type/menu"
 import { MenuCategory } from "@/lib/type/menu-category"
 import { CoffeeIcon } from "@icons/coffee"
@@ -14,7 +14,6 @@ import { DrinkIcon } from "@icons/drink"
 import { useState } from "react"
 import CardMenu from "./card-menu"
 
-// Constants
 const ICON_MAP = {
   DashboardIcon,
   DishIcon,
@@ -23,16 +22,15 @@ const ICON_MAP = {
   CookieIcon,
 } as const
 
-// Types
 interface CategoryWithIcon extends MenuCategory {
   Icon: React.ComponentType<{ className?: string }>
 }
 
 const CategoryTabsList = ({
-  categoriesWithIcons }: {
-    categoriesWithIcons: CategoryWithIcon[]
-    onCategoryChange: (value: string) => void
-  }) => (
+  categoriesWithIcons,
+}: {
+  categoriesWithIcons: CategoryWithIcon[]
+}) => (
   <div className="w-full overflow-x-auto scrollbar-hide scroll-smooth">
     <TabsList className="w-max py-2 mx-4 gap-2">
       {categoriesWithIcons.map((category) => (
@@ -110,29 +108,20 @@ const CategoryTab = () => {
     Icon: ICON_MAP[category.icon as keyof typeof ICON_MAP] || DashboardIcon,
   }))
 
-  const filteredMenus: Menu[] = selectedCategory === "all"
-    ? menu
-    : menu.filter(menu => menu.category === selectedCategory)
-
-  const handleValueChange = (value: string) => {
-    setSelectedCategory(value)
-  }
+  const getMenusByCategory = (categoryId: string): Menu[] =>
+    categoryId === "all"
+      ? MENUS
+      : MENUS.filter((m) => m.category === (categoryId as MenuCategoryValue))
 
   return (
     <div className="flex w-full h-max flex-col gap-6 overflow-y-auto scrollbar-hide scroll-smooth">
-      <Tabs
-        value={selectedCategory}
-        onValueChange={handleValueChange}
-      >
-        <CategoryTabsList
-          categoriesWithIcons={categoriesWithIcons}
-          onCategoryChange={setSelectedCategory}
-        />
+      <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
+        <CategoryTabsList categoriesWithIcons={categoriesWithIcons} />
 
         <TabsContents>
           {categoriesWithIcons.map((category) => (
             <TabsContent key={category.id} value={category.id} className="px-4">
-              <MenuGrid menus={filteredMenus} />
+              <MenuGrid menus={getMenusByCategory(category.id)} />
             </TabsContent>
           ))}
         </TabsContents>
