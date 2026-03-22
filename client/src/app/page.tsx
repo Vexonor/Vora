@@ -1,8 +1,8 @@
 "use client"
 
-import CartDrawer from "./customer/home/components/cart-drawer";
-import CategoryTab from "./customer/home/components/category-tab";
-import Header from "./customer/home/components/header";
+import CartDrawer from "./(public)/home/components/cart-drawer";
+import CategoryTab from "./(public)/home/components/category-tab";
+import Header from "./(public)/home/components/header";
 
 
 export default function Home() {

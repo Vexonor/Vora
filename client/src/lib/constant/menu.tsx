@@ -1,6 +1,34 @@
-import { Menu } from "../type/menu";
+import { Menu } from "../type/menu"
 
-export const menu: Menu[] = [
+export type MenuStatus = "tersedia" | "habis"
+
+export type MenuCategory = "food" | "hot-drink" | "cold-drink" | "snack"
+
+export const MENU_STATUS_CONFIG: Record<MenuStatus, {
+  label: string
+  badgeClass: string
+}> = {
+  tersedia: {
+    label: "Tersedia",
+    badgeClass: "border border-primary text-primary bg-primary/10",
+  },
+  habis: {
+    label: "Habis",
+    badgeClass: "border border-destructive text-destructive bg-destructive/10",
+  },
+}
+
+export const MENU_CATEGORY_OPTIONS: { label: string; value: MenuCategory }[] = [
+  { label: "Makanan", value: "food" },
+  { label: "Minuman Panas", value: "hot-drink" },
+  { label: "Minuman Dingin", value: "cold-drink" },
+  { label: "Snack", value: "snack" },
+]
+
+export const getMenuStatus = (isAvailable: boolean): MenuStatus =>
+  isAvailable ? "tersedia" : "habis"
+
+export const MENUS: Menu[] = [
   {
     id: 1,
     name: "Nasi Goreng Spesial",
@@ -9,7 +37,7 @@ export const menu: Menu[] = [
     description: "Nasi goreng dengan telur, ayam, dan sayuran segar",
     image: "/image/menu/nasi-goreng.jpg",
     isAvailable: true,
-    ingredients: ["nasi", "ayam", "telur", "wortel", "bawang", "kecap"]
+    ingredients: ["nasi", "ayam", "telur", "wortel", "bawang", "kecap"],
   },
   {
     id: 2,
@@ -19,7 +47,7 @@ export const menu: Menu[] = [
     description: "Mie ayam dengan bakso urat dan pangsit",
     image: "/images/mie-ayam.jpg",
     isAvailable: true,
-    ingredients: ["mie", "ayam", "bakso", "pangsit", "sawi"]
+    ingredients: ["mie", "ayam", "bakso", "pangsit", "sawi"],
   },
   {
     id: 3,
@@ -29,7 +57,7 @@ export const menu: Menu[] = [
     description: "Kopi asli Indonesia dengan gula aren",
     image: "/images/kopi-tubruk.jpg",
     isAvailable: true,
-    ingredients: ["kopi", "gula aren", "air panas"]
+    ingredients: ["kopi", "gula aren", "air panas"],
   },
   {
     id: 4,
@@ -39,7 +67,7 @@ export const menu: Menu[] = [
     description: "Teh susu khas Malaysia yang disajikan hangat",
     image: "/images/teh-tarik.jpg",
     isAvailable: true,
-    ingredients: ["teh", "susu", "gula"]
+    ingredients: ["teh", "susu", "gula"],
   },
   {
     id: 5,
@@ -49,7 +77,7 @@ export const menu: Menu[] = [
     description: "Minuman tradisional dengan cendol dan santan",
     image: "/images/es-cendol.jpg",
     isAvailable: true,
-    ingredients: ["cendol", "santan", "gula merah", "es"]
+    ingredients: ["cendol", "santan", "gula merah", "es"],
   },
   {
     id: 6,
@@ -59,7 +87,7 @@ export const menu: Menu[] = [
     description: "Jeruk segar dengan es dan mint",
     image: "/images/es-jeruk.jpg",
     isAvailable: true,
-    ingredients: ["jeruk", "es", "mint", "gula"]
+    ingredients: ["jeruk", "es", "mint", "gula"],
   },
   {
     id: 7,
@@ -69,6 +97,6 @@ export const menu: Menu[] = [
     description: "Pisang goreng crispy dengan madu",
     image: "/images/pisang-goreng.jpg",
     isAvailable: true,
-    ingredients: ["pisang", "tepung", "madu", "minyak"]
+    ingredients: ["pisang", "tepung", "madu", "minyak"],
   },
-];
+]

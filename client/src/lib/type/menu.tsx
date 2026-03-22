@@ -5,6 +5,6 @@ export interface Menu {
   price: number;
   description: string;
   image: string;
-  isAvailable?: boolean;
+  isAvailable: boolean;
   ingredients?: string[];
 }

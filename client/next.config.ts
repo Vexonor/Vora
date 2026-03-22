@@ -6,8 +6,18 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: '/cashier',            
+        source: '/(private)/cashier',            
         destination: '/cashier/dashboard', 
+        permanent: true,              
+      },
+      {
+        source: '/(private)/kitchen',            
+        destination: '/kitchen/order', 
+        permanent: true,              
+      },
+      {
+        source: '/(private)/manager',            
+        destination: '/manager/dashboard', 
         permanent: true,              
       },
     ];

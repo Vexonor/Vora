@@ -57,6 +57,12 @@ export const FILTER_TABS = [
   { label: "Belum Bayar", value: "belum_bayar" },
 ] as const
 
+
+export const MANAGER_FILTER_TABS = [
+  ...FILTER_TABS,
+  { label: "Sudah Bayar", value: "paid" },
+] as const
+
 export const TRANSACTIONS: Transaction[] = [
   {
     id: "1", tableCode: "T-02", tableName: "Meja 02", itemCount: 8, status: "done",

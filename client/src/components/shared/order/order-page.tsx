@@ -1,12 +1,21 @@
 "use client"
 
+import { TransactionCard } from "@/components/shared/order/order-card"
 import { useSidebar } from "@/components/ui/sidebar"
 import { FILTER_TABS, TRANSACTIONS } from "@/lib/constant/order"
 import { SearchIcon, SlidersHorizontalIcon } from "lucide-react"
 import { useState } from "react"
-import { TransactionCard } from "./components/order-card"
 
-export default function OrderPage() {
+type FilterTab = {
+  label: string
+  value: string
+}
+
+type Props = {
+  filterTabs?: readonly FilterTab[]
+}
+
+export function OrderPage({ filterTabs = FILTER_TABS }: Props) {
   const [activeFilter, setActiveFilter] = useState("semua")
   const [search, setSearch] = useState("")
   const { open } = useSidebar()
@@ -29,7 +38,7 @@ export default function OrderPage() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-1 lg:flex-2 order-2 lg:order-1 items-center gap-2">
-          {FILTER_TABS.map((tab) => (
+          {filterTabs.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setActiveFilter(tab.value)}
