@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["bun-types", "express"],
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
