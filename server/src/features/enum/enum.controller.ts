@@ -5,8 +5,33 @@ import { EnumService } from './enum.service';
 export class EnumController {
   constructor(private readonly enumService: EnumService) {}
 
-  @Get("user-roles")
+  @Get('user-roles')
   userRoles() {
-    return this.enumService.userRoles();
+    return this.enumService.UserRole();
+  }
+
+  @Get('stock-statuses')
+  stockStatuses() {
+    return this.enumService.StockStatus();
+  }
+
+  @Get('menu-types')
+  menuTypes() {
+    return this.enumService.MenuType();
+  }
+
+  @Get('menu-statuses')
+  menuStatuses() {
+    return this.enumService.MenuStatus();
+  }
+
+  @Get('order-statuses')
+  orderStatuses() {
+    return this.enumService.OrderStatus();
+  }
+
+  @Get('payment-types')
+  paymentTypes() {
+    return this.enumService.PaymentType();
   }
 }

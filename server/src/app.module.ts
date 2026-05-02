@@ -7,8 +7,17 @@ import routerConfig from './core/configs/router.config';
 import { sequelizeConfigAsync } from './core/configs/sequelize.config';
 import { ResponseModule } from './core/modules/response/response.module';
 import { AuthModule } from './features/auth/auth.module';
-import { UserModule } from './features/user/user.module';
 import { EnumModule } from './features/enum/enum.module';
+import { MaterialModule } from './features/material/material.module';
+import { UnitModule } from './features/unit/unit.module';
+import { UserModule } from './features/user/user.module';
+import { StockModule } from './features/stock/stock.module';
+import { MenuModule } from './features/menu/menu.module';
+import { TableModule } from './features/table/table.module';
+import { OrderModule } from './features/order/order.module';
+import { OrderItemModule } from './features/order-item/order-item.module';
+import { PaymentModule } from './features/payment/payment.module';
+import { SellingReportModule } from './features/selling-report/selling-report.module';
 
 @Module({
   imports: [
@@ -20,8 +29,19 @@ import { EnumModule } from './features/enum/enum.module';
     SequelizeModule.forRootAsync(sequelizeConfigAsync),
     routerConfig,
     ResponseModule,
-    AuthModule, 
-    UserModule, EnumModule],
+    AuthModule,
+    UserModule,
+    EnumModule,
+    UnitModule,
+    MaterialModule,
+    StockModule,
+    MenuModule,
+    TableModule,
+    OrderModule,
+    OrderItemModule,
+    PaymentModule,
+    SellingReportModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

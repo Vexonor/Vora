@@ -5,42 +5,41 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      await queryInterface.createTable('users', {
+      await queryInterface.createTable('order_items', {
         id: {
           type: Sequelize.BIGINT,
           autoIncrement: true,
           primaryKey: true,
         },
-        username: {
-          type: Sequelize.STRING,
+        menu_id: {
+          type: Sequelize.BIGINT,
           allowNull: false,
+          references: {
+            model: "menus",
+            key: "id",
+          },
         },
-        email: {
-          type: Sequelize.STRING,
-          unique: true,
+        order_id: {
+          type: Sequelize.BIGINT,
           allowNull: false,
+          references: {
+            model: "orders",
+            key: "id",
+          },
         },
-        password: {
-          type: Sequelize.STRING,
+        quantity: {
+          type: Sequelize.BIGINT,
           allowNull: false,
+          defaultValue: 0,
         },
-        role: {
-          type: Sequelize.TINYINT,
+        total_price: {
+          type: Sequelize.DECIMAL(16, 3),
           allowNull: false,
-          defaultValue: 0
         },
         created_at: {
           type: Sequelize.DATE,
           allowNull: false,
           defaultValue: Sequelize.NOW,
-        },
-        updated_at: {
-          type: Sequelize.DATE,
-          allowNull: true,
-        },
-        deleted_at: {
-          type: Sequelize.DATE,
-          allowNull: true,
         },
       });
       await transaction.commit();
@@ -53,7 +52,7 @@ module.exports = {
   async down(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      await queryInterface.dropTable('users', { transaction });
+      await queryInterface.dropTable('order_items', { transaction });
       await transaction.commit();
     } catch (error) {
       await transaction.rollback();

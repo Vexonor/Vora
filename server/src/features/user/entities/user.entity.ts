@@ -1,4 +1,5 @@
 import { Column, DataType, DefaultScope, Model, Table } from "sequelize-typescript";
+import { getUserRoleEnumLabel } from "../enums/user-role.enum";
 
 @Table({
   timestamps: true,
@@ -16,14 +17,22 @@ import { Column, DataType, DefaultScope, Model, Table } from "sequelize-typescri
 }))
 export class User extends Model {
   @Column(DataType.STRING)
-  name: string;
-
-  @Column(DataType.TINYINT)
-  roles: number;
+  username: string;
 
   @Column({ type: DataType.STRING, unique: true })
   email: string;
 
   @Column(DataType.STRING)
   password: string;
+
+  @Column({ type: DataType.TINYINT, allowNull: true, defaultValue: 0 })
+  role: number;
+
+  @Column({
+    type: DataType.VIRTUAL,
+    get() {
+      return getUserRoleEnumLabel(+this.getDataValue("role"));
+    },
+  })
+  role_name: string;
 }
