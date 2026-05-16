@@ -1,4 +1,5 @@
 import {
+  BeforeSave,
   Column,
   DataType,
   ForeignKey,
@@ -6,7 +7,9 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { Material } from 'src/features/material/entities/material.entity';
-import { getStockStatusEnumLabel } from '../enums/stock-status.enum';
+import StockStatusEnum, {
+  getStockStatusEnumLabel,
+} from '../enums/stock-status.enum';
 
 @Table({
   timestamps: true,
@@ -41,4 +44,22 @@ export class Stock extends Model {
 
   @Column(DataType.BIGINT)
   maximum: number;
+
+  @BeforeSave
+  static assignStockStatus(stock: Stock) {
+    if (stock.status === StockStatusEnum.DISCONTINUED) {
+      return;
+    }
+
+    const currentQty = Number(stock.quantity);
+    const minQty = Number(stock.minimum);
+
+    if (currentQty <= 0) {
+      stock.status = StockStatusEnum.OUT_OF_STOCK;
+    } else if (currentQty <= minQty) {
+      stock.status = StockStatusEnum.LOW_STOCK;
+    } else {
+      stock.status = StockStatusEnum.IN_STOCK;
+    }
+  }
 }

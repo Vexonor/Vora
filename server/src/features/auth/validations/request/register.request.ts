@@ -1,41 +1,32 @@
 import * as Joi from 'joi';
+import { ErrorCodeEnum } from 'src/core/enums/error-code.enum';
 import { User } from 'src/features/user/entities/user.entity';
 
-const REQ = '{#label} Wajib Diisi';
-const EMPTY = '{#label} Tidak Boleh Kosong';
-
 export const registerSchema = Joi.object({
-  name: Joi.string().required().label('Nama')
-    .messages({
-      'any.required': REQ,
-      'string.empty': EMPTY
-    }),
+  username: Joi.string().required().min(3).max(30).alphanum().messages({
+    'string.min': ErrorCodeEnum.USERNAME_TOO_SHORT,
+    'string.max': ErrorCodeEnum.USERNAME_TOO_LONG,
+    'string.alphanum': ErrorCodeEnum.USERNAME_MUST_BE_ALPHANUMERIC,
+    'any.required': ErrorCodeEnum.USERNAME_REQUIRED,
+  }),
+
   email: Joi.string()
     .required()
-    .email({ tlds: { allow: ['com', 'id'] } }) 
-    .label('Email')
-    .messages({
-      'any.required': REQ,
-      'string.empty': EMPTY,
-      'string.email': 'Format {#label} tidak valid',
-    })
+    .email({ tlds: { allow: ['com', 'id'] } })
     .external(async (value) => {
       const user = await User.findOne({
         where: { email: value },
       });
+
       if (user) {
         throw new Joi.ValidationError(
-          'any.email-exists',
+          ErrorCodeEnum.EMAIL_ALREADY_REGISTERED,
           [
             {
-              message: 'Email sudah terdaftar',
+              message: ErrorCodeEnum.EMAIL_ALREADY_REGISTERED,
               path: ['email'],
-              type: 'any.email-exists',
-              context: {
-                key: 'email',
-                label: 'email',
-                value,
-              },
+              type: ErrorCodeEnum.EMAIL_ALREADY_REGISTERED,
+              context: { key: 'email', label: 'email', value },
             },
           ],
           value,
@@ -43,10 +34,18 @@ export const registerSchema = Joi.object({
       }
       return value;
     }),
-  password: Joi.string().required().min(8).label('Password')
+
+  password: Joi.string()
+    .required()
+    .min(8)
+    .max(64)
+    .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)'))
     .messages({
-      'any.required': REQ,
-      'string.empty': EMPTY,
-      'string.min': '{#label} minimal {#limit} karakter',
+      'string.min': ErrorCodeEnum.PASSWORD_TOO_SHORT,
+      'string.max': ErrorCodeEnum.PASSWORD_TOO_LONG,
+      'string.pattern.base': ErrorCodeEnum.PASSWORD_TOO_WEAK,
+      'any.required': ErrorCodeEnum.PASSWORD_REQUIRED,
     }),
-}).options({ abortEarly: false, errors: { wrap: { label: false } } });
+})
+  .required()
+  .options({ abortEarly: false, errors: { wrap: { label: false } } });

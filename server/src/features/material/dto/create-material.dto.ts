@@ -1,1 +1,4 @@
-export class CreateMaterialDto {}
+export class CreateMaterialDto {
+  name: string;
+  unit_id: number;
+}

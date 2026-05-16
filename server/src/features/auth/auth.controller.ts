@@ -1,6 +1,7 @@
 import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/core/guards/jwt-auth.guard';
 import { LocalAuthGuard } from 'src/core/guards/local-auth.guard';
-import { JoiValidationPipe } from 'src/core/validators/joi-validation-pipe.param';
+import { JoiValidationPipe } from 'src/core/validators/joi-validation.pipe';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { registerSchema } from './validations/request/register.request';
@@ -12,12 +13,15 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   login(@Request() req) {
-    return this.authService.login(req.user)
+    return this.authService.login(req.user);
   }
 
-
+  @UseGuards(JwtAuthGuard)
   @Post('register')
-  register(@Body(new JoiValidationPipe(registerSchema)) createUserDto: CreateUserDto) {
-    return this.authService.register(createUserDto);
+  register(
+    @Body(new JoiValidationPipe(registerSchema)) createUserDto: CreateUserDto,
+    @Request() req,
+  ) {
+    return this.authService.register(createUserDto, req.user);
   }
 }
