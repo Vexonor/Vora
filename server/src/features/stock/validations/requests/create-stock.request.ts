@@ -1,21 +1,24 @@
 import * as Joi from 'joi';
 import { ErrorCodeEnum } from 'src/core/enums/error-code.enum';
-import { Material } from 'src/features/material/entities/material.entity';
+import { Unit } from 'src/features/unit/entities/unit.entity';
 
 export const createStockScheme = Joi.object({
-  material_id: Joi.number()
+  name: Joi.string().required().messages({
+    'string.empty': 'Name cannot be empty',
+  }),
+  unit_id: Joi.number()
     .required()
     .external(async (value) => {
       if (value === undefined || value === null) return;
-      const material = await Material.findOne({ where: { id: value } });
-      if (!material) {
+      const unit = await Unit.findOne({ where: { id: value } });
+      if (!unit) {
         throw new Joi.ValidationError(
-          'any.invalid-material-id',
+          'any.invalid-unit-id',
           [
             {
-              message: ErrorCodeEnum.MATERIAL_NOT_FOUND,
+              message: ErrorCodeEnum.UNIT_NOT_FOUND,
               path: ['id'],
-              type: 'any.invalid-material-id',
+              type: 'any.invalid-unit-id',
               context: {
                 key: 'id',
                 label: 'id',

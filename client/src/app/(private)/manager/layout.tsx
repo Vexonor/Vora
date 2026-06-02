@@ -1,6 +1,7 @@
 "use client"
 
 import { RoleLayout } from "@/components/layout/role-layout"
+import { useAuth } from "@/hooks/use-auth"
 import { BoxIcon } from "@icons/box"
 import { CallBellIcon } from "@icons/call-bell"
 import { DashboardIcon } from "@icons/dashboard"
@@ -9,9 +10,11 @@ import { MenuIcon } from "@icons/menu"
 import { TableIcon } from "@icons/table"
 import { UsersIcon } from "@icons/users"
 import { usePathname } from "next/navigation"
+import { ScaleIcon } from "lucide-react"
 
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const { user } = useAuth()
 
   const managerNav = [
     {
@@ -39,6 +42,12 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       isActive: pathname.startsWith("/manager/stock"),
     },
     {
+      title: "Satuan (Unit)",
+      url: "/manager/unit",
+      icon: <ScaleIcon className="size-6" />,
+      isActive: pathname.startsWith("/manager/unit"),
+    },
+    {
       title: "Meja Makan",
       url: "/manager/table-management",
       icon: <TableIcon className="size-6" />,
@@ -59,8 +68,8 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
   ]
 
   const managerUser = {
-    name: "Manajer",
-    email: "manager@vora.com",
+    name: user?.username ?? "Manajer",
+    email: user?.email ?? "manager@vora.com",
     avatar: "/avatars/manager.jpg",
   }
 

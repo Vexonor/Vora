@@ -11,5 +11,5 @@ import { Column, DataType, Model, Table } from 'sequelize-typescript';
 })
 export class Tables extends Model {
   @Column(DataType.BIGINT)
-  quantity: number;
+  number: number;
 }

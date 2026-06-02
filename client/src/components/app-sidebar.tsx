@@ -15,11 +15,10 @@ import {
 } from "@/components/ui/sidebar"
 import Image from "next/image"
 
-export function AppSidebar({ user, navItems,
-  ...props }: React.ComponentProps<typeof Sidebar> & {
-    user: { name: string; email: string; avatar: string },
-    navItems: { title: string; url: string; icon: React.ReactNode; isActive?: boolean }[]
-  }) {
+export function AppSidebar({ avatar, navItems, ...props }: React.ComponentProps<typeof Sidebar> & {
+  avatar: string
+  navItems: { title: string; url: string; icon: React.ReactNode; isActive?: boolean }[]
+}) {
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -48,7 +47,7 @@ export function AppSidebar({ user, navItems,
         <NavItems navs={navItems} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser avatar={avatar} />
       </SidebarFooter>
     </Sidebar>
   )

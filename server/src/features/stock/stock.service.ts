@@ -9,6 +9,7 @@ import UserRoleEnum from '../user/enums/user-role.enum';
 import { CreateStockDto } from './dto/create-stock.dto';
 import { UpdateStockDto } from './dto/update-stock.dto';
 import { Stock } from './entities/stock.entity';
+import StockStatusEnum from './enums/stock-status.enum';
 
 @Injectable()
 export class StockService {
@@ -28,10 +29,13 @@ export class StockService {
     }
     const transaction = await this.sequelize.transaction();
     try {
+      const initialStatus = this.resolveStatus(
+        StockStatusEnum.IN_STOCK,
+        Number(createStockDto.quantity),
+        Number(createStockDto.minimum),
+      );
       const stock = await this.stockModel.create(
-        {
-          ...createStockDto,
-        },
+        { ...createStockDto, status: initialStatus },
         { transaction },
       );
       await transaction.commit();
@@ -95,10 +99,32 @@ export class StockService {
     }
   }
 
+  private resolveStatus(
+    currentStatus: number,
+    quantity: number,
+    minimum: number,
+  ): number {
+    if (currentStatus === StockStatusEnum.DISCONTINUED) {
+      return StockStatusEnum.DISCONTINUED;
+    }
+    if (quantity <= 0) return StockStatusEnum.OUT_OF_STOCK;
+    if (quantity <= minimum) return StockStatusEnum.LOW_STOCK;
+    return StockStatusEnum.IN_STOCK;
+  }
+
   async update(stock: Stock, updateStockDto: UpdateStockDto) {
     const transaction = await this.sequelize.transaction();
     try {
-      await stock.update({ ...updateStockDto }, { transaction });
+      const newQuantity = updateStockDto.quantity ?? Number(stock.quantity);
+      const newMinimum = updateStockDto.minimum ?? Number(stock.minimum);
+      const newStatus = updateStockDto.status !== undefined
+        ? updateStockDto.status
+        : this.resolveStatus(stock.status, newQuantity, newMinimum);
+
+      await stock.update(
+        { ...updateStockDto, status: newStatus },
+        { transaction },
+      );
       await transaction.commit();
       return this.response.success(
         stock,

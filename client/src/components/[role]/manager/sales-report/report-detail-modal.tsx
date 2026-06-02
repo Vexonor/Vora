@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { SalesReport } from "@/lib/constant/sales-report"
+import type { SellingReport } from "@/types/selling-report"
 
 type Props = {
-  report: SalesReport
+  report: SellingReport
   onClose: () => void
 }
 
@@ -29,11 +29,11 @@ export function ReportDetailModal({ report, onClose }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-muted/50 rounded-lg p-3">
               <p className="text-xs text-muted-foreground mb-1">Total transaksi</p>
-              <p className="font-bold text-lg">{report.totalTransactions}</p>
+              <p className="font-bold text-lg">{report.total_transaction}</p>
             </div>
             <div className="bg-muted/50 rounded-lg p-3">
               <p className="text-xs text-muted-foreground mb-1">Total produk terjual</p>
-              <p className="font-bold text-lg">{report.totalProducts.toLocaleString("id-ID")}</p>
+              <p className="font-bold text-lg">{Number(report.total_items_sold).toLocaleString("id-ID")}</p>
             </div>
           </div>
 
@@ -42,16 +42,16 @@ export function ReportDetailModal({ report, onClose }: Props) {
           <div className="flex flex-col gap-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Modal</span>
-              <span className="font-medium">{formatCurrency(report.capital)}</span>
+              <span className="font-medium">{formatCurrency(Number(report.unit_cost))}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pendapatan kotor</span>
-              <span className="font-medium">{formatCurrency(report.grossRevenue)}</span>
+              <span className="font-medium">{formatCurrency(Number(report.gross_revenue))}</span>
             </div>
             <hr className="border-foreground/10 my-1" />
             <div className="flex justify-between font-bold text-base">
               <span>Pendapatan bersih</span>
-              <span className="text-primary">{formatCurrency(report.netRevenue)}</span>
+              <span className="text-primary">{formatCurrency(Number(report.net_profit))}</span>
             </div>
           </div>
 

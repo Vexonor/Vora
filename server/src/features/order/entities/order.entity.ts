@@ -4,8 +4,10 @@ import {
   ForeignKey,
   Model,
   Table,
+  HasMany,
 } from 'sequelize-typescript';
 import { Tables } from 'src/features/table/entities/table.entity';
+import { OrderItem } from 'src/features/order-item/entities/order-item.entity';
 import { getOrderStatusEnumLabel } from '../enums/order-status.enum';
 
 @Table({
@@ -38,4 +40,7 @@ export class Order extends Model {
     },
   })
   status_name: string;
+
+  @HasMany(() => OrderItem)
+  items: OrderItem[];
 }

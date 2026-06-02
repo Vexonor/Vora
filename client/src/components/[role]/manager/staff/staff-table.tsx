@@ -4,23 +4,30 @@ import {
   DropdownMenu, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Staff, STAFF_ROLE_CONFIG } from "@/lib/constant/staff"
+import type { User } from "@/types/user"
+import { UserRole } from "@/types/user"
 import { EllipsisIcon, PencilIcon, Trash2Icon } from "lucide-react"
 import { useState } from "react"
 import { DeleteStaffModal } from "./delete-staff-modal"
 
+const ROLE_BADGE: Record<number, { label: string; badgeClass: string }> = {
+  [UserRole.MANAGER]: { label: "Manager", badgeClass: "border-primary/40 bg-primary/10 text-primary" },
+  [UserRole.CASHIER]: { label: "Kasir", badgeClass: "border-secondary/40 bg-secondary/10 text-secondary" },
+  [UserRole.KITCHEN]: { label: "Kitchen", badgeClass: "border-amber-500/40 bg-amber-50 text-amber-600" },
+}
+
 type Props = {
-  staffs: Staff[]
+  staffs: User[]
   currentPage: number
   onPageChange: (page: number) => void
   totalPages: number
-  onDelete: (staff: Staff) => void
+  onDelete: (staff: User) => void
 }
 
 const PAGE_SIZE = 5
 
 export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDelete }: Props) {
-  const [deleteTarget, setDeleteTarget] = useState<Staff | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
 
   const paginated = staffs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
   const offset = (currentPage - 1) * PAGE_SIZE
@@ -61,8 +68,15 @@ export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDe
             </tr>
           </thead>
           <tbody>
+            {paginated.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-6 py-16 text-center text-sm text-muted-foreground">
+                  Staf tidak ditemukan.
+                </td>
+              </tr>
+            )}
             {paginated.map((staff, i) => {
-              const config = STAFF_ROLE_CONFIG[staff.role]
+              const config = ROLE_BADGE[staff.role] ?? { label: staff.role_name ?? "Unknown", badgeClass: "border-foreground/30 bg-foreground/5 text-foreground" }
               return (
                 <tr key={staff.id} className="border-b border-foreground/5 last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="px-6 py-4 text-muted-foreground">{offset + i + 1}.</td>
@@ -101,39 +115,41 @@ export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDe
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-end gap-1 pt-2">
-        <button
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          ‹ Sebelumnya
-        </button>
-        {getPages().map((page, i) =>
-          page === "..." ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">...</span>
-          ) : (
-            <button
-              key={page}
-              onClick={() => onPageChange(page as number)}
-              className={`size-8 rounded-lg text-sm font-medium transition-colors border
-                ${currentPage === page
-                  ? "bg-primary text-white border-primary"
-                  : "border-foreground/20 hover:border-primary"
-                }`}
-            >
-              {page}
-            </button>
-          )
-        )}
-        <button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          Setelahnya ›
-        </button>
-      </div>
+      {staffs.length > 0 && (
+        <div className="flex items-center justify-end gap-1 pt-2">
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            ‹ Sebelumnya
+          </button>
+          {getPages().map((page, i) =>
+            page === "..." ? (
+              <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">...</span>
+            ) : (
+              <button
+                key={page}
+                onClick={() => onPageChange(page as number)}
+                className={`size-8 rounded-lg text-sm font-medium transition-colors border
+                  ${currentPage === page
+                    ? "bg-primary text-white border-primary"
+                    : "border-foreground/20 hover:border-primary"
+                  }`}
+              >
+                {page}
+              </button>
+            )
+          )}
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Setelahnya ›
+          </button>
+        </div>
+      )}
 
       {deleteTarget && (
         <DeleteStaffModal

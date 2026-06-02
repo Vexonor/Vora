@@ -1,22 +1,92 @@
 "use client"
 
+import { OrderFilterDropdown } from "@/components/shared/order/order-filter-dropdown"
 import { useSidebar } from "@/components/ui/sidebar"
-import { KITCHEN_FILTER_TABS, KITCHEN_ORDERS } from "@/lib/constant/kitchen-order"
-import { SearchIcon, SlidersHorizontalIcon } from "lucide-react"
-import { useState } from "react"
+import { orderService } from "@/services/order.service"
+import type { Order } from "@/types/order"
+import { OrderStatus } from "@/types/order"
+import { Loader2Icon, SearchIcon } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 import { KitchenOrderCard } from "./components/kitchen-order-card"
+
+const KITCHEN_FILTER_TABS = [
+  { label: "Semua", value: "semua" },
+  { label: "Menunggu", value: String(OrderStatus.PENDING) },
+  { label: "Diproses", value: String(OrderStatus.PROCESSING) },
+  { label: "Siap", value: String(OrderStatus.READY) },
+  { label: "Selesai", value: String(OrderStatus.COMPLETED) },
+] as const
 
 export default function KitchenOrderPage() {
   const [activeFilter, setActiveFilter] = useState("semua")
+  const [statusFilter, setStatusFilter] = useState<number[]>([])
   const [search, setSearch] = useState("")
   const { open } = useSidebar()
+  const [orders, setOrders] = useState<Order[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const filtered = KITCHEN_ORDERS.filter((o) => {
-    const matchFilter = activeFilter === "semua" || o.status === activeFilter
+  const POLL_INTERVAL = 10_000
+
+  const fetchOrders = useCallback(async (silent = false) => {
+    if (!silent) {
+      setIsLoading(true)
+      setError(null)
+    }
+    try {
+      const data = await orderService.getAll()
+      setOrders(Array.isArray(data) ? data : [])
+    } catch {
+      if (!silent) setError("Gagal memuat data pesanan.")
+    } finally {
+      if (!silent) setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchOrders()
+  }, [fetchOrders])
+
+  useEffect(() => {
+    const tick = () => {
+      if (document.visibilityState === "visible") fetchOrders(true)
+    }
+    const timer = setInterval(tick, POLL_INTERVAL)
+    document.addEventListener("visibilitychange", tick)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener("visibilitychange", tick)
+    }
+  }, [fetchOrders])
+
+  const handleUpdateStatus = async (orderId: number, newStatus: number) => {
+    try {
+      await orderService.updateStatus(orderId, { status: newStatus })
+      fetchOrders(true)
+    } catch {
+      // Silent fail
+    }
+  }
+
+  const handleTabChange = (val: string) => {
+    setActiveFilter(val)
+    setStatusFilter([])
+  }
+
+  const handleFilterApply = (statuses: number[]) => {
+    setStatusFilter(statuses)
+    if (statuses.length > 0) setActiveFilter("semua")
+  }
+
+  const filtered = orders.filter((o) => {
+    const matchTab = activeFilter === "semua" || o.status === Number(activeFilter)
+    const matchDropdown = statusFilter.length === 0 || statusFilter.includes(o.status)
+    const tableCode = `T-${String(o.table_id).padStart(2, "0")}`
+    const tableName = `Meja ${String(o.table_id).padStart(2, "0")}`
     const matchSearch =
-      o.tableName.toLowerCase().includes(search.toLowerCase()) ||
-      o.tableCode.toLowerCase().includes(search.toLowerCase())
-    return matchFilter && matchSearch
+      tableName.toLowerCase().includes(search.toLowerCase()) ||
+      tableCode.toLowerCase().includes(search.toLowerCase())
+    return matchTab && matchDropdown && matchSearch
   })
 
   const gridCols = open
@@ -32,9 +102,9 @@ export default function KitchenOrderPage() {
           {KITCHEN_FILTER_TABS.map((tab) => (
             <button
               key={tab.value}
-              onClick={() => setActiveFilter(tab.value)}
+              onClick={() => handleTabChange(tab.value)}
               className={`text-sm px-4 py-1.5 rounded-full border transition-colors
-                ${activeFilter === tab.value
+                ${activeFilter === tab.value && statusFilter.length === 0
                   ? "bg-primary text-white border-primary"
                   : "bg-white text-foreground border-foreground/30 hover:border-primary"
                 }`}
@@ -45,9 +115,7 @@ export default function KitchenOrderPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="border border-foreground/30 rounded-lg p-2 hover:border-primary transition-colors">
-            <SlidersHorizontalIcon className="size-4 text-muted-foreground" />
-          </button>
+          <OrderFilterDropdown selected={statusFilter} onApply={handleFilterApply} />
           <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
             <SearchIcon className="size-4 text-muted-foreground shrink-0" />
             <input
@@ -61,11 +129,26 @@ export default function KitchenOrderPage() {
         </div>
       </div>
 
-      {/* Grid */}
-      {filtered.length > 0 ? (
+      {/* Content */}
+      {isLoading ? (
+        <div className="flex flex-1 items-center justify-center py-20">
+          <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : error ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
+          <p className="text-sm text-destructive">{error}</p>
+          <button onClick={() => fetchOrders()} className="text-sm text-primary underline">
+            Coba lagi
+          </button>
+        </div>
+      ) : filtered.length > 0 ? (
         <div className={`grid ${gridCols} gap-4 transition-all duration-200`}>
           {filtered.map((order) => (
-            <KitchenOrderCard key={order.id} {...order} />
+            <KitchenOrderCard
+              key={order.id}
+              order={order}
+              onUpdateStatus={handleUpdateStatus}
+            />
           ))}
         </div>
       ) : (

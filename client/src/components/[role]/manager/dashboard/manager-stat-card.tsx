@@ -1,4 +1,11 @@
-import { ManagerStat } from "@/lib/constant/manager-stats"
+type ManagerStat = {
+  title: string
+  value: number | string
+  icon: React.ReactNode
+  trend?: "up" | "down" | "neutral"
+  trendIcon?: React.ReactNode
+  trendLabel: string
+}
 
 export function ManagerStatCard({ title, value, icon, trendIcon, trendLabel }: ManagerStat) {
   return (

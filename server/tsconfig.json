@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
-    "types": ["bun-types", "express"],
+    "types": ["bun-types", "express", "multer"],
     "module": "commonjs",
     "strictPropertyInitialization": false,
-    "ignoreDeprecations": "6.0",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,

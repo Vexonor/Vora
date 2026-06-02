@@ -28,6 +28,7 @@ const OrderSection = () => {
                   width={100}
                   height={100}
                   className="size-16 object-cover transition-transform duration-500 group-hover:scale-110 rounded-xl"
+                  unoptimized
                 />
               </div>
               <div className="flex-1 min-w-0">

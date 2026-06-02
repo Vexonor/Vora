@@ -1,28 +1,61 @@
 "use client"
 
 import { MenuTable } from "@/components/[role]/manager/menu/menu-table"
-import { MENUS } from "@/lib/constant/menu"
-import { CirclePlusIcon, SearchIcon, SlidersHorizontalIcon } from "lucide-react"
+import { MenuFilterDropdown } from "@/components/shared/menu/menu-filter-dropdown"
+import { menuService } from "@/services/menu.service"
+import type { Menu } from "@/types/menu"
+import { CirclePlusIcon, Loader2Icon, SearchIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 const PAGE_SIZE = 5
 
 export default function ManagerMenuPage() {
   const router = useRouter()
+  const [menus, setMenus] = useState<Menu[]>([])
   const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState<number[]>([])
   const [currentPage, setCurrentPage] = useState(1)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const filtered = MENUS.filter((m) =>
-    m.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const fetchMenus = useCallback(async (q: string, statuses: number[]) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const data = await menuService.getAll({
+        q: q || undefined,
+        statuses: statuses.length > 0 ? statuses : undefined,
+      })
+      setMenus(data)
+    } catch {
+      setError("Gagal memuat data menu.")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  useEffect(() => {
+    fetchMenus("", [])
+  }, [fetchMenus])
 
   const handleSearch = (val: string) => {
     setSearch(val)
     setCurrentPage(1)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      fetchMenus(val, statusFilter)
+    }, 400)
   }
+
+  const handleFilterApply = (statuses: number[]) => {
+    setStatusFilter(statuses)
+    setCurrentPage(1)
+    fetchMenus(search, statuses)
+  }
+
+  const totalPages = Math.max(1, Math.ceil(menus.length / PAGE_SIZE))
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
@@ -38,9 +71,7 @@ export default function ManagerMenuPage() {
         </button>
 
         <div className="flex items-center gap-2">
-          <button className="border border-foreground/30 rounded-lg p-2 hover:border-primary transition-colors">
-            <SlidersHorizontalIcon className="size-4 text-muted-foreground" />
-          </button>
+          <MenuFilterDropdown selected={statusFilter} onApply={handleFilterApply} />
           <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
             <SearchIcon className="size-4 text-muted-foreground shrink-0" />
             <input
@@ -54,12 +85,26 @@ export default function ManagerMenuPage() {
         </div>
       </div>
 
-      <MenuTable
-        menus={filtered}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        totalPages={totalPages}
-      />
+      {/* Content */}
+      {isLoading ? (
+        <div className="flex flex-1 items-center justify-center py-20">
+          <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : error ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
+          <p className="text-sm text-destructive">{error}</p>
+          <button onClick={() => fetchMenus(search, statusFilter)} className="text-sm text-primary underline">
+            Coba lagi
+          </button>
+        </div>
+      ) : (
+        <MenuTable
+          menus={menus}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          totalPages={totalPages}
+        />
+      )}
 
     </div>
   )

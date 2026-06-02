@@ -4,44 +4,64 @@ import { AddTableModal } from "@/components/[role]/manager/table-management/add-
 import { DeleteTableModal } from "@/components/[role]/manager/table-management/delete-table-modal"
 import { TableCard } from "@/components/[role]/manager/table-management/table-card"
 import { useSidebar } from "@/components/ui/sidebar"
-import { Table, TABLES } from "@/lib/constant/table"
-import { CirclePlusIcon, SearchIcon } from "lucide-react"
-import { useState } from "react"
+import { tableService } from "@/services/table.service"
+import type { Table } from "@/types/table"
+import { CirclePlusIcon, Loader2Icon, SearchIcon } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 
 export default function TableManagementPage() {
   const { open } = useSidebar()
-  const [tables, setTables] = useState<Table[]>(TABLES)
+  const [tables, setTables] = useState<Table[]>([])
   const [search, setSearch] = useState("")
   const [showAddModal, setShowAddModal] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Table | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchTables = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const data = await tableService.getAll()
+      setTables(Array.isArray(data) ? data : [])
+    } catch {
+      setError("Gagal memuat data meja.")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchTables()
+  }, [fetchTables])
 
   const filtered = tables.filter((t) =>
-    t.tableCode.toLowerCase().includes(search.toLowerCase()) ||
-    t.tableNumber.toString().includes(search)
+    t.number.toString().includes(search)
   )
 
-  const handleGenerate = (num: number): string | null => {
-    const exists = tables.some((t) => t.tableNumber === num)
+  const handleGenerate = async (num: number): Promise<string | null> => {
+    const exists = tables.some((t) => t.number === num)
     if (exists) return `Meja nomor ${num} sudah ada.`
 
-    const code = `T-${String(num).padStart(2, "0")}`
-    const newTable: Table = {
-      id: Date.now().toString(),
-      tableNumber: num,
-      tableCode: code,
-      status: "aktif",
-      qrValue: `https://vora.app/table/${code}`,
+    try {
+      const newTable = await tableService.create({ number: num })
+      setTables((prev) =>
+        [...prev, newTable].sort((a, b) => a.number - b.number)
+      )
+      return null
+    } catch {
+      return "Gagal menambahkan meja. Silakan coba lagi."
     }
-
-    setTables((prev) =>
-      [...prev, newTable].sort((a, b) => a.tableNumber - b.tableNumber)
-    )
-    return null
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return
-    setTables((prev) => prev.filter((t) => t.id !== deleteTarget.id))
+    try {
+      await tableService.remove(deleteTarget.id)
+      setTables((prev) => prev.filter((t) => t.id !== deleteTarget.id))
+    } catch {
+      // Silent fail for now
+    }
     setDeleteTarget(null)
   }
 
@@ -66,26 +86,39 @@ export default function TableManagementPage() {
         </div>
       </div>
 
-      <div className={`grid ${gridCols} gap-3 transition-all duration-200`}>
+      {isLoading ? (
+        <div className="flex flex-1 items-center justify-center py-20">
+          <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : error ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
+          <p className="text-sm text-destructive">{error}</p>
+          <button onClick={fetchTables} className="text-sm text-primary underline">
+            Coba lagi
+          </button>
+        </div>
+      ) : (
+        <div className={`grid ${gridCols} gap-3 transition-all duration-200`}>
 
-        {!search && (
-          <div
-            onClick={() => setShowAddModal(true)}
-            className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-foreground/20 hover:border-primary transition-colors cursor-pointer min-h-[180px]"
-          >
-            <CirclePlusIcon className="size-6 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Tambah meja</span>
-          </div>
-        )}
+          {!search && (
+            <div
+              onClick={() => setShowAddModal(true)}
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-foreground/20 hover:border-primary transition-colors cursor-pointer min-h-[180px]"
+            >
+              <CirclePlusIcon className="size-6 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Tambah meja</span>
+            </div>
+          )}
 
-        {filtered.map((table) => (
-          <TableCard
-            key={table.id}
-            table={table}
-            onDelete={setDeleteTarget}
-          />
-        ))}
-      </div>
+          {filtered.map((table) => (
+            <TableCard
+              key={table.id}
+              table={table}
+              onDelete={setDeleteTarget}
+            />
+          ))}
+        </div>
+      )}
 
       {showAddModal && (
         <AddTableModal
@@ -96,7 +129,7 @@ export default function TableManagementPage() {
 
       {deleteTarget && (
         <DeleteTableModal
-          tableCode={deleteTarget.tableCode}
+          tableCode={`T-${String(deleteTarget.number).padStart(2, "0")}`}
           onConfirm={handleDelete}
           onClose={() => setDeleteTarget(null)}
         />

@@ -1,6 +1,7 @@
 import * as Joi from 'joi';
 import { ErrorCodeEnum } from 'src/core/enums/error-code.enum';
 import { User } from 'src/features/user/entities/user.entity';
+import UserRoleEnum from 'src/features/user/enums/user-role.enum';
 
 export const registerSchema = Joi.object({
   username: Joi.string().required().min(3).max(30).alphanum().messages({
@@ -14,10 +15,7 @@ export const registerSchema = Joi.object({
     .required()
     .email({ tlds: { allow: ['com', 'id'] } })
     .external(async (value) => {
-      const user = await User.findOne({
-        where: { email: value },
-      });
-
+      const user = await User.findOne({ where: { email: value } });
       if (user) {
         throw new Joi.ValidationError(
           ErrorCodeEnum.EMAIL_ALREADY_REGISTERED,
@@ -35,16 +33,12 @@ export const registerSchema = Joi.object({
       return value;
     }),
 
-  password: Joi.string()
+  role: Joi.number()
+    .valid(UserRoleEnum.CASHIER, UserRoleEnum.KITCHEN, UserRoleEnum.MANAGER)
     .required()
-    .min(8)
-    .max(64)
-    .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)'))
     .messages({
-      'string.min': ErrorCodeEnum.PASSWORD_TOO_SHORT,
-      'string.max': ErrorCodeEnum.PASSWORD_TOO_LONG,
-      'string.pattern.base': ErrorCodeEnum.PASSWORD_TOO_WEAK,
-      'any.required': ErrorCodeEnum.PASSWORD_REQUIRED,
+      'any.required': ErrorCodeEnum.ROLE_REQUIRED,
+      'any.only': ErrorCodeEnum.ROLE_INVALID,
     }),
 })
   .required()

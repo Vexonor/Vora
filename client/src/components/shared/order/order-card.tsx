@@ -1,23 +1,104 @@
 "use client"
 
-import { OrderStatus, STATUS_CONFIG, Transaction } from "@/lib/constant/order"
-import { CheckCheckIcon, CircleAlertIcon, TimerIcon } from "lucide-react"
+import type { Order } from "@/types/order"
+import { OrderStatus } from "@/types/order"
+import { CheckCheckIcon, CircleAlertIcon, TimerIcon, ClockIcon, XCircleIcon } from "lucide-react"
 import { useState } from "react"
+import { OrderDetailModal } from "./order-detail-modal"
 import { PaymentVerificationModal } from "./payment-verification-modal"
 
-const STATUS_ICON: Record<OrderStatus, React.ReactNode> = {
-  done: <CheckCheckIcon className="size-3.5" />,
-  process: <TimerIcon className="size-3.5" />,
-  unpaid: <CircleAlertIcon className="size-3.5" />,
+/** Map API order status number to UI config */
+const STATUS_CONFIG: Record<number, {
+  label: string
+  description: string
+  buttonClass: string
+  dotClass: string
+  icon: React.ReactNode
+}> = {
+  [OrderStatus.PENDING]: {
+    label: "Menunggu",
+    description: "Menunggu diproses",
+    buttonClass: "border border-secondary text-secondary",
+    dotClass: "bg-secondary",
+    icon: <ClockIcon className="size-3.5" />,
+  },
+  [OrderStatus.PROCESSING]: {
+    label: "Diproses",
+    description: "Sedang diproses",
+    buttonClass: "border border-secondary text-secondary",
+    dotClass: "bg-secondary",
+    icon: <TimerIcon className="size-3.5" />,
+  },
+  [OrderStatus.READY]: {
+    label: "Siap",
+    description: "Siap disajikan",
+    buttonClass: "border border-primary text-primary",
+    dotClass: "bg-primary",
+    icon: <CheckCheckIcon className="size-3.5" />,
+  },
+  [OrderStatus.COMPLETED]: {
+    label: "Selesai",
+    description: "Pesanan selesai",
+    buttonClass: "border border-primary text-primary",
+    dotClass: "bg-primary",
+    icon: <CheckCheckIcon className="size-3.5" />,
+  },
+  [OrderStatus.CANCELED]: {
+    label: "Dibatalkan",
+    description: "Pesanan dibatalkan",
+    buttonClass: "border border-destructive text-destructive",
+    dotClass: "bg-destructive",
+    icon: <XCircleIcon className="size-3.5" />,
+  },
+}
+
+const DEFAULT_CONFIG = {
+  label: "Unknown",
+  description: "",
+  buttonClass: "border border-foreground/30 text-foreground",
+  dotClass: "bg-foreground/30",
+  icon: <CircleAlertIcon className="size-3.5" />,
 }
 
 const formatCurrency = (value: number) =>
-  value.toLocaleString("id-ID")
+  Number(value).toLocaleString("id-ID")
 
-export function TransactionCard(props: Transaction) {
-  const { tableCode, tableName, itemCount, status, date, time, items, subtotal, tax, total } = props
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return ""
+  const date = new Date(dateStr)
+  return date.toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+const formatTime = (dateStr?: string) => {
+  if (!dateStr) return ""
+  const date = new Date(dateStr)
+  return date.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  })
+}
+
+type Props = {
+  order: Order
+  onRefresh?: () => void
+}
+
+export function TransactionCard({ order, onRefresh }: Props) {
+  const { id, table_id, total_price, items, created_at } = order
+  const status = Number(order.status)
   const [showModal, setShowModal] = useState(false)
-  const config = STATUS_CONFIG[status]
+  const [showDetail, setShowDetail] = useState(false)
+  const config = STATUS_CONFIG[status] ?? DEFAULT_CONFIG
+
+  const tableCode = `T-${String(table_id).padStart(2, "0")}`
+  const tableName = `Meja ${String(table_id).padStart(2, "0")}`
+  const itemCount = items?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0
 
   return (
     <>
@@ -36,7 +117,7 @@ export function TransactionCard(props: Transaction) {
           </div>
           <div className="flex flex-col items-end gap-1">
             <button className={`flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full ${config.buttonClass}`}>
-              {STATUS_ICON[status]}
+              {config.icon}
               {config.label}
             </button>
             <div className="flex items-center gap-1">
@@ -48,8 +129,8 @@ export function TransactionCard(props: Transaction) {
 
         {/* Date & Time */}
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{date}</span>
-          <span>{time}</span>
+          <span>{formatDate(created_at)}</span>
+          <span>{formatTime(created_at)}</span>
         </div>
 
         <hr className="border-foreground/10" />
@@ -61,11 +142,11 @@ export function TransactionCard(props: Transaction) {
             <span className="text-center">Jumlah</span>
             <span className="text-right">Harga</span>
           </div>
-          {items.map((item) => (
-            <div key={item.name} className="grid grid-cols-3 text-sm">
-              <span>{item.name}</span>
-              <span className="text-center">{item.qty}</span>
-              <span className="text-right">{formatCurrency(item.price)}</span>
+          {items?.map((item) => (
+            <div key={item.id} className="grid grid-cols-3 text-sm">
+              <span>{item.menu?.name ?? `Menu #${item.menu_id}`}</span>
+              <span className="text-center">{item.quantity}</span>
+              <span className="text-right">{formatCurrency(item.total_price)}</span>
             </div>
           ))}
         </div>
@@ -74,28 +155,23 @@ export function TransactionCard(props: Transaction) {
 
         {/* Summary */}
         <div className="flex flex-col gap-1 text-sm">
-          <div className="flex justify-between text-muted-foreground">
-            <span>Subtotal</span>
-            <span>{formatCurrency(subtotal)}</span>
-          </div>
-          <div className="flex justify-between text-muted-foreground">
-            <span>PPN (10%)</span>
-            <span>{formatCurrency(tax)}</span>
-          </div>
           <div className="flex justify-between font-bold text-base mt-1">
             <span>Total</span>
-            <span>{formatCurrency(total)}</span>
+            <span>{formatCurrency(total_price)}</span>
           </div>
         </div>
 
         {/* Actions */}
         <div className="grid grid-cols-2 gap-2 mt-1">
-          <button className="bg-primary text-white text-sm font-semibold py-2 rounded-lg">
+          <button
+            onClick={() => setShowDetail(true)}
+            className="bg-primary text-white text-sm font-semibold py-2 rounded-lg"
+          >
             Detail Pesanan
           </button>
           <button
             onClick={() => setShowModal(true)}
-            disabled={status === "done"}
+            disabled={status === OrderStatus.COMPLETED || status === OrderStatus.CANCELED}
             className="bg-secondary text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Verifikasi Pembayaran
@@ -104,10 +180,19 @@ export function TransactionCard(props: Transaction) {
 
       </div>
 
+      {showDetail && (
+        <OrderDetailModal
+          order={order}
+          onClose={() => setShowDetail(false)}
+        />
+      )}
+
       {showModal && (
         <PaymentVerificationModal
-          transaction={props}
+          transaction={{ id: String(id), tableCode, tableName, total: Number(total_price) }}
+          orderId={id}
           onClose={() => setShowModal(false)}
+          onVerified={() => { setShowModal(false); onRefresh?.() }}
         />
       )}
     </>

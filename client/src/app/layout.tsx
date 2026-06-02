@@ -1,6 +1,8 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/use-cart";
+import { AuthProvider } from "@/hooks/use-auth";
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,11 +20,14 @@ export default function RootLayout({
       <body
         className={`antialiased`}
       >
-        <TooltipProvider>
-          <CartProvider>
-            {children}
-          </CartProvider>
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <CartProvider>
+              {children}
+            </CartProvider>
+          </TooltipProvider>
+          <Toaster position="top-right" richColors />
+        </AuthProvider>
       </body>
     </html>
   );

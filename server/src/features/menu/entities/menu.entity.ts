@@ -1,6 +1,7 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, Model, Table, HasMany } from 'sequelize-typescript';
 import { getMenuStatusEnumLabel } from '../enums/menu-status.enum';
 import { getMenuTypeEnumLabel } from '../enums/menu-type.enum';
+import { OrderItem } from 'src/features/order-item/entities/order-item.entity';
 
 @Table({
   timestamps: true,
@@ -14,6 +15,13 @@ import { getMenuTypeEnumLabel } from '../enums/menu-type.enum';
 export class Menu extends Model {
   @Column(DataType.STRING)
   name: string;
+
+  @Column({
+    type: DataType.DECIMAL(16, 3),
+    allowNull: false,
+    defaultValue: 0,
+  })
+  cost: number;
 
   @Column({
     type: DataType.DECIMAL(16, 3),
@@ -51,4 +59,7 @@ export class Menu extends Model {
 
   @Column(DataType.STRING)
   image_url: string;
+
+  @HasMany(() => OrderItem)
+  order_items: OrderItem[];
 }

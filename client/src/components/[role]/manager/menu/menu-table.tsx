@@ -4,11 +4,18 @@ import {
   DropdownMenu, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getMenuStatus, MENU_STATUS_CONFIG } from "@/lib/constant/menu"
-import { Menu } from "@/lib/type/menu"
+import type { Menu } from "@/types/menu"
+import { MenuStatus } from "@/types/menu"
 import { EllipsisIcon, EyeIcon, PencilIcon, Trash2Icon } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
 import { DeleteMenuModal } from "./delete-menu-modal"
+
+export const MENU_STATUS_BADGE: Record<number, { label: string; badgeClass: string }> = {
+  [MenuStatus.AVAILABLE]: { label: "Tersedia", badgeClass: "border-primary/40 bg-primary/10 text-primary" },
+  [MenuStatus.SOLD_OUT]: { label: "Habis", badgeClass: "border-destructive/40 bg-destructive/10 text-destructive" },
+  [MenuStatus.INACTIVE]: { label: "Tidak Aktif", badgeClass: "border-foreground/30 bg-foreground/5 text-foreground/60" },
+}
 
 type Props = {
   menus: Menu[]
@@ -56,9 +63,15 @@ export function MenuTable({ menus, currentPage, onPageChange, totalPages }: Prop
             </tr>
           </thead>
           <tbody>
+            {paginated.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-6 py-16 text-center text-sm text-muted-foreground">
+                  Menu tidak ditemukan.
+                </td>
+              </tr>
+            )}
             {paginated.map((menu, i) => {
-              const status = getMenuStatus(menu.isAvailable)
-              const config = MENU_STATUS_CONFIG[status]
+              const config = MENU_STATUS_BADGE[menu.status] ?? { label: menu.status_name ?? "Unknown", badgeClass: "border-foreground/30 bg-foreground/5 text-foreground" }
               return (
                 <tr key={menu.id} className="border-b border-foreground/5 last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="px-6 py-4 text-muted-foreground">{offset + i + 1}.</td>
@@ -79,11 +92,15 @@ export function MenuTable({ menus, currentPage, onPageChange, totalPages }: Prop
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-36">
-                        <DropdownMenuItem className="gap-2 cursor-pointer">
-                          <EyeIcon className="size-4" /> Detail
+                        <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+                          <Link href={`/manager/menu/${menu.id}`}>
+                            <EyeIcon className="size-4" /> Detail
+                          </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2 cursor-pointer">
-                          <PencilIcon className="size-4" /> Edit
+                        <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+                          <Link href={`/manager/menu/${menu.id}/edit`}>
+                            <PencilIcon className="size-4" /> Edit
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setDeleteTarget(menu)}
@@ -102,39 +119,41 @@ export function MenuTable({ menus, currentPage, onPageChange, totalPages }: Prop
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-end gap-1 pt-2">
-        <button
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          ‹ Sebelumnya
-        </button>
-        {getPages().map((page, i) =>
-          page === "..." ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">...</span>
-          ) : (
-            <button
-              key={page}
-              onClick={() => onPageChange(page as number)}
-              className={`size-8 rounded-lg text-sm font-medium transition-colors border
-                ${currentPage === page
-                  ? "bg-primary text-white border-primary"
-                  : "border-foreground/20 hover:border-primary"
-                }`}
-            >
-              {page}
-            </button>
-          )
-        )}
-        <button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          Setelahnya ›
-        </button>
-      </div>
+      {menus.length > 0 && (
+        <div className="flex items-center justify-end gap-1 pt-2">
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            ‹ Sebelumnya
+          </button>
+          {getPages().map((page, i) =>
+            page === "..." ? (
+              <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">...</span>
+            ) : (
+              <button
+                key={page}
+                onClick={() => onPageChange(page as number)}
+                className={`size-8 rounded-lg text-sm font-medium transition-colors border
+                  ${currentPage === page
+                    ? "bg-primary text-white border-primary"
+                    : "border-foreground/20 hover:border-primary"
+                  }`}
+              >
+                {page}
+              </button>
+            )
+          )}
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Setelahnya ›
+          </button>
+        </div>
+      )}
 
       {deleteTarget && (
         <DeleteMenuModal

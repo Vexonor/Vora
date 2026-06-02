@@ -2,11 +2,31 @@
 
 import { AddReportModal } from "@/components/[role]/manager/sales-report/add-report-modal"
 import { ReportTable } from "@/components/[role]/manager/sales-report/report-table"
-import { SALES_REPORTS, SalesReport } from "@/lib/constant/sales-report"
-import { PlusIcon, SearchIcon } from "lucide-react"
-import { useState } from "react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { sellingReportService } from "@/services/selling-report.service"
+import type { SellingReport } from "@/types/selling-report"
+import { Loader2Icon, PlusIcon, SearchIcon } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 const PAGE_SIZE = 5
+
+const MONTHS = [
+  { value: "1", label: "Januari" },
+  { value: "2", label: "Februari" },
+  { value: "3", label: "Maret" },
+  { value: "4", label: "April" },
+  { value: "5", label: "Mei" },
+  { value: "6", label: "Juni" },
+  { value: "7", label: "Juli" },
+  { value: "8", label: "Agustus" },
+  { value: "9", label: "September" },
+  { value: "10", label: "Oktober" },
+  { value: "11", label: "November" },
+  { value: "12", label: "Desember" },
+]
+
+const currentYear = new Date().getFullYear()
+const YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - i))
 
 const formatCurrency = (value: number) => {
   if (value >= 1000000) return `Rp ${(value / 1000000).toFixed(1)}jt`
@@ -14,43 +34,71 @@ const formatCurrency = (value: number) => {
 }
 
 export default function SalesReportPage() {
-  const [reports, setReports] = useState<SalesReport[]>(SALES_REPORTS)
+  const [reports, setReports] = useState<SellingReport[]>([])
   const [search, setSearch] = useState("")
+  const [monthFilter, setMonthFilter] = useState("")
+  const [yearFilter, setYearFilter] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const filtered = reports.filter((r) =>
-    r.title.toLowerCase().includes(search.toLowerCase())
-  )
+  const fetchReports = useCallback(async (q: string, month: string, year: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const data = await sellingReportService.getAll({
+        q: q || undefined,
+        month: month || undefined,
+        year: year || undefined,
+      })
+      setReports(Array.isArray(data) ? data : [])
+    } catch {
+      setError("Gagal memuat laporan penjualan.")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  useEffect(() => {
+    fetchReports("", "", "")
+  }, [fetchReports])
+
+  const totalPages = Math.max(1, Math.ceil(reports.length / PAGE_SIZE))
 
   const handleSearch = (val: string) => {
     setSearch(val)
     setCurrentPage(1)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      fetchReports(val, monthFilter, yearFilter)
+    }, 400)
   }
 
-  const totalTransactions = reports.reduce((sum, r) => sum + r.totalTransactions, 0)
-  const totalProducts = reports.reduce((sum, r) => sum + r.totalProducts, 0)
-  const totalNetRevenue = reports.reduce((sum, r) => sum + r.netRevenue, 0)
-  const totalCapital = reports.reduce((sum, r) => sum + r.capital, 0)
+  const handleMonthChange = (val: string) => {
+    setMonthFilter(val)
+    setCurrentPage(1)
+    fetchReports(search, val, yearFilter)
+  }
 
-  const handleAdd = (form: {
+  const handleYearChange = (val: string) => {
+    setYearFilter(val)
+    setCurrentPage(1)
+    fetchReports(search, monthFilter, val)
+  }
+
+  const totalTransactions = reports.reduce((sum, r) => sum + Number(r.total_transaction), 0)
+  const totalProducts = reports.reduce((sum, r) => sum + Number(r.total_items_sold), 0)
+  const totalNetRevenue = reports.reduce((sum, r) => sum + Number(r.net_profit), 0)
+  const totalCapital = reports.reduce((sum, r) => sum + Number(r.unit_cost), 0)
+
+  const handleAdd = async (form: {
     title: string; date: string; totalTransactions: string
     totalProducts: string; capital: string; grossRevenue: string; netRevenue: string
-  }): string | null => {
-    const newReport: SalesReport = {
-      id: Date.now().toString(),
-      title: form.title,
-      date: form.date,
-      totalTransactions: Number(form.totalTransactions),
-      totalProducts: Number(form.totalProducts),
-      capital: Number(form.capital),
-      grossRevenue: Number(form.grossRevenue),
-      netRevenue: Number(form.netRevenue),
-    }
-    setReports((prev) => [newReport, ...prev])
-    return null
+  }): Promise<void> => {
+    await sellingReportService.generate(form.date)
+    fetchReports(search, monthFilter, yearFilter)
   }
 
   return (
@@ -72,7 +120,7 @@ export default function SalesReportPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           onClick={() => setShowAddModal(true)}
           className="flex items-center gap-2 bg-secondary text-primary text-sm font-semibold px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors"
@@ -81,25 +129,73 @@ export default function SalesReportPage() {
           Tambah Laporan
         </button>
 
-        <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
-          <SearchIcon className="size-4 text-muted-foreground shrink-0" />
-          <input
-            type="text"
-            placeholder="Cari laporan ..."
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full text-sm outline-none placeholder:text-muted-foreground"
-          />
+        <div className="flex items-center gap-2">
+          {/* Year filter */}
+          <Select
+            value={yearFilter || "all"}
+            onValueChange={(v) => handleYearChange(v === "all" ? "" : v)}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Semua Tahun" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Tahun</SelectItem>
+              {YEARS.map((y) => (
+                <SelectItem key={y} value={y}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Month filter */}
+          <Select
+            value={monthFilter || "all"}
+            onValueChange={(v) => handleMonthChange(v === "all" ? "" : v)}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Semua Bulan" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Bulan</SelectItem>
+              {MONTHS.map((m) => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Search */}
+          <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
+            <SearchIcon className="size-4 text-muted-foreground shrink-0" />
+            <input
+              type="text"
+              placeholder="Cari laporan ..."
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Tabel */}
-      <ReportTable
-        reports={filtered}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        totalPages={totalPages}
-      />
+      {/* Content */}
+      {isLoading ? (
+        <div className="flex flex-1 items-center justify-center py-20">
+          <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : error ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
+          <p className="text-sm text-destructive">{error}</p>
+          <button onClick={() => fetchReports(search, monthFilter, yearFilter)} className="text-sm text-primary underline">
+            Coba lagi
+          </button>
+        </div>
+      ) : (
+        <ReportTable
+          reports={reports}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          totalPages={totalPages}
+        />
+      )}
 
       {showAddModal && (
         <AddReportModal

@@ -1,34 +1,69 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { TableService } from './table.service';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { CurrentUser } from 'src/core/decorators/current-user.decorator';
+import { JwtAuthGuard } from 'src/core/guards/jwt-auth.guard';
+import { JoiValidationParamPipe } from 'src/core/validators/joi-validation-param.pipe';
+import { JoiValidationPipe } from 'src/core/validators/joi-validation.pipe';
+import { User } from '../user/entities/user.entity';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
+import { Tables } from './entities/table.entity';
+import { TableService } from './table.service';
+import { tableIdParamSchema } from './validations/params/table-id.param';
+import { createTableScheme } from './validations/requests/create-table.request';
 
-@Controller('table')
+@Controller()
 export class TableController {
   constructor(private readonly tableService: TableService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createTableDto: CreateTableDto) {
-    return this.tableService.create(createTableDto);
+  create(
+    @Body(new JoiValidationPipe(createTableScheme))
+    createTableDto: CreateTableDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.tableService.create(createTableDto, user);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
-  findAll() {
-    return this.tableService.findAll();
+  async findAll(@Query() query, @CurrentUser() user: User) {
+    return this.tableService.findAll(query, user);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tableService.findOne(+id);
+  async findOne(
+    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: Tables,
+  ) {
+    return this.tableService.findOne(table);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTableDto: UpdateTableDto) {
-    return this.tableService.update(+id, updateTableDto);
+  @UseGuards(JwtAuthGuard)
+  @Put(':id')
+  async update(
+    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: Tables,
+    @Body(new JoiValidationPipe(createTableScheme))
+    updateTableDto: UpdateTableDto,
+  ) {
+    return this.tableService.update(table, updateTableDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.tableService.remove(+id);
+  async remove(
+    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: Tables,
+  ) {
+    return this.tableService.remove(table);
   }
 }

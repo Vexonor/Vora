@@ -1,6 +1,6 @@
 "use client"
 
-import { Table, TABLE_STATUS_CONFIG } from "@/lib/constant/table"
+import type { Table } from "@/types/table"
 import { DownloadIcon, Trash2Icon } from "lucide-react"
 import { useRef } from "react"
 import QRCode from "react-qr-code"
@@ -12,8 +12,8 @@ type Props = {
 
 export function TableCard({ table, onDelete }: Props) {
   const qrRef = useRef<HTMLDivElement>(null)
-  const config = TABLE_STATUS_CONFIG[table.status]
-  const isActive = table.status === "aktif"
+  const tableCode = `T-${String(table.number).padStart(2, "0")}`
+  const qrValue = `${typeof window !== "undefined" ? window.location.origin : ""}/order?table=${table.id}`
 
   const handleDownload = () => {
     const svg = qrRef.current?.querySelector("svg")
@@ -32,7 +32,7 @@ export function TableCard({ table, onDelete }: Props) {
       ctx?.drawImage(img, 0, 0, 300, 300)
       URL.revokeObjectURL(url)
       const a = document.createElement("a")
-      a.download = `QR-${table.tableCode}.png`
+      a.download = `QR-${tableCode}.png`
       a.href = canvas.toDataURL("image/png")
       a.click()
     }
@@ -40,40 +40,39 @@ export function TableCard({ table, onDelete }: Props) {
   }
 
   return (
-    <div className={`bg-white rounded-xl border border-foreground/10 p-4 flex flex-col items-center gap-3 transition-opacity ${!isActive ? "opacity-60" : ""}`}>
+    <div className="bg-white rounded-xl border border-foreground/10 p-4 flex flex-col items-center gap-3">
 
       {/* Header */}
       <div className="flex items-center justify-between w-full">
-        <span className="font-semibold text-sm">{table.tableCode}</span>
-        <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${config.badgeClass}`}>
-          {config.label}
+        <span className="font-semibold text-sm">{tableCode}</span>
+        <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30">
+          Aktif
         </span>
       </div>
 
       {/* QR Code */}
       <div
         ref={qrRef}
-        className={`bg-muted rounded-lg p-3 flex items-center justify-center ${!isActive ? "grayscale" : ""}`}
+        className="bg-muted rounded-lg p-3 flex items-center justify-center"
       >
         <QRCode
-          value={table.qrValue}
+          value={qrValue}
           size={80}
           bgColor="transparent"
-          fgColor={isActive ? "#056A68" : "#888888"}
+          fgColor="#056A68"
         />
       </div>
 
       {/* URL hint */}
       <p className="text-[10px] text-muted-foreground text-center truncate w-full px-1">
-        {table.qrValue}
+        {qrValue}
       </p>
 
       {/* Actions */}
       <div className="flex gap-2 w-full">
         <button
           onClick={handleDownload}
-          disabled={!isActive}
-          className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-lg border border-foreground/20 hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-lg border border-foreground/20 hover:border-primary transition-colors"
         >
           <DownloadIcon className="size-3.5" />
           Unduh

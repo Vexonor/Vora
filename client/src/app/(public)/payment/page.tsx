@@ -12,6 +12,7 @@ import PaymentTypeSection from "./payment-type-section"
 
 const Payment = () => {
   const [paymentType, setPaymentType] = useState<string>("")
+  const [paymentMethod, setPaymentMethod] = useState<string>("")
 
   return (
     <main className="w-full h-dvh bg-primary">
@@ -21,19 +22,22 @@ const Payment = () => {
         <Separator />
         <PaymentTypeSection
           value={paymentType}
-          onValueChange={setPaymentType}
+          onValueChange={(val) => {
+            setPaymentType(val)
+            if (val !== "online") setPaymentMethod("")
+          }}
         />
         <Separator />
         <div className="min-h-[200px]">
           {paymentType === "online"
             ? <div className="flex flex-col gap-6">
-              <PaymentMethodSection />
-              <BottomSheet />
+              <PaymentMethodSection value={paymentMethod} onValueChange={setPaymentMethod} />
+              <BottomSheet paymentType="online" paymentMethod={paymentMethod} />
             </div>
             : paymentType === "offline"
               ? <div className="flex flex-col gap-6">
                 <PayAtCashierSection />
-                <BottomSheet />
+                <BottomSheet paymentType="offline" />
               </div>
               : <EmptyStateSection />
           }

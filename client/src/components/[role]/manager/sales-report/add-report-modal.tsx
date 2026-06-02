@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { SaveIcon } from "lucide-react"
+import { Loader2Icon, SaveIcon } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 
 type ReportForm = {
   title: string
@@ -20,7 +21,7 @@ type ReportForm = {
 type ReportFormErrors = Partial<Record<keyof ReportForm, string>>
 
 type Props = {
-  onSubmit: (form: ReportForm) => string | null
+  onSubmit: (form: ReportForm) => Promise<void>
   onClose: () => void
 }
 
@@ -30,6 +31,7 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
     totalProducts: "", capital: "", grossRevenue: "", netRevenue: "",
   })
   const [errors, setErrors] = useState<ReportFormErrors>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const validate = (): ReportFormErrors => {
     const e: ReportFormErrors = {}
@@ -48,18 +50,22 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
     setErrors((prev) => ({ ...prev, [key]: undefined }))
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newErrors = validate()
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       return
     }
-    const errorMsg = onSubmit(form)
-    if (errorMsg) {
-      setErrors({ title: errorMsg })
-      return
+    setIsSubmitting(true)
+    try {
+      await onSubmit(form)
+      toast.success("Laporan berhasil dibuat.")
+      onClose()
+    } catch {
+      toast.error("Gagal membuat laporan. Silakan coba lagi.")
+    } finally {
+      setIsSubmitting(false)
     }
-    onClose()
   }
 
   return (
@@ -78,7 +84,7 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
               placeholder="Masukkan judul laporan penjualan"
               value={form.title}
               onChange={handleChange("title")}
-              className={`border ${errors.title ? "border-destructive" : "border-primary"}`}
+              aria-invalid={!!errors.title}
             />
             {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
           </div>
@@ -89,7 +95,7 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
               type="date"
               value={form.date}
               onChange={handleChange("date")}
-              className={`border ${errors.date ? "border-destructive" : "border-primary"}`}
+              aria-invalid={!!errors.date}
             />
             {errors.date && <p className="text-xs text-destructive">{errors.date}</p>}
           </div>
@@ -102,7 +108,7 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
                 placeholder="Masukkan total transaksi"
                 value={form.totalTransactions}
                 onChange={handleChange("totalTransactions")}
-                className={`border ${errors.totalTransactions ? "border-destructive" : "border-primary"}`}
+                aria-invalid={!!errors.totalTransactions}
               />
               {errors.totalTransactions && <p className="text-xs text-destructive">{errors.totalTransactions}</p>}
             </div>
@@ -113,7 +119,7 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
                 placeholder="Masukkan total produk"
                 value={form.totalProducts}
                 onChange={handleChange("totalProducts")}
-                className={`border ${errors.totalProducts ? "border-destructive" : "border-primary"}`}
+                aria-invalid={!!errors.totalProducts}
               />
               {errors.totalProducts && <p className="text-xs text-destructive">{errors.totalProducts}</p>}
             </div>
@@ -127,7 +133,7 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
                 placeholder="Masukkan jumlah modal"
                 value={form.capital}
                 onChange={handleChange("capital")}
-                className={`border ${errors.capital ? "border-destructive" : "border-primary"}`}
+                aria-invalid={!!errors.capital}
               />
               {errors.capital && <p className="text-xs text-destructive">{errors.capital}</p>}
             </div>
@@ -138,7 +144,7 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
                 placeholder="Masukkan jumlah pendapatan kotor"
                 value={form.grossRevenue}
                 onChange={handleChange("grossRevenue")}
-                className={`border ${errors.grossRevenue ? "border-destructive" : "border-primary"}`}
+                aria-invalid={!!errors.grossRevenue}
               />
               {errors.grossRevenue && <p className="text-xs text-destructive">{errors.grossRevenue}</p>}
             </div>
@@ -151,7 +157,7 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
               placeholder="Masukkan jumlah pendapatan bersih"
               value={form.netRevenue}
               onChange={handleChange("netRevenue")}
-              className={`border ${errors.netRevenue ? "border-destructive" : "border-primary"}`}
+              aria-invalid={!!errors.netRevenue}
             />
             {errors.netRevenue && <p className="text-xs text-destructive">{errors.netRevenue}</p>}
           </div>
@@ -160,10 +166,15 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
             <Button variant="outline" onClick={onClose}>Batal</Button>
             <Button
               onClick={handleSubmit}
+              disabled={isSubmitting}
               className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
             >
-              <SaveIcon className="size-4" />
-              Simpan Laporan
+              {isSubmitting ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : (
+                <SaveIcon className="size-4" />
+              )}
+              {isSubmitting ? "Menyimpan..." : "Simpan Laporan"}
             </Button>
           </div>
 

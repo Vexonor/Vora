@@ -3,7 +3,14 @@ import ChevronRightIcon from "@icons/chevron-right"
 import { ReceiptIcon } from "@icons/receipt"
 import Link from "next/link"
 
-const PaymentStatus = () => {
+interface PaymentStatusProps {
+  params: Promise<{ transactionId: string }>
+}
+
+const PaymentStatus = async ({ params }: PaymentStatusProps) => {
+  const resolvedParams = await params
+  const transactionId = resolvedParams.transactionId
+
   return (
     <div className="w-full h-dvh bg-primary">
       <div className="max-w-3xl h-full mx-auto flex flex-col justify-center items-center gap-4 bg-background p-4">
@@ -17,9 +24,9 @@ const PaymentStatus = () => {
           <p className="text-center text-sm font-medium">Pembayaran telah berhasil diselesaikan. Struk siap dicetak untuk pelanggan.</p>
         </div>
         {/* Button */}
-        <Link href="/customer/payment/invoice" className="w-full flex flex-col items center gap-1">
+        <Link href={`/payment/invoice?orderId=${transactionId}`} className="w-full flex flex-col items center gap-1">
           <Button className="w-full bg-secondary text-primary font-semibold py-2 rounded-lg">
-            <span>Lanjut</span>
+            <span>Lihat Struk (Invoice)</span>
             <ChevronRightIcon className="size-5" />
           </Button>
           <span className="text-center text-xs text-foreground/50">Otomatis lanjut dalam 20 detik</span>

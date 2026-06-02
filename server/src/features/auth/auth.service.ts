@@ -7,6 +7,7 @@ import { ResponseHelper } from 'src/core/helpers/response.helper';
 import { User } from '../user/entities/user.entity';
 import UserRoleEnum from '../user/enums/user-role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -57,23 +58,62 @@ export class AuthService {
     return user;
   }
 
+  getMe(currentUser: User) {
+    return this.response.success(currentUser, 200, 'Successfully retrieved profile');
+  }
+
+  async changePassword(dto: ChangePasswordDto, currentUser: User) {
+    try {
+      const user = await this.userModel.findByPk(currentUser.id, {
+        attributes: { include: ['password'] },
+      });
+
+      const isValid = await Bun.password.verify(
+        dto.current_password,
+        user.password.replace(/\$2y\$|\$2a\$/, '$2b$'),
+        'bcrypt',
+      );
+
+      if (!isValid) {
+        return this.response.fail(ErrorCodeEnum.INVALID_CURRENT_PASSWORD, 400);
+      }
+
+      const hashed = await Bun.password.hash(dto.new_password, {
+        algorithm: 'bcrypt',
+        cost: 10,
+      });
+
+      await user.update({ password: hashed });
+      return this.response.success(null, 200, 'Password changed successfully');
+    } catch (error: any) {
+      return this.response.fail(error.message, 500);
+    }
+  }
+
   async register(createUserDto: CreateUserDto, currentUser: User) {
     if (currentUser.role !== UserRoleEnum.MANAGER) {
       return this.response.fail(ErrorCodeEnum.FORBIDDEN, 403);
     }
     const transaction = await this.sequelize.transaction();
     try {
-      createUserDto.password = await Bun.password.hash(createUserDto.password, {
+      const digits = Math.floor(1000 + Math.random() * 9000);
+      const defaultPassword = `Vora@${digits}`;
+      const hashedPassword = await Bun.password.hash(defaultPassword, {
         algorithm: 'bcrypt',
         cost: 10,
       });
+
       const user = await this.userModel
-        .create({ ...createUserDto })
+        .create({ ...createUserDto, password: hashedPassword })
         .then((value) => value.toJSON());
 
       delete user.password;
       await transaction.commit();
-      return this.response.success(user, 201, 'Successfully register user');
+      return this.response.success(
+        { ...user, default_password: defaultPassword },
+        201,
+        'Successfully register user',
+      );
     } catch (error: any) {
       await transaction.rollback();
       return this.response.fail(error.message, 400);

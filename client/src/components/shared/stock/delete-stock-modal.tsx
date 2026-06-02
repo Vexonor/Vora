@@ -2,15 +2,16 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { Trash2Icon } from "lucide-react"
+import { Loader2Icon, Trash2Icon } from "lucide-react"
 
 type Props = {
   stockName: string
   onConfirm: () => void
   onClose: () => void
+  isLoading?: boolean
 }
 
-export function DeleteStockModal({ stockName, onConfirm, onClose }: Props) {
+export function DeleteStockModal({ stockName, onConfirm, onClose, isLoading }: Props) {
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-sm text-center" showCloseButton={false}>
@@ -33,9 +34,10 @@ export function DeleteStockModal({ stockName, onConfirm, onClose }: Props) {
             </Button>
             <Button
               onClick={onConfirm}
+              disabled={isLoading}
               className="w-full bg-destructive hover:bg-destructive/90 text-white"
             >
-              Ya
+              {isLoading ? <Loader2Icon className="size-4 animate-spin" /> : "Ya, Hapus"}
             </Button>
           </div>
         </div>

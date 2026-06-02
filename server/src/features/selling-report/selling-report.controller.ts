@@ -1,30 +1,25 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { SellingReportService } from './selling-report.service';
 import { CreateSellingReportDto } from './dto/create-selling-report.dto';
 import { UpdateSellingReportDto } from './dto/update-selling-report.dto';
 
-@Controller('selling-report')
+@Controller()
 export class SellingReportController {
   constructor(private readonly sellingReportService: SellingReportService) {}
 
-  @Post()
-  create(@Body() createSellingReportDto: CreateSellingReportDto) {
-    return this.sellingReportService.create(createSellingReportDto);
+  @Post('generate')
+  generate(@Body('date') date: string) {
+    return this.sellingReportService.generate(date);
   }
 
   @Get()
-  findAll() {
-    return this.sellingReportService.findAll();
+  findAll(@Query() query: { q?: string; month?: string; year?: string }) {
+    return this.sellingReportService.findAll(query);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.sellingReportService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSellingReportDto: UpdateSellingReportDto) {
-    return this.sellingReportService.update(+id, updateSellingReportDto);
   }
 
   @Delete(':id')

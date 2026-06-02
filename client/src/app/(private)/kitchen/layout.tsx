@@ -1,12 +1,14 @@
 "use client"
 
 import { RoleLayout } from "@/components/layout/role-layout"
+import { useAuth } from "@/hooks/use-auth"
 import { BoxIcon } from "@icons/box"
 import { CallBellIcon } from "@icons/call-bell"
 import { usePathname } from "next/navigation"
 
 export default function KitchenLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const { user } = useAuth()
 
   const kitchenNav = [
     {
@@ -24,8 +26,8 @@ export default function KitchenLayout({ children }: { children: React.ReactNode 
   ]
 
   const kitchenUser = {
-    name: "Dapur Utama",
-    email: "kitchen@vora.com",
+    name: user?.username ?? "Dapur Utama",
+    email: user?.email ?? "kitchen@vora.com",
     avatar: "/avatars/kitchen.jpg",
   }
 

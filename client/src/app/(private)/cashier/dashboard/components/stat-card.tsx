@@ -1,5 +1,11 @@
-import { StatCardProps } from "@/lib/type/stat-card";
-
+type StatCardProps = {
+  title: string
+  value: number | string
+  icon: React.ReactNode
+  variant?: "primary" | "default"
+  iconBg: string
+  iconColor: string
+}
 
 function StatCard({ title, value, icon, variant = "default", iconBg, iconColor }: StatCardProps) {
   const isPrimary = variant === "primary"

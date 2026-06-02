@@ -1,11 +1,17 @@
 "use client"
 
-import { SalesReport } from "@/lib/constant/sales-report"
+import {
+  DropdownMenu, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { downloadReportAsExcel, downloadReportAsPDF } from "@/lib/report-download"
+import type { SellingReport } from "@/types/selling-report"
+import { DownloadIcon, FileSpreadsheetIcon, FileTextIcon } from "lucide-react"
 import { useState } from "react"
 import { ReportDetailModal } from "./report-detail-modal"
 
 type Props = {
-  reports: SalesReport[]
+  reports: SellingReport[]
   currentPage: number
   onPageChange: (page: number) => void
   totalPages: number
@@ -19,7 +25,7 @@ const formatDate = (dateStr: string) =>
   })
 
 export function ReportTable({ reports, currentPage, onPageChange, totalPages }: Props) {
-  const [detailTarget, setDetailTarget] = useState<SalesReport | null>(null)
+  const [detailTarget, setDetailTarget] = useState<SellingReport | null>(null)
 
   const paginated = reports.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
   const offset = (currentPage - 1) * PAGE_SIZE
@@ -60,21 +66,46 @@ export function ReportTable({ reports, currentPage, onPageChange, totalPages }: 
                 <td className="px-6 py-4 text-muted-foreground">{offset + i + 1}.</td>
                 <td className="px-6 py-4 font-medium">{report.title}</td>
                 <td className="px-6 py-4 text-muted-foreground">{formatDate(report.date)}</td>
-                <td className="px-6 py-4 text-center text-muted-foreground">{report.totalTransactions}</td>
-                <td className="px-6 py-4 text-right font-medium text-primary">{formatCurrency(report.netRevenue)}</td>
+                <td className="px-6 py-4 text-center text-muted-foreground">{report.total_transaction}</td>
+                <td className="px-6 py-4 text-right font-medium text-primary">{formatCurrency(Number(report.net_profit))}</td>
                 <td className="px-6 py-4 text-center">
-                  <button
-                    onClick={() => setDetailTarget(report)}
-                    className="text-xs font-medium px-3 py-1.5 rounded-lg border border-foreground/20 hover:border-primary transition-colors"
-                  >
-                    Detail
-                  </button>
+                  <div className="flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => setDetailTarget(report)}
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg border border-foreground/20 hover:border-primary transition-colors"
+                    >
+                      Detail
+                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1.5 rounded-lg border border-foreground/20 hover:border-primary transition-colors">
+                          <DownloadIcon className="size-3.5 text-muted-foreground" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuItem
+                          onClick={() => downloadReportAsExcel(report)}
+                          className="gap-2 cursor-pointer"
+                        >
+                          <FileSpreadsheetIcon className="size-4 text-green-600" />
+                          Download Excel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => downloadReportAsPDF(report)}
+                          className="gap-2 cursor-pointer"
+                        >
+                          <FileTextIcon className="size-4 text-red-500" />
+                          Download PDF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </td>
               </tr>
             )) : (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground text-sm">
-                  Belum ada laporan.
+                <td colSpan={6} className="px-6 py-16 text-center text-muted-foreground text-sm">
+                  Laporan tidak ditemukan.
                 </td>
               </tr>
             )}
@@ -83,7 +114,7 @@ export function ReportTable({ reports, currentPage, onPageChange, totalPages }: 
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-end gap-1 pt-2">
+      {reports.length > 0 && <div className="flex items-center justify-end gap-1 pt-2">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
@@ -115,7 +146,7 @@ export function ReportTable({ reports, currentPage, onPageChange, totalPages }: 
         >
           Setelahnya ›
         </button>
-      </div>
+      </div>}
 
       {detailTarget && (
         <ReportDetailModal

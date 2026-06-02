@@ -1,54 +1,63 @@
-import { SearchInput } from "@/components/search-input"
-import { CheckCheckIcon, TimerIcon } from "lucide-react"
+"use client"
 
-type OrderStatus = "siap" | "proses"
+import { dashboardService } from "@/services/dashboard.service"
+import type { Order } from "@/types/order"
+import { OrderStatus } from "@/types/order"
+import { CheckCheckIcon, ClockIcon, Loader2Icon, TimerIcon } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 
-type Order = {
-  tableCode: string
-  tableName: string
-  itemCount: number
-  status: OrderStatus
-}
-
-const STATUS_CONFIG: Record<OrderStatus, {
+const STATUS_UI: Record<number, {
   label: string
   icon: React.ReactNode
   buttonClass: string
   dotClass: string
   description: string
+  tableBg: string
 }> = {
-  siap: {
-    label: "Siap",
-    icon: <CheckCheckIcon className="size-3.5" />,
-    buttonClass: "border border-primary text-primary",
-    dotClass: "bg-primary",
-    description: "Siap disajikan",
+  [OrderStatus.PENDING]: {
+    label: "Menunggu",
+    icon: <ClockIcon className="size-3.5" />,
+    buttonClass: "border border-secondary text-secondary",
+    dotClass: "bg-secondary",
+    description: "Menunggu diproses",
+    tableBg: "bg-secondary",
   },
-  proses: {
+  [OrderStatus.PROCESSING]: {
     label: "Proses",
     icon: <TimerIcon className="size-3.5" />,
     buttonClass: "border border-secondary text-secondary",
     dotClass: "bg-secondary",
     description: "Sedang diproses",
+    tableBg: "bg-secondary",
+  },
+  [OrderStatus.READY]: {
+    label: "Siap",
+    icon: <CheckCheckIcon className="size-3.5" />,
+    buttonClass: "border border-primary text-primary",
+    dotClass: "bg-primary",
+    description: "Siap disajikan",
+    tableBg: "bg-primary",
   },
 }
 
-const TABLE_COLOR: Record<OrderStatus, string> = {
-  siap: "bg-primary",
-  proses: "bg-secondary",
+const DEFAULT_STATUS = {
+  label: "Unknown",
+  icon: <ClockIcon className="size-3.5" />,
+  buttonClass: "border border-foreground/30 text-foreground",
+  dotClass: "bg-foreground/30",
+  description: "",
+  tableBg: "bg-foreground/30",
 }
 
-const ORDERS: Order[] = [
-  { tableCode: "T-02", tableName: "Meja 02", itemCount: 8, status: "siap" },
-  { tableCode: "T-08", tableName: "Meja 08", itemCount: 2, status: "proses" },
-]
-
-function OrderItem({ tableCode, tableName, itemCount, status }: Order) {
-  const config = STATUS_CONFIG[status]
+function OrderItem({ order }: { order: Order }) {
+  const config = STATUS_UI[Number(order.status)] ?? DEFAULT_STATUS
+  const tableCode = `T-${String(order.table_id).padStart(2, "0")}`
+  const tableName = `Meja ${String(order.table_id).padStart(2, "0")}`
+  const itemCount = order.items?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0
 
   return (
     <div className="flex items-center gap-3">
-      <div className={`${TABLE_COLOR[status]} text-white text-sm font-bold rounded-lg px-3 py-4 min-w-14 text-center`}>
+      <div className={`${config.tableBg} text-white text-sm font-bold rounded-lg px-3 py-4 min-w-14 text-center`}>
         {tableCode}
       </div>
       <div className="flex-1">
@@ -69,16 +78,46 @@ function OrderItem({ tableCode, tableName, itemCount, status }: Order) {
   )
 }
 
-export function OrderList() {
+type Props = {
+  refreshKey?: number
+}
+
+export function OrderList({ refreshKey }: Props) {
+  const [orders, setOrders] = useState<Order[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  const fetchOrders = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const data = await dashboardService.getActiveOrders()
+      setOrders(Array.isArray(data) ? data : [])
+    } catch {
+      setOrders([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchOrders()
+  }, [fetchOrders, refreshKey])
+
   return (
     <div className="bg-white border border-foreground/40 rounded-lg p-4 flex flex-col gap-4">
-      <h4 className="font-bold text-xl">Pesanan</h4>
-      <SearchInput placeholder="Cari pesanan ..." />
-      <div className="flex flex-col gap-3">
-        {ORDERS.map((order) => (
-          <OrderItem key={order.tableCode} {...order} />
-        ))}
-      </div>
+      <h4 className="font-bold text-xl">Pesanan Aktif</h4>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : orders.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-4">Tidak ada pesanan aktif.</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {orders.map((order) => (
+            <OrderItem key={order.id} order={order} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

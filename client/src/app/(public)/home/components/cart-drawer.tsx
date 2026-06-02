@@ -78,6 +78,7 @@ const CartDrawer = () => {
                           width={100}
                           height={100}
                           className="size-16 object-cover transition-transform duration-500 group-hover:scale-110 rounded-xl"
+                          unoptimized
                         />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -167,7 +168,7 @@ const CartDrawer = () => {
               </div>
 
               <DrawerFooter className="px-0 gap-2 mb-8">
-                <Link href="/customer/payment" className="bg-secondary text-primary font-semibold rounded-lg p-2 text-center">
+                <Link href="/payment" className="bg-secondary text-primary font-semibold rounded-lg p-2 text-center">
                   Pesan Sekarang
                 </Link>
               </DrawerFooter>

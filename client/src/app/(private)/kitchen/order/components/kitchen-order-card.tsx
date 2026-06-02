@@ -1,33 +1,109 @@
 "use client"
 
-import { KITCHEN_STATUS_CONFIG, KitchenOrder, KitchenStatus } from "@/lib/constant/kitchen-order"
-import { CheckCheckIcon, CircleAlertIcon, CircleCheckIcon, TimerIcon } from "lucide-react"
+import type { Order } from "@/types/order"
+import { OrderStatus } from "@/types/order"
+import { CheckCheckIcon, CircleAlertIcon, CircleCheckIcon, ClockIcon, TimerIcon } from "lucide-react"
 import { useState } from "react"
 import { ConfirmCompleteModal } from "./confirm-complete-modal"
 import { OrderDetailModal } from "./order-detail-modal"
 
-const STATUS_ICON: Record<KitchenStatus, React.ReactNode> = {
-  process: <TimerIcon className="size-3.5" />,
-  paid: <CircleCheckIcon className="size-3.5" />,
-  unpaid: <CircleAlertIcon className="size-3.5" />,
-  unverified: <CircleAlertIcon className="size-3.5" />,
-  ready: <CheckCheckIcon className="size-3.5" />,
+/** Map API order status to UI config */
+const STATUS_CONFIG: Record<number, {
+  label: string
+  description: string
+  buttonClass: string
+  dotClass: string
+  icon: React.ReactNode
+}> = {
+  [OrderStatus.PENDING]: {
+    label: "Menunggu",
+    description: "Menunggu diproses",
+    buttonClass: "border border-secondary text-secondary",
+    dotClass: "bg-secondary",
+    icon: <ClockIcon className="size-3.5" />,
+  },
+  [OrderStatus.PROCESSING]: {
+    label: "Diproses",
+    description: "Sedang diproses",
+    buttonClass: "border border-secondary text-secondary",
+    dotClass: "bg-secondary",
+    icon: <TimerIcon className="size-3.5" />,
+  },
+  [OrderStatus.READY]: {
+    label: "Siap",
+    description: "Siap disajikan",
+    buttonClass: "border border-primary text-primary",
+    dotClass: "bg-primary",
+    icon: <CheckCheckIcon className="size-3.5" />,
+  },
+  [OrderStatus.COMPLETED]: {
+    label: "Selesai",
+    description: "Pesanan selesai",
+    buttonClass: "border border-primary text-primary",
+    dotClass: "bg-primary",
+    icon: <CircleCheckIcon className="size-3.5" />,
+  },
+  [OrderStatus.CANCELED]: {
+    label: "Dibatalkan",
+    description: "Pesanan dibatalkan",
+    buttonClass: "border border-destructive text-destructive",
+    dotClass: "bg-destructive",
+    icon: <CircleAlertIcon className="size-3.5" />,
+  },
 }
 
-const formatCurrency = (value: number) => value.toLocaleString("id-ID")
+const DEFAULT_CONFIG = {
+  label: "Unknown",
+  description: "",
+  buttonClass: "border border-foreground/30 text-foreground",
+  dotClass: "bg-foreground/30",
+  icon: <CircleAlertIcon className="size-3.5" />,
+}
 
-// Status yang boleh diselesaikan
-const CAN_COMPLETE: KitchenStatus[] = ["process", "paid"]
+const formatCurrency = (value: number) => Number(value).toLocaleString("id-ID")
 
-export function KitchenOrderCard(props: KitchenOrder) {
-  const { tableCode, tableName, itemCount, status, date, time, items, subtotal, tax, total } = props
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return ""
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    weekday: "long", day: "numeric", month: "short", year: "numeric",
+  })
+}
+
+const formatTime = (dateStr?: string) => {
+  if (!dateStr) return ""
+  return new Date(dateStr).toLocaleTimeString("id-ID", {
+    hour: "2-digit", minute: "2-digit", timeZoneName: "short",
+  })
+}
+
+type Props = {
+  order: Order
+  onUpdateStatus?: (orderId: number, newStatus: number) => void
+}
+
+export function KitchenOrderCard({ order, onUpdateStatus }: Props) {
+  const { id, table_id, total_price, items, created_at } = order
+  const status = Number(order.status)
   const [showDetail, setShowDetail] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const config = KITCHEN_STATUS_CONFIG[status]
-  const canComplete = CAN_COMPLETE.includes(status)
+
+  const config = STATUS_CONFIG[status] ?? DEFAULT_CONFIG
+  const canAct = status === OrderStatus.PENDING || status === OrderStatus.PROCESSING
+  const actionLabel = status === OrderStatus.PENDING ? "Proses Pesanan" : "Selesaikan Pesanan"
+  const tableCode = `T-${String(table_id).padStart(2, "0")}`
+  const tableName = `Meja ${String(table_id).padStart(2, "0")}`
+  const itemCount = items?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0
+
+  const handleActionClick = () => {
+    if (status === OrderStatus.PENDING) {
+      onUpdateStatus?.(id, OrderStatus.PROCESSING)
+    } else if (status === OrderStatus.PROCESSING) {
+      setShowConfirm(true)
+    }
+  }
 
   const handleConfirm = () => {
-    // TODO: handle API call untuk update status
+    onUpdateStatus?.(id, OrderStatus.READY)
     setShowConfirm(false)
   }
 
@@ -48,7 +124,7 @@ export function KitchenOrderCard(props: KitchenOrder) {
           </div>
           <div className="flex flex-col items-end gap-1">
             <button className={`flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full ${config.buttonClass}`}>
-              {STATUS_ICON[status]}
+              {config.icon}
               {config.label}
             </button>
             <div className="flex items-center gap-1">
@@ -60,8 +136,8 @@ export function KitchenOrderCard(props: KitchenOrder) {
 
         {/* Date & Time */}
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{date}</span>
-          <span>{time}</span>
+          <span>{formatDate(created_at)}</span>
+          <span>{formatTime(created_at)}</span>
         </div>
 
         <hr className="border-foreground/10" />
@@ -73,11 +149,11 @@ export function KitchenOrderCard(props: KitchenOrder) {
             <span className="text-center">Jumlah</span>
             <span className="text-right">Harga</span>
           </div>
-          {items.map((item, i) => (
-            <div key={i} className="grid grid-cols-3 text-sm">
-              <span>{item.name}</span>
-              <span className="text-center">{item.qty}</span>
-              <span className="text-right">{formatCurrency(item.qty * (total / itemCount))}</span>
+          {items?.map((item) => (
+            <div key={item.id} className="grid grid-cols-3 text-sm">
+              <span>{item.menu?.name ?? `Menu #${item.menu_id}`}</span>
+              <span className="text-center">{item.quantity}</span>
+              <span className="text-right">{formatCurrency(item.total_price)}</span>
             </div>
           ))}
         </div>
@@ -86,17 +162,9 @@ export function KitchenOrderCard(props: KitchenOrder) {
 
         {/* Summary */}
         <div className="flex flex-col gap-1 text-sm">
-          <div className="flex justify-between text-muted-foreground">
-            <span>Subtotal</span>
-            <span>{formatCurrency(subtotal)}</span>
-          </div>
-          <div className="flex justify-between text-muted-foreground">
-            <span>PPN (10%)</span>
-            <span>{formatCurrency(tax)}</span>
-          </div>
           <div className="flex justify-between font-bold text-base mt-1">
             <span>Total</span>
-            <span>{formatCurrency(total)}</span>
+            <span>{formatCurrency(total_price)}</span>
           </div>
         </div>
 
@@ -109,11 +177,11 @@ export function KitchenOrderCard(props: KitchenOrder) {
             Detail Pesanan
           </button>
           <button
-            onClick={() => canComplete && setShowConfirm(true)}
-            disabled={!canComplete}
+            onClick={handleActionClick}
+            disabled={!canAct}
             className="bg-secondary text-white text-sm font-semibold py-2 rounded-lg hover:bg-secondary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Selesaikan Pesanan
+            {actionLabel}
           </button>
         </div>
 
@@ -121,9 +189,16 @@ export function KitchenOrderCard(props: KitchenOrder) {
 
       {showDetail && (
         <OrderDetailModal
-          order={props}
+          order={order}
           onClose={() => setShowDetail(false)}
-          onComplete={() => { setShowDetail(false); setShowConfirm(true) }}
+          onComplete={() => {
+            setShowDetail(false)
+            if (status === OrderStatus.PENDING) {
+              onUpdateStatus?.(id, OrderStatus.PROCESSING)
+            } else if (status === OrderStatus.PROCESSING) {
+              setShowConfirm(true)
+            }
+          }}
         />
       )}
 

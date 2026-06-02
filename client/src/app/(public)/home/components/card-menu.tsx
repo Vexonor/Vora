@@ -57,6 +57,7 @@ const MenuImage = ({
       alt={menu.name}
       fill
       className="object-cover transition-transform duration-500 group-hover:scale-110"
+      unoptimized
     />
     {!isAvailable && (
       <div className="absolute top-2 right-2 z-10">

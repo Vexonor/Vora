@@ -1,6 +1,6 @@
 import { RouterModule } from '@nestjs/core';
 import { AuthModule } from 'src/features/auth/auth.module';
-import { MaterialModule } from 'src/features/material/material.module';
+import { DashboardModule } from 'src/features/dashboard/dashboard.module';
 import { MenuModule } from 'src/features/menu/menu.module';
 import { OrderItemModule } from 'src/features/order-item/order-item.module';
 import { OrderModule } from 'src/features/order/order.module';
@@ -27,26 +27,22 @@ export default RouterModule.register([
             module: UserModule,
           },
           {
-            path: 'tables',
-            module: TableModule,
-          },
-          {
             path: 'selling-reports',
             module: SellingReportModule,
           },
         ],
       },
       {
-        path: 'menu',
+        path: 'tables',
+        module: TableModule,
+      },
+      {
+        path: 'menus',
         module: MenuModule,
       },
       {
         path: 'units',
         module: UnitModule,
-      },
-      {
-        path: 'materials',
-        module: MaterialModule,
       },
       {
         path: 'stocks',
@@ -65,6 +61,10 @@ export default RouterModule.register([
       {
         path: 'payments',
         module: PaymentModule,
+      },
+      {
+        path: 'dashboard',
+        module: DashboardModule,
       },
     ],
   },

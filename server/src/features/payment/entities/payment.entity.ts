@@ -22,6 +22,12 @@ export class Payment extends Model {
   order_id: number;
 
   @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  midtrans_transaction_id: string;
+
+  @Column({
     type: DataType.DECIMAL(16, 3),
     allowNull: false,
   })
@@ -29,7 +35,38 @@ export class Payment extends Model {
 
   @Column({
     type: DataType.DECIMAL(16, 3),
-    allowNull: false,
+    allowNull: true,
+    defaultValue: 0,
   })
   paid: number;
+
+  @Column({
+    type: DataType.TINYINT,
+    allowNull: true,
+  })
+  type: number; // enum
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  qr_image_url: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  payment_status: string; // 'pending', 'settlement', 'expire', etc
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  snap_token: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  snap_redirect_url: string;
 }

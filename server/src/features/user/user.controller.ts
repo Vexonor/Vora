@@ -1,7 +1,7 @@
-import { Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 
-@Controller('user')
+@Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -11,8 +11,8 @@ export class UserController {
   }
 
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  findAll(@Query() query: { q?: string; role?: string }) {
+    return this.userService.findAll(query);
   }
 
   @Get(':id')

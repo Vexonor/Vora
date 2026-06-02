@@ -6,7 +6,7 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { Material } from 'src/features/material/entities/material.entity';
+import { Unit } from 'src/features/unit/entities/unit.entity';
 import StockStatusEnum, {
   getStockStatusEnumLabel,
 } from '../enums/stock-status.enum';
@@ -21,9 +21,13 @@ import StockStatusEnum, {
   modelName: 'stocks',
 })
 export class Stock extends Model {
-  @ForeignKey(() => Material)
+  static searchable = ['stocks.name'];
+  @ForeignKey(() => Unit)
   @Column(DataType.BIGINT)
-  material_id: number;
+  unit_id: number;
+
+  @Column(DataType.STRING)
+  name: string;
 
   @Column({ type: DataType.TINYINT, allowNull: true, defaultValue: 1 })
   status: number;

@@ -1,24 +1,64 @@
 import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
+import { ResponseHelper } from 'src/core/helpers/response.helper';
+import { User } from './entities/user.entity';
+import UserRoleEnum from './enums/user-role.enum';
 
 @Injectable()
 export class UserService {
-  create() {
-    return 'This action adds a new user';
+  constructor(
+    @InjectModel(User) private readonly userModel: typeof User,
+    private readonly response: ResponseHelper,
+  ) {}
+
+  async findAll(query: { q?: string; role?: string } = {}) {
+    let allowedRoles = [UserRoleEnum.CASHIER, UserRoleEnum.KITCHEN];
+
+    if (query.role !== undefined && query.role !== '') {
+      try {
+        const parsed = JSON.parse(query.role);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const filtered = parsed
+            .map(Number)
+            .filter((r) => [UserRoleEnum.CASHIER, UserRoleEnum.KITCHEN].includes(r));
+          if (filtered.length > 0) allowedRoles = filtered;
+        }
+      } catch {
+        // ignore invalid JSON
+      }
+    }
+
+    const where: any = { role: { [Op.in]: allowedRoles } };
+
+    if (query.q) {
+      where[Op.or] = [
+        { username: { [Op.like]: `%${query.q}%` } },
+        { email: { [Op.like]: `%${query.q}%` } },
+      ];
+    }
+
+    const users = await this.userModel.findAll({
+      where,
+      order: [['created_at', 'DESC']],
+    });
+    return this.response.success(users, 200, 'Successfully retrieved all staff');
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async findOne(id: number) {
+    const user = await this.userModel.findByPk(id);
+    if (!user) {
+      return this.response.fail(`User with ID ${id} not found`, 404);
+    }
+    return this.response.success(user, 200, 'Successfully retrieved user');
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
-
-  update(id: number) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: number) {
+    const user = await this.userModel.findByPk(id);
+    if (!user) {
+      return this.response.fail(`User with ID ${id} not found`, 404);
+    }
+    await user.destroy();
+    return this.response.success({}, 200, `User with ID ${id} has been deleted`);
   }
 }

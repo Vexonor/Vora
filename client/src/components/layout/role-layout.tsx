@@ -58,7 +58,7 @@ export function RoleLayout({ user, navItems, children }: Props) {
 
   return (
     <SidebarProvider>
-      <AppSidebar user={user} navItems={navItems} />
+      <AppSidebar avatar={user.avatar} navItems={navItems} />
       <SidebarInset className="flex flex-col min-w-0">
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">
@@ -88,7 +88,7 @@ export function RoleLayout({ user, navItems, children }: Props) {
           </div>
           <div className="ml-auto px-4 text-sm text-muted-foreground">{date}</div>
         </header>
-        <main className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <main className="flex flex-1 flex-col min-w-0">
           {children}
         </main>
       </SidebarInset>

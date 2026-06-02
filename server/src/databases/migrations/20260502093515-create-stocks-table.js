@@ -11,13 +11,17 @@ module.exports = {
           autoIncrement: true,
           primaryKey: true,
         },
-        material_id: {
+        unit_id: {
           type: Sequelize.BIGINT,
           allowNull: false,
           references: {
-            model: "materials",
+            model: "units",
             key: "id",
           },
+        },
+        name: {
+          type: Sequelize.STRING,
+          allowNull: false,
         },
         status: {
           type: Sequelize.TINYINT,

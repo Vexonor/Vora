@@ -4,29 +4,34 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CirclePlusIcon } from "lucide-react"
+import { CirclePlusIcon, Loader2Icon } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 
 type Props = {
-  onGenerate: (tableNumber: number) => string | null
+  onGenerate: (tableNumber: number) => Promise<string | null>
   onClose: () => void
 }
 
 export function AddTableModal({ onGenerate, onClose }: Props) {
   const [tableNumber, setTableNumber] = useState("")
   const [error, setError] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const num = parseInt(tableNumber)
     if (!tableNumber || isNaN(num) || num <= 0) {
       setError("Masukkan nomor meja yang valid.")
       return
     }
-    const errorMsg = onGenerate(num)
+    setIsSubmitting(true)
+    const errorMsg = await onGenerate(num)
+    setIsSubmitting(false)
     if (errorMsg) {
-      setError(errorMsg)
+      toast.error(errorMsg)
       return
     }
+    toast.success("Meja berhasil ditambahkan.")
     onClose()
   }
 
@@ -51,7 +56,7 @@ export function AddTableModal({ onGenerate, onClose }: Props) {
                 setError("")
               }}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              className={`border ${error ? "border-destructive" : "border-primary"}`}
+              aria-invalid={!!error}
             />
             {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
@@ -64,10 +69,15 @@ export function AddTableModal({ onGenerate, onClose }: Props) {
             <Button variant="outline" onClick={onClose}>Batal</Button>
             <Button
               onClick={handleSubmit}
+              disabled={isSubmitting}
               className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
             >
-              <CirclePlusIcon className="size-4" />
-              Generate QR
+              {isSubmitting ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : (
+                <CirclePlusIcon className="size-4" />
+              )}
+              {isSubmitting ? "Membuat..." : "Generate QR"}
             </Button>
           </div>
         </div>

@@ -1,34 +1,40 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, HttpCode } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { CreatePaymentDto } from './dto/create-payment.dto';
-import { UpdatePaymentDto } from './dto/update-payment.dto';
 
-@Controller('payment')
+@Controller()
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @Post()
-  create(@Body() createPaymentDto: CreatePaymentDto) {
-    return this.paymentService.create(createPaymentDto);
+  @Post(':orderId/snap')
+  createSnapTransaction(
+    @Param('orderId') orderId: string,
+    @Body('payment_method') paymentMethod?: string,
+    @Body('return_url') returnUrl?: string,
+  ) {
+    return this.paymentService.createSnapTransaction(+orderId, paymentMethod, returnUrl);
   }
 
-  @Get()
-  findAll() {
-    return this.paymentService.findAll();
+  @Get('order/:orderId')
+  getPaymentByOrderId(@Param('orderId') orderId: string) {
+    return this.paymentService.getPaymentByOrderId(+orderId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.paymentService.findOne(+id);
+  @Post('order/:orderId/verify-offline')
+  verifyOfflinePayment(
+    @Param('orderId') orderId: string,
+    @Body('paid_amount') paidAmount: number,
+  ) {
+    return this.paymentService.verifyOfflinePayment(+orderId, paidAmount);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePaymentDto: UpdatePaymentDto) {
-    return this.paymentService.update(+id, updatePaymentDto);
+  @Post('webhook')
+  @HttpCode(200)
+  handleWebhook(@Body() payload: any) {
+    return this.paymentService.handleWebhook(payload);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.paymentService.remove(+id);
+  @Get('webhook')
+  webhookHealthCheck() {
+    return { statusCode: 200, message: 'Webhook endpoint is active' };
   }
 }
