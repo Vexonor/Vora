@@ -56,7 +56,7 @@ export default function ManagerEditMenuPage({ params }: { params: Promise<{ id: 
     )
   }
 
-  if (loadError) {
+  if (loadError || !menu) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center py-20 gap-4 text-center">
         <p className="text-destructive font-medium">Gagal memuat data menu.</p>
@@ -73,7 +73,7 @@ export default function ManagerEditMenuPage({ params }: { params: Promise<{ id: 
         <ChevronLeftIcon className="size-4" />
         Batal
       </Link>
-      <MenuForm onSubmit={handleSubmit} isSubmitting={isSubmitting} initialData={menu!} />
+      <MenuForm onSubmit={handleSubmit} isSubmitting={isSubmitting} initialData={menu} />
     </div>
   )
 }

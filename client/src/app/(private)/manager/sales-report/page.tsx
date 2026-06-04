@@ -98,7 +98,7 @@ export default function SalesReportPage() {
     totalProducts: string; capital: string; grossRevenue: string; netRevenue: string
   }): Promise<void> => {
     await sellingReportService.generate(form.date)
-    fetchReports(search, monthFilter, yearFilter)
+    await fetchReports(search, monthFilter, yearFilter)
   }
 
   return (

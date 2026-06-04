@@ -85,18 +85,7 @@ export class StockService {
   }
 
   async findOne(stock: Stock) {
-    try {
-      return this.response.success(
-        stock,
-        HttpStatus.OK,
-        'Successfully get stock',
-      );
-    } catch (error) {
-      return this.response.fail(
-        ErrorCodeEnum.STOCK_NOT_FOUND,
-        HttpStatus.NOT_FOUND,
-      );
-    }
+    return this.response.success(stock, HttpStatus.OK, 'Successfully get stock');
   }
 
   private resolveStatus(

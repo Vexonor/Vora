@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { FormField } from "@/components/ui/form-field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authService } from "@/services/auth.service"
@@ -132,8 +133,7 @@ function PasswordTab() {
         { key: "new_password" as const, label: "Password Baru", showKey: "new" as const },
         { key: "confirm_password" as const, label: "Konfirmasi Password Baru", showKey: "confirm" as const },
       ].map(({ key, label, showKey }) => (
-        <div key={key} className="flex flex-col gap-1.5">
-          <Label className="font-medium">{label}</Label>
+        <FormField key={key} label={label} error={errors[key]}>
           <div className="relative">
             <Input
               type={show[showKey] ? "text" : "password"}
@@ -151,8 +151,7 @@ function PasswordTab() {
               {show[showKey] ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
             </button>
           </div>
-          {errors[key] && <p className="text-xs text-destructive">{errors[key]}</p>}
-        </div>
+        </FormField>
       ))}
 
       <Button

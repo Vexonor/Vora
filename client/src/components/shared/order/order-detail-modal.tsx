@@ -1,12 +1,15 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { downloadInvoiceAsPDF } from "@/lib/invoice-download"
 import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
 import {
   CheckCheckIcon,
   CircleAlertIcon,
   ClockIcon,
+  DownloadIcon,
   TimerIcon,
   XCircleIcon,
 } from "lucide-react"
@@ -134,6 +137,16 @@ export function OrderDetailModal({ order, onClose }: Props) {
             <span>Total</span>
             <span>{formatCurrency(total_price)}</span>
           </div>
+
+          {/* Download Invoice */}
+          <Button
+            variant="outline"
+            className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"
+            onClick={() => downloadInvoiceAsPDF(order)}
+          >
+            <DownloadIcon className="size-4" />
+            Download Invoice (PDF)
+          </Button>
 
         </div>
       </DialogContent>

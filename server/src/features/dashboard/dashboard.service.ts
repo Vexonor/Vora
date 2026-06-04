@@ -10,6 +10,12 @@ import OrderStatusEnum from '../order/enums/order-status.enum';
 
 type ChartPeriod = '7d' | '30d' | '6m';
 
+const ACTIVE_ORDER_STATUSES = [
+  OrderStatusEnum.PENDING,
+  OrderStatusEnum.PROCESSING,
+  OrderStatusEnum.READY,
+];
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -47,23 +53,28 @@ export class DashboardService {
     );
   }
 
+  private async findActiveOrders(limit = 10) {
+    return this.orderModel.findAll({
+      where: { status: { [Op.in]: ACTIVE_ORDER_STATUSES } },
+      include: [{ model: OrderItem, include: [Menu] }],
+      order: [['created_at', 'DESC']],
+      limit,
+    });
+  }
+
   async getActiveOrders() {
     try {
-      const orders = await this.orderModel.findAll({
-        where: {
-          status: {
-            [Op.in]: [
-              OrderStatusEnum.PENDING,
-              OrderStatusEnum.PROCESSING,
-              OrderStatusEnum.READY,
-            ],
-          },
-        },
-        include: [{ model: OrderItem, include: [Menu] }],
-        order: [['created_at', 'DESC']],
-        limit: 10,
-      });
+      const orders = await this.findActiveOrders();
       return this.response.success(orders, 200, 'Successfully retrieved active orders');
+    } catch (error: any) {
+      return this.response.fail(error.message, 500);
+    }
+  }
+
+  async getPendingPayments() {
+    try {
+      const orders = await this.findActiveOrders();
+      return this.response.success(orders, 200, 'Successfully retrieved pending payments');
     } catch (error: any) {
       return this.response.fail(error.message, 500);
     }
@@ -108,7 +119,7 @@ export class DashboardService {
         buckets.push({ label: MONTH_NAMES[d.getMonth()], count: 0, revenue: 0, key });
       }
       orders.forEach((order) => {
-        const d = new Date(order.created_at);
+        const d = new Date(order.createdAt);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const bucket = buckets.find((b) => b.key === key);
         if (bucket) {
@@ -132,7 +143,7 @@ export class DashboardService {
         buckets.push({ label, count: 0, revenue: 0, key });
       }
       orders.forEach((order) => {
-        const d = new Date(order.created_at);
+        const d = new Date(order.createdAt);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const bucket = buckets.find((b) => b.key === key);
         if (bucket) {
@@ -146,7 +157,7 @@ export class DashboardService {
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
-    const todayOrders = orders.filter((o) => new Date(o.created_at) >= todayStart);
+    const todayOrders = orders.filter((o) => new Date(o.createdAt) >= todayStart);
 
     const totalRevenueInPeriod = orders
       .filter((o) => Number(o.status) === OrderStatusEnum.COMPLETED)
@@ -175,27 +186,5 @@ export class DashboardService {
       200,
       'Successfully retrieved manager chart data',
     );
-  }
-
-  async getPendingPayments() {
-    try {
-      const orders = await this.orderModel.findAll({
-        where: {
-          status: {
-            [Op.in]: [
-              OrderStatusEnum.PENDING,
-              OrderStatusEnum.PROCESSING,
-              OrderStatusEnum.READY,
-            ],
-          },
-        },
-        include: [{ model: OrderItem, include: [Menu] }],
-        order: [['created_at', 'DESC']],
-        limit: 10,
-      });
-      return this.response.success(orders, 200, 'Successfully retrieved pending payments');
-    } catch (error: any) {
-      return this.response.fail(error.message, 500);
-    }
   }
 }

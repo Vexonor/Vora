@@ -1,8 +1,9 @@
 "use client"
 
 import { orderService } from "@/services/order.service"
+import { downloadInvoiceAsPDF } from "@/lib/invoice-download"
 import type { Order } from "@/types/order"
-import { Loader2Icon, ReceiptTextIcon } from "lucide-react"
+import { DownloadIcon, Loader2Icon, ReceiptTextIcon } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { format } from "date-fns"
@@ -149,6 +150,17 @@ const Invoice = () => {
 
         {/* Receipt Bottom Zigzag Decor */}
         <div className="absolute -bottom-2 left-0 right-0 h-4 bg-white" style={{ clipPath: 'polygon(0% 0%, 5% 100%, 10% 0%, 15% 100%, 20% 0%, 25% 100%, 30% 0%, 35% 100%, 40% 0%, 45% 100%, 50% 0%, 55% 100%, 60% 0%, 65% 100%, 70% 0%, 75% 100%, 80% 0%, 85% 100%, 90% 0%, 95% 100%, 100% 0%)' }}></div>
+      </div>
+
+      {/* Download Button */}
+      <div className="max-w-md mx-auto mt-8 px-4 pb-8">
+        <button
+          onClick={() => downloadInvoiceAsPDF(order)}
+          className="w-full flex items-center justify-center gap-2 bg-white text-primary font-semibold py-3 rounded-xl shadow-md hover:bg-white/90 active:scale-95 transition-all"
+        >
+          <DownloadIcon className="size-4" />
+          Download Invoice (PDF)
+        </button>
       </div>
     </div>
   )

@@ -1,8 +1,8 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { FormField } from "@/components/ui/form-field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { BoxIcon, CheckIcon, ChevronsUpDownIcon, Loader2Icon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { unitService } from "@/services/unit.service"
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/popover"
 
 type Props = {
-  onSubmit: (form: StockForm) => void
+  onSubmit: (form: StockForm) => Promise<void>
   isSubmitting?: boolean
   initialValues?: Partial<StockForm>
   submitLabel?: string
@@ -31,17 +31,12 @@ export type StockForm = {
   maxStock: string
 }
 
-type StockFormErrors = {
-  name?: string
-  quantity?: string
-  unit?: string
-}
+type StockFormErrors = { name?: string; quantity?: string; unit?: string }
 
 export function CreateStockForm({ onSubmit, isSubmitting, initialValues, submitLabel }: Props) {
   const [units, setUnits] = useState<Unit[]>([])
   const [openUnit, setOpenUnit] = useState(false)
   const [isLoadingUnits, setIsLoadingUnits] = useState(true)
-
   const [form, setForm] = useState<StockForm>({
     name: initialValues?.name ?? "",
     quantity: initialValues?.quantity ?? "",
@@ -53,7 +48,7 @@ export function CreateStockForm({ onSubmit, isSubmitting, initialValues, submitL
 
   useEffect(() => {
     unitService.getAll()
-      .then((data) => setUnits(data))
+      .then(setUnits)
       .catch((err) => console.error("Failed to load units:", err))
       .finally(() => setIsLoadingUnits(false))
   }, [])
@@ -72,35 +67,27 @@ export function CreateStockForm({ onSubmit, isSubmitting, initialValues, submitL
     return e
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newErrors = validate()
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
-    onSubmit(form)
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
+    await onSubmit(form)
   }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
       <div className="flex flex-col gap-6 max-w-4xl">
 
-        {/* Nama Bahan */}
-        <div className="flex flex-col gap-1.5">
-          <Label className="font-semibold">Nama bahan</Label>
+        <FormField label="Nama bahan" error={errors.name} labelClassName="font-semibold">
           <Input
             placeholder="Masukkan nama bahan"
             value={form.name}
             onChange={handleChange("name")}
             aria-invalid={!!errors.name}
           />
-          {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
-        </div>
+        </FormField>
 
-        {/* Jumlah & Satuan */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-semibold">Jumlah bahan</Label>
+          <FormField label="Jumlah bahan" error={errors.quantity} labelClassName="font-semibold">
             <Input
               type="number"
               placeholder="Masukkan jumlah bahan"
@@ -108,17 +95,14 @@ export function CreateStockForm({ onSubmit, isSubmitting, initialValues, submitL
               onChange={handleChange("quantity")}
               aria-invalid={!!errors.quantity}
             />
-            {errors.quantity && <p className="text-xs text-destructive">{errors.quantity}</p>}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-semibold">Satuan bahan</Label>
+          </FormField>
+          <FormField label="Satuan bahan" error={errors.unit} labelClassName="font-semibold">
             <Popover open={openUnit} onOpenChange={setOpenUnit}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   role="combobox"
                   aria-expanded={openUnit}
-                  aria-invalid={!!errors.unit}
                   className={cn(
                     "w-full justify-between text-foreground/80 hover:bg-transparent",
                     errors.unit && "border-destructive"
@@ -147,12 +131,7 @@ export function CreateStockForm({ onSubmit, isSubmitting, initialValues, submitL
                             setOpenUnit(false)
                           }}
                         >
-                          <CheckIcon
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              form.unit === u.id.toString() ? "opacity-100" : "opacity-0"
-                            )}
-                          />
+                          <CheckIcon className={cn("mr-2 h-4 w-4", form.unit === u.id.toString() ? "opacity-100" : "opacity-0")} />
                           {u.name}
                         </CommandItem>
                       ))}
@@ -161,33 +140,28 @@ export function CreateStockForm({ onSubmit, isSubmitting, initialValues, submitL
                 </Command>
               </PopoverContent>
             </Popover>
-            {errors.unit && <p className="text-xs text-destructive">{errors.unit}</p>}
-          </div>
+          </FormField>
         </div>
 
-        {/* Min & Max Stok */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-semibold">Minimum stok <span className="text-muted-foreground font-normal">(opsional)</span></Label>
+          <FormField labelClassName="font-semibold" label="Minimum stok (opsional)">
             <Input
               type="number"
               placeholder="Masukkan minimum stok"
               value={form.minStock}
               onChange={handleChange("minStock")}
             />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-semibold">Maksimum stok <span className="text-muted-foreground font-normal">(opsional)</span></Label>
+          </FormField>
+          <FormField labelClassName="font-semibold" label="Maksimum stok (opsional)">
             <Input
               type="number"
               placeholder="Masukkan maksimum stok"
               value={form.maxStock}
               onChange={handleChange("maxStock")}
             />
-          </div>
+          </FormField>
         </div>
 
-        {/* Submit */}
         <div className="flex justify-end">
           <Button
             onClick={handleSubmit}

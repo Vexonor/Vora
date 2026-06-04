@@ -45,19 +45,17 @@ export class PaymentService {
       return this.response.fail('Order cannot be paid in current status', 400);
     }
 
-    // Prepare Midtrans payload
     const parameter: any = {
       transaction_details: {
         order_id: `VORA-ORDER-${order.id}-${Date.now()}`,
         gross_amount: Math.round(order.total_price),
       },
-      // Batasi tampilan pilihan kasir di Midtrans
-      enabled_payments: paymentMethod ? [paymentMethod] : ['qris', 'gopay', 'shopeepay', 'other_qris'], 
+      enabled_payments: paymentMethod ? [paymentMethod] : ['qris', 'gopay', 'shopeepay', 'other_qris'],
       item_details: order.items?.map(item => ({
         id: item.menu_id.toString(),
         price: Math.round(item.price),
         quantity: item.quantity,
-        name: item.menu?.name || 'Menu Item'
+        name: item.menu?.name || 'Menu Item',
       })) || [],
     };
 
@@ -65,16 +63,16 @@ export class PaymentService {
       parameter.callbacks = {
         finish: returnUrl,
         error: returnUrl,
-        pending: returnUrl
+        pending: returnUrl,
       };
     }
 
     try {
       const snapResponse = await this.snap.createTransaction(parameter);
-      
+
       const payment = await this.paymentModel.create({
         order_id: order.id,
-        midtrans_transaction_id: parameter.transaction_details.order_id, // we save our custom ID to match later
+        midtrans_transaction_id: parameter.transaction_details.order_id,
         total: order.total_price,
         paid: 0,
         type: PaymentTypeEnum.ONLINE,
@@ -86,7 +84,7 @@ export class PaymentService {
       return this.response.success({
         payment_id: payment.id,
         token: snapResponse.token,
-        redirect_url: snapResponse.redirect_url
+        redirect_url: snapResponse.redirect_url,
       }, 201, 'Successfully generated Snap Token');
     } catch (error: any) {
       this.logger.error('Failed to create Midtrans transaction:', error);
@@ -103,7 +101,7 @@ export class PaymentService {
       return this.response.fail(`Payment for order ${orderId} not found`, 404);
     }
 
-    return this.response.success(payment);
+    return this.response.success(payment, 200, 'Successfully retrieved payment');
   }
 
   async verifyOfflinePayment(orderId: number, paidAmount: number) {
@@ -117,45 +115,50 @@ export class PaymentService {
       return this.response.fail('Order cannot be verified in current status', 400);
     }
 
-    let payment = await this.paymentModel.findOne({ where: { order_id: orderId } });
+    const transaction = await this.sequelize.transaction();
+    try {
+      const existingPayment = await this.paymentModel.findOne({ where: { order_id: orderId }, transaction });
 
-    if (!payment) {
-      await this.paymentModel.create({
-        order_id: orderId,
-        total: order.total_price,
-        paid: paidAmount,
-        type: PaymentTypeEnum.OFFLINE,
-        payment_status: 'settlement',
-      });
-    } else {
-      await payment.update({ paid: paidAmount, payment_status: 'settlement' });
+      if (!existingPayment) {
+        await this.paymentModel.create({
+          order_id: orderId,
+          total: order.total_price,
+          paid: paidAmount,
+          type: PaymentTypeEnum.OFFLINE,
+          payment_status: 'settlement',
+        }, { transaction });
+      } else {
+        await existingPayment.update({ paid: paidAmount, payment_status: 'settlement' }, { transaction });
+      }
+
+      await order.update({ status: OrderStatusEnum.COMPLETED }, { transaction });
+      await transaction.commit();
+
+      return this.response.success({}, 200, 'Payment verified successfully');
+    } catch (error: any) {
+      await transaction.rollback();
+      return this.response.fail(error.message, 400);
     }
-
-    await order.update({ status: OrderStatusEnum.COMPLETED });
-
-    return this.response.success({}, 200, 'Payment verified successfully');
   }
 
   async handleWebhook(payload: any) {
     const serverKey = this.configService.getOrThrow<string>('MIDTRANS_SERVER_KEY');
-    
-    // Verify Signature Key
+
     const hash = crypto.createHash('sha512');
     hash.update(payload.order_id + payload.status_code + payload.gross_amount + serverKey);
     const signatureKey = hash.digest('hex');
 
     if (signatureKey !== payload.signature_key) {
       this.logger.warn('Invalid signature key from Midtrans webhook');
-      // Midtrans expects 200 OK for URL validation tests. 
+      // Midtrans expects 200 OK for URL validation tests.
       return this.response.success({}, 200, 'Webhook received but signature invalid');
     }
 
     const transactionStatus = payload.transaction_status;
     const fraudStatus = payload.fraud_status;
 
-    // Find the payment record based on the custom order_id we sent
     const payment = await this.paymentModel.findOne({
-      where: { midtrans_transaction_id: payload.order_id }
+      where: { midtrans_transaction_id: payload.order_id },
     });
 
     if (!payment) {
@@ -166,16 +169,16 @@ export class PaymentService {
 
     if (transactionStatus === 'capture' || transactionStatus === 'settlement') {
       if (fraudStatus === 'accept' || !fraudStatus) {
-        await payment.update({ 
-          payment_status: 'settlement',
-          paid: payment.total
-        });
-        
+        await payment.update({ payment_status: 'settlement', paid: payment.total });
         if (order) {
           await order.update({ status: OrderStatusEnum.COMPLETED });
         }
       }
-    } else if (transactionStatus === 'cancel' || transactionStatus === 'deny' || transactionStatus === 'expire') {
+    } else if (
+      transactionStatus === 'cancel' ||
+      transactionStatus === 'deny' ||
+      transactionStatus === 'expire'
+    ) {
       await payment.update({ payment_status: transactionStatus });
     } else if (transactionStatus === 'pending') {
       await payment.update({ payment_status: 'pending' });

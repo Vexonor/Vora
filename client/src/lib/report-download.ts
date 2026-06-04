@@ -140,7 +140,6 @@ export function downloadReportAsPDF(report: SellingReport) {
       ["Total Produk Terjual", String(Number(report.total_items_sold).toLocaleString("id-ID"))],
       ["Modal", formatCurrency(Number(report.unit_cost))],
       ["Pendapatan Kotor", formatCurrency(Number(report.gross_revenue))],
-      ["Pendapatan Bersih", formatCurrency(Number(report.net_profit))],
     ],
     headStyles: { fillColor: [34, 197, 94] },
     columnStyles: { 1: { halign: "right" } },

@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { FormField } from "@/components/ui/form-field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { CirclePlusIcon, Loader2Icon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -27,10 +27,7 @@ export function AddTableModal({ onGenerate, onClose }: Props) {
     setIsSubmitting(true)
     const errorMsg = await onGenerate(num)
     setIsSubmitting(false)
-    if (errorMsg) {
-      toast.error(errorMsg)
-      return
-    }
+    if (errorMsg) { toast.error(errorMsg); return }
     toast.success("Meja berhasil ditambahkan.")
     onClose()
   }
@@ -41,30 +38,22 @@ export function AddTableModal({ onGenerate, onClose }: Props) {
         <DialogHeader>
           <DialogTitle>Tambah meja baru</DialogTitle>
         </DialogHeader>
-
         <div className="flex flex-col gap-4 py-2">
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-medium">Nomor meja</Label>
+          <FormField label="Nomor meja" error={error}>
             <Input
               autoFocus
               type="number"
               min={1}
               placeholder="contoh: 8"
               value={tableNumber}
-              onChange={(e) => {
-                setTableNumber(e.target.value)
-                setError("")
-              }}
+              onChange={(e) => { setTableNumber(e.target.value); setError("") }}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               aria-invalid={!!error}
             />
-            {error && <p className="text-xs text-destructive">{error}</p>}
-          </div>
-
+          </FormField>
           <p className="text-xs text-muted-foreground">
             QR code akan di-generate otomatis. Pelanggan dapat scan QR untuk melihat menu.
           </p>
-
           <div className="grid grid-cols-2 gap-3">
             <Button variant="outline" onClick={onClose}>Batal</Button>
             <Button
@@ -72,11 +61,7 @@ export function AddTableModal({ onGenerate, onClose }: Props) {
               disabled={isSubmitting}
               className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
             >
-              {isSubmitting ? (
-                <Loader2Icon className="size-4 animate-spin" />
-              ) : (
-                <CirclePlusIcon className="size-4" />
-              )}
+              {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : <CirclePlusIcon className="size-4" />}
               {isSubmitting ? "Membuat..." : "Generate QR"}
             </Button>
           </div>

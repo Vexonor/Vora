@@ -39,15 +39,13 @@ export class OrderService {
           throw new Error(`Menu with ID ${item.menu_id} not found`);
         }
 
-        const price = menu.price;
-        const total_price = price * item.quantity;
+        const total_price = menu.price * item.quantity;
         totalOrderPrice += total_price;
-
         itemsToCreate.push({
           menu_id: item.menu_id,
           quantity: item.quantity,
-          price: price,
-          total_price: total_price,
+          price: menu.price,
+          total_price,
         });
       }
 
@@ -57,17 +55,15 @@ export class OrderService {
         status: OrderStatusEnum.PENDING,
       }, { transaction });
 
-      for (const item of itemsToCreate) {
-        await this.orderItemModel.create({
-          ...item,
-          order_id: order.id,
-        }, { transaction });
-      }
+      await this.orderItemModel.bulkCreate(
+        itemsToCreate.map((item) => ({ ...item, order_id: order.id })),
+        { transaction },
+      );
 
       await transaction.commit();
 
       const createdOrder = await this.orderModel.findByPk(order.id, {
-        include: [{ model: OrderItem, include: [Menu] }]
+        include: [{ model: OrderItem, include: [Menu] }],
       });
 
       return this.response.success(createdOrder, 201, 'Successfully created order');
@@ -97,17 +93,14 @@ export class OrderService {
       if (query.search) {
         const num = parseInt(query.search.replace(/\D/g, ''), 10);
         if (!isNaN(num)) {
-          whereClause[Op.or] = [
-            { id: num },
-            { table_id: num },
-          ];
+          whereClause[Op.or] = [{ id: num }, { table_id: num }];
         }
       }
 
       const orders = await this.orderModel.findAll({
         where: whereClause,
         include: [{ model: OrderItem, include: [Menu] }],
-        order: [['created_at', 'DESC']]
+        order: [['created_at', 'DESC']],
       });
       return this.response.success(orders, 200, 'Successfully retrieved all orders');
     } catch (error: any) {
@@ -117,13 +110,13 @@ export class OrderService {
 
   async findOne(id: number) {
     const order = await this.orderModel.findByPk(id, {
-      include: [{ model: OrderItem, include: [Menu] }]
+      include: [{ model: OrderItem, include: [Menu] }],
     });
-    
+
     if (!order) {
       return this.response.fail(`Order with ID ${id} not found`, 404);
     }
-    
+
     return this.response.success(order, 200, 'Successfully retrieved order');
   }
 

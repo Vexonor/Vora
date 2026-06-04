@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { FormField } from "@/components/ui/form-field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Loader2Icon, SaveIcon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -52,10 +52,7 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
 
   const handleSubmit = async () => {
     const newErrors = validate()
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
     setIsSubmitting(true)
     try {
       await onSubmit(form)
@@ -74,11 +71,9 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
         <DialogHeader>
           <DialogTitle>Tambah laporan penjualan</DialogTitle>
         </DialogHeader>
-
         <div className="flex flex-col gap-4 py-2">
 
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-medium">Judul laporan penjualan</Label>
+          <FormField label="Judul laporan penjualan" error={errors.title}>
             <Input
               autoFocus
               placeholder="Masukkan judul laporan penjualan"
@@ -86,23 +81,19 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
               onChange={handleChange("title")}
               aria-invalid={!!errors.title}
             />
-            {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
-          </div>
+          </FormField>
 
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-medium">Tanggal laporan penjualan</Label>
+          <FormField label="Tanggal laporan penjualan" error={errors.date}>
             <Input
               type="date"
               value={form.date}
               onChange={handleChange("date")}
               aria-invalid={!!errors.date}
             />
-            {errors.date && <p className="text-xs text-destructive">{errors.date}</p>}
-          </div>
+          </FormField>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label className="font-medium">Total transaksi</Label>
+            <FormField label="Total transaksi" error={errors.totalTransactions}>
               <Input
                 type="number"
                 placeholder="Masukkan total transaksi"
@@ -110,10 +101,8 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
                 onChange={handleChange("totalTransactions")}
                 aria-invalid={!!errors.totalTransactions}
               />
-              {errors.totalTransactions && <p className="text-xs text-destructive">{errors.totalTransactions}</p>}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label className="font-medium">Total produk yang terjual</Label>
+            </FormField>
+            <FormField label="Total produk yang terjual" error={errors.totalProducts}>
               <Input
                 type="number"
                 placeholder="Masukkan total produk"
@@ -121,13 +110,11 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
                 onChange={handleChange("totalProducts")}
                 aria-invalid={!!errors.totalProducts}
               />
-              {errors.totalProducts && <p className="text-xs text-destructive">{errors.totalProducts}</p>}
-            </div>
+            </FormField>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label className="font-medium">Modal</Label>
+            <FormField label="Modal" error={errors.capital}>
               <Input
                 type="number"
                 placeholder="Masukkan jumlah modal"
@@ -135,10 +122,8 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
                 onChange={handleChange("capital")}
                 aria-invalid={!!errors.capital}
               />
-              {errors.capital && <p className="text-xs text-destructive">{errors.capital}</p>}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label className="font-medium">Pendapatan kotor</Label>
+            </FormField>
+            <FormField label="Pendapatan kotor" error={errors.grossRevenue}>
               <Input
                 type="number"
                 placeholder="Masukkan jumlah pendapatan kotor"
@@ -146,12 +131,10 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
                 onChange={handleChange("grossRevenue")}
                 aria-invalid={!!errors.grossRevenue}
               />
-              {errors.grossRevenue && <p className="text-xs text-destructive">{errors.grossRevenue}</p>}
-            </div>
+            </FormField>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-medium">Pendapatan bersih</Label>
+          <FormField label="Pendapatan bersih" error={errors.netRevenue}>
             <Input
               type="number"
               placeholder="Masukkan jumlah pendapatan bersih"
@@ -159,8 +142,7 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
               onChange={handleChange("netRevenue")}
               aria-invalid={!!errors.netRevenue}
             />
-            {errors.netRevenue && <p className="text-xs text-destructive">{errors.netRevenue}</p>}
-          </div>
+          </FormField>
 
           <div className="grid grid-cols-2 gap-3 mt-2">
             <Button variant="outline" onClick={onClose}>Batal</Button>
@@ -169,11 +151,7 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
               disabled={isSubmitting}
               className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
             >
-              {isSubmitting ? (
-                <Loader2Icon className="size-4 animate-spin" />
-              ) : (
-                <SaveIcon className="size-4" />
-              )}
+              {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
               {isSubmitting ? "Menyimpan..." : "Simpan Laporan"}
             </Button>
           </div>

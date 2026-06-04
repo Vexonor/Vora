@@ -2,12 +2,12 @@
 
 import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
-import { CheckCheckIcon, CircleAlertIcon, TimerIcon, ClockIcon, XCircleIcon } from "lucide-react"
+import { downloadInvoiceAsPDF } from "@/lib/invoice-download"
+import { CheckCheckIcon, CircleAlertIcon, TimerIcon, ClockIcon, XCircleIcon, DownloadIcon } from "lucide-react"
 import { useState } from "react"
 import { OrderDetailModal } from "./order-detail-modal"
 import { PaymentVerificationModal } from "./payment-verification-modal"
 
-/** Map API order status number to UI config */
 const STATUS_CONFIG: Record<number, {
   label: string
   description: string
@@ -65,8 +65,7 @@ const formatCurrency = (value: number) =>
 
 const formatDate = (dateStr?: string) => {
   if (!dateStr) return ""
-  const date = new Date(dateStr)
-  return date.toLocaleDateString("id-ID", {
+  return new Date(dateStr).toLocaleDateString("id-ID", {
     weekday: "long",
     day: "numeric",
     month: "short",
@@ -76,8 +75,7 @@ const formatDate = (dateStr?: string) => {
 
 const formatTime = (dateStr?: string) => {
   if (!dateStr) return ""
-  const date = new Date(dateStr)
-  return date.toLocaleTimeString("id-ID", {
+  return new Date(dateStr).toLocaleTimeString("id-ID", {
     hour: "2-digit",
     minute: "2-digit",
     timeZoneName: "short",
@@ -154,27 +152,34 @@ export function TransactionCard({ order, onRefresh }: Props) {
         <hr className="border-foreground/10" />
 
         {/* Summary */}
-        <div className="flex flex-col gap-1 text-sm">
-          <div className="flex justify-between font-bold text-base mt-1">
-            <span>Total</span>
-            <span>{formatCurrency(total_price)}</span>
-          </div>
+        <div className="flex justify-between font-bold text-base mt-1">
+          <span>Total</span>
+          <span>{formatCurrency(total_price)}</span>
         </div>
 
         {/* Actions */}
-        <div className="grid grid-cols-2 gap-2 mt-1">
+        <div className="flex flex-col gap-2 mt-1">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setShowDetail(true)}
+              className="bg-primary text-white text-sm font-semibold py-2 rounded-lg"
+            >
+              Detail Pesanan
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              disabled={status === OrderStatus.COMPLETED || status === OrderStatus.CANCELED}
+              className="bg-secondary text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Verifikasi Pembayaran
+            </button>
+          </div>
           <button
-            onClick={() => setShowDetail(true)}
-            className="bg-primary text-white text-sm font-semibold py-2 rounded-lg"
+            onClick={() => downloadInvoiceAsPDF(order)}
+            className="flex items-center justify-center gap-1.5 text-sm font-medium border border-foreground/20 text-foreground/70 py-2 rounded-lg hover:bg-muted/50 transition-colors"
           >
-            Detail Pesanan
-          </button>
-          <button
-            onClick={() => setShowModal(true)}
-            disabled={status === OrderStatus.COMPLETED || status === OrderStatus.CANCELED}
-            className="bg-secondary text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Verifikasi Pembayaran
+            <DownloadIcon className="size-3.5" />
+            Download Invoice
           </button>
         </div>
 

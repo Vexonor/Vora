@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { FormField } from "@/components/ui/form-field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -22,8 +23,8 @@ const MENU_TYPE_OPTIONS = [
 
 const MENU_STATUS_OPTIONS = [
   { value: String(MenuStatus.AVAILABLE), label: "Tersedia" },
-  { value: String(MenuStatus.SOLD_OUT),  label: "Habis" },
-  { value: String(MenuStatus.INACTIVE),  label: "Tidak Aktif" },
+  { value: String(MenuStatus.SOLD_OUT), label: "Habis" },
+  { value: String(MenuStatus.INACTIVE), label: "Tidak Aktif" },
 ]
 
 export type MenuFormData = {
@@ -36,14 +37,10 @@ export type MenuFormData = {
   image: File | null
 }
 
-type MenuFormErrors = {
-  name?: string
-  price?: string
-  type?: string
-}
+type MenuFormErrors = { name?: string; price?: string; type?: string }
 
 type Props = {
-  onSubmit: (form: MenuFormData) => void
+  onSubmit: (form: MenuFormData) => Promise<void>
   isSubmitting?: boolean
   initialData?: Menu
 }
@@ -52,12 +49,7 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
   const [preview, setPreview] = useState<string | null>(null)
   const fileRef = useRef<File | null>(null)
   const [form, setForm] = useState<Omit<MenuFormData, "image">>({
-    name: "",
-    price: "",
-    cost: "",
-    description: "",
-    type: "",
-    status: "",
+    name: "", price: "", cost: "", description: "", type: "", status: "",
   })
   const [errors, setErrors] = useState<MenuFormErrors>({})
 
@@ -71,9 +63,7 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
         type: String(initialData.type),
         status: String(initialData.status),
       })
-      if (initialData.image_url) {
-        setPreview(initialData.image_url)
-      }
+      if (initialData.image_url) setPreview(initialData.image_url)
     }
   }, [initialData])
 
@@ -101,13 +91,10 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
     return e
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newErrors = validate()
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
-    onSubmit({ ...form, image: fileRef.current })
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
+    await onSubmit({ ...form, image: fileRef.current })
   }
 
   const isEdit = !!initialData
@@ -118,17 +105,13 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
 
         {/* Foto Menu */}
         <div className="flex flex-col gap-2">
-          <Label className="font-semibold">Foto menu {isEdit && <span className="text-muted-foreground font-normal">(biarkan kosong jika tidak ingin mengubah)</span>}</Label>
+          <Label className="font-semibold">
+            Foto menu{" "}
+            {isEdit && <span className="text-muted-foreground font-normal">(biarkan kosong jika tidak ingin mengubah)</span>}
+          </Label>
           <label className="flex flex-col items-center justify-center border-2 border-dashed border-input rounded-xl cursor-pointer hover:border-primary/70 transition-colors overflow-hidden min-h-60">
             {preview ? (
-              <Image
-                src={preview}
-                alt="Foto menu"
-                width={800}
-                height={240}
-                className="w-full object-cover max-h-80"
-                unoptimized
-              />
+              <Image src={preview} alt="Foto menu" width={800} height={240} className="w-full object-cover max-h-80" unoptimized />
             ) : (
               <div className="flex flex-col items-center gap-2 text-muted-foreground p-8">
                 <ImagePlusIcon className="size-10" strokeWidth={1.5} />
@@ -141,18 +124,15 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
 
         {/* Nama & Harga */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-semibold">Nama menu</Label>
+          <FormField label="Nama menu" error={errors.name} labelClassName="font-semibold">
             <Input
               placeholder="Masukkan nama menu"
               value={form.name}
               onChange={handleChange("name")}
               aria-invalid={!!errors.name}
             />
-            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-semibold">Harga menu</Label>
+          </FormField>
+          <FormField label="Harga menu" error={errors.price} labelClassName="font-semibold">
             <div className={`flex items-center border rounded-md overflow-hidden transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 ${errors.price ? "border-destructive" : "border-input"}`}>
               <span className="px-3 text-sm text-muted-foreground border-r border-input bg-muted h-full flex items-center">Rp.</span>
               <Input
@@ -163,14 +143,12 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
                 className="border-0 rounded-none focus-visible:ring-0 shadow-none"
               />
             </div>
-            {errors.price && <p className="text-xs text-destructive">{errors.price}</p>}
-          </div>
+          </FormField>
         </div>
 
         {/* Deskripsi & Tipe */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-semibold">Deskripsi menu</Label>
+          <FormField label="Deskripsi menu" labelClassName="font-semibold">
             <Textarea
               placeholder="Masukkan deskripsi menu"
               value={form.description}
@@ -178,9 +156,8 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
               className="resize-none"
               rows={3}
             />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label className="font-semibold">Tipe menu</Label>
+          </FormField>
+          <FormField label="Tipe menu" error={errors.type} labelClassName="font-semibold">
             <Select
               value={form.type}
               onValueChange={(val) => {
@@ -197,29 +174,30 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
                 ))}
               </SelectContent>
             </Select>
-            {errors.type && <p className="text-xs text-destructive">{errors.type}</p>}
-          </div>
+          </FormField>
         </div>
 
         {/* Harga Modal */}
-        <div className="flex flex-col gap-1.5 max-w-xs">
-          <Label className="font-semibold">Harga modal <span className="text-muted-foreground font-normal">(opsional)</span></Label>
+        <FormField
+          label="Harga modal"
+          labelClassName="font-semibold"
+          className="max-w-xs"
+        >
           <div className="flex items-center border border-input rounded-md overflow-hidden transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
             <span className="px-3 text-sm text-muted-foreground border-r border-input bg-muted h-full flex items-center">Rp.</span>
             <Input
               type="number"
-              placeholder="Masukkan harga modal"
+              placeholder="Masukkan harga modal (opsional)"
               value={form.cost}
               onChange={handleChange("cost")}
               className="border-0 rounded-none focus-visible:ring-0 shadow-none"
             />
           </div>
-        </div>
+        </FormField>
 
         {/* Status — hanya muncul saat mode edit */}
         {isEdit && (
-          <div className="flex flex-col gap-1.5 max-w-xs">
-            <Label className="font-semibold">Status menu</Label>
+          <FormField label="Status menu" labelClassName="font-semibold" className="max-w-xs">
             <Select
               value={form.status}
               onValueChange={(val) => setForm((prev) => ({ ...prev, status: val }))}
@@ -233,7 +211,7 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </FormField>
         )}
 
         {/* Submit */}
@@ -243,13 +221,7 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
             disabled={isSubmitting}
             className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
           >
-            {isSubmitting ? (
-              <Loader2Icon className="size-4 animate-spin" />
-            ) : isEdit ? (
-              <PencilIcon className="size-4" />
-            ) : (
-              <CirclePlusIcon className="size-4" />
-            )}
+            {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : isEdit ? <PencilIcon className="size-4" /> : <CirclePlusIcon className="size-4" />}
             {isSubmitting ? "Menyimpan..." : isEdit ? "Simpan Perubahan" : "Tambah Menu"}
           </Button>
         </div>

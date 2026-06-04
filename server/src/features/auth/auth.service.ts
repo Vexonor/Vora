@@ -22,7 +22,7 @@ export class AuthService {
     const payload = { email: user.email, sub: user.id };
     const result = {
       user,
-      accsess_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload),
     };
     return this.response.success(result, 200);
   }
@@ -30,7 +30,7 @@ export class AuthService {
   async validateUser(email: string, password: string) {
     try {
       const user = await this.userModel.findOne({
-        where: { email: email },
+        where: { email },
         attributes: { include: ['password'] },
       });
 
@@ -54,8 +54,7 @@ export class AuthService {
   }
 
   async validateJwt(id: number) {
-    const user = await this.userModel.findByPk(id);
-    return user;
+    return this.userModel.findByPk(id);
   }
 
   getMe(currentUser: User) {
@@ -67,6 +66,10 @@ export class AuthService {
       const user = await this.userModel.findByPk(currentUser.id, {
         attributes: { include: ['password'] },
       });
+
+      if (!user) {
+        return this.response.fail('User not found', 404);
+      }
 
       const isValid = await Bun.password.verify(
         dto.current_password,
@@ -104,7 +107,7 @@ export class AuthService {
       });
 
       const user = await this.userModel
-        .create({ ...createUserDto, password: hashedPassword })
+        .create({ ...createUserDto, password: hashedPassword }, { transaction })
         .then((value) => value.toJSON());
 
       delete user.password;

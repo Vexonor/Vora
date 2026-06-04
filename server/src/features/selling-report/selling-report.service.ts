@@ -39,7 +39,7 @@ export class SellingReportService {
       include: [{ model: OrderItem, include: [Menu] }],
     });
 
-    let totalTransaction = orders.length;
+    const totalTransaction = orders.length;
     let totalItemsSold = 0;
     let unitCost = 0;
     let grossRevenue = 0;
