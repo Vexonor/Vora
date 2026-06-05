@@ -1,6 +1,7 @@
 import { RouterModule } from '@nestjs/core';
 import { AuthModule } from 'src/features/auth/auth.module';
 import { DashboardModule } from 'src/features/dashboard/dashboard.module';
+import { AiPredictionModule } from 'src/features/ai-prediction/ai-prediction.module';
 import { MenuModule } from 'src/features/menu/menu.module';
 import { OrderItemModule } from 'src/features/order-item/order-item.module';
 import { OrderModule } from 'src/features/order/order.module';
@@ -29,6 +30,10 @@ export default RouterModule.register([
           {
             path: 'selling-reports',
             module: SellingReportModule,
+          },
+          {
+            path: 'ai',
+            module: AiPredictionModule,
           },
         ],
       },

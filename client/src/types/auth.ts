@@ -8,7 +8,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   user: User;
-  accsess_token: string; // Note: typo from backend, kept for compatibility
+  access_token: string;
 }
 
 export interface RegisterRequest {

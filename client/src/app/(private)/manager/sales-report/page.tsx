@@ -1,6 +1,7 @@
 "use client"
 
 import { AddReportModal } from "@/components/[role]/manager/sales-report/add-report-modal"
+import { PredictionChart } from "@/components/[role]/manager/sales-report/prediction-chart"
 import { ReportTable } from "@/components/[role]/manager/sales-report/report-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { sellingReportService } from "@/services/selling-report.service"
@@ -103,6 +104,9 @@ export default function SalesReportPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-hidden">
+
+      {/* AI Prediction */}
+      <PredictionChart />
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

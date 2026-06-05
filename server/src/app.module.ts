@@ -20,6 +20,7 @@ import { TableModule } from './features/table/table.module';
 import { UnitModule } from './features/unit/unit.module';
 import { UserModule } from './features/user/user.module';
 import { DashboardModule } from './features/dashboard/dashboard.module';
+import { AiPredictionModule } from './features/ai-prediction/ai-prediction.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { DashboardModule } from './features/dashboard/dashboard.module';
     PaymentModule,
     SellingReportModule,
     DashboardModule,
+    AiPredictionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
