@@ -2,7 +2,7 @@
 
 import { orderService } from "@/services/order.service"
 import { downloadInvoiceAsPDF } from "@/lib/invoice-download"
-import type { Order } from "@/types/order"
+import { OrderStatus, type Order } from "@/types/order"
 import { DownloadIcon, Loader2Icon, ReceiptTextIcon } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -53,6 +53,31 @@ const Invoice = () => {
     )
   }
 
+  // Struk hanya tersedia setelah pesanan dikonfirmasi kasir / diproses dapur.
+  // Cegah akses langsung saat pesanan masih menunggu atau telah dibatalkan.
+  const status = Number(order.status)
+  const invoiceAllowed =
+    status === OrderStatus.PROCESSING ||
+    status === OrderStatus.READY ||
+    status === OrderStatus.COMPLETED
+
+  if (!invoiceAllowed) {
+    const isCanceled = status === OrderStatus.CANCELED
+    return (
+      <div className="w-full h-dvh bg-primary flex flex-col items-center justify-center text-primary-foreground gap-4 px-6 text-center">
+        <ReceiptTextIcon className="size-16 opacity-50" />
+        <h2 className="text-xl font-bold">
+          {isCanceled ? "Pesanan Dibatalkan" : "Struk Belum Tersedia"}
+        </h2>
+        <p className="text-sm opacity-80 max-w-xs">
+          {isCanceled
+            ? "Pesanan ini telah dibatalkan, sehingga struk tidak dapat dicetak."
+            : "Struk dapat dicetak setelah pesanan dikonfirmasi kasir atau sedang diproses oleh dapur."}
+        </p>
+      </div>
+    )
+  }
+
   // Calculate taxes since the backend returns total_price directly, we infer subtotal
   const subtotal = order.total_price / 1.10
   const tax = order.total_price - subtotal
@@ -88,6 +113,13 @@ const Invoice = () => {
                   <td className="w-4 flex justify-end">:</td>
                   <td className="text-right font-medium text-foreground">#{order.id}</td>
                 </tr>
+                {order.customer_name && (
+                  <tr>
+                    <td className="w-32 py-1 font-medium text-foreground">Pelanggan</td>
+                    <td className="w-4 flex justify-end">:</td>
+                    <td className="text-right font-medium text-foreground">{order.customer_name}</td>
+                  </tr>
+                )}
                 <tr>
                   <td className="w-32 py-1 font-medium text-foreground">Tanggal</td>
                   <td className="w-4 flex justify-end">:</td>

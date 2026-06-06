@@ -13,9 +13,10 @@ import { useState } from "react"
 interface PriceSectionProps {
   paymentType?: string
   paymentMethod?: string
+  customerName?: string
 }
 
-const PriceSection = ({ paymentType, paymentMethod }: PriceSectionProps) => {
+const PriceSection = ({ paymentType, paymentMethod, customerName }: PriceSectionProps) => {
   const router = useRouter()
   const {
     cartItems,
@@ -56,6 +57,7 @@ const PriceSection = ({ paymentType, paymentMethod }: PriceSectionProps) => {
       // 3. Buat pesanan ke backend
       const order = await orderService.create({
         table_id: tableId,
+        customer_name: customerName?.trim() || undefined,
         items
       })
 

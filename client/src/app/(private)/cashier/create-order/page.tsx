@@ -38,6 +38,7 @@ export default function CashierCreateOrderPage() {
   const [tables, setTables] = useState<Table[]>([])
   const [menus, setMenus] = useState<Menu[]>([])
   const [selectedTableId, setSelectedTableId] = useState<string>("")
+  const [customerName, setCustomerName] = useState<string>("")
   const [cart, setCart] = useState<CartItem[]>([])
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
   const [search, setSearch] = useState("")
@@ -98,6 +99,7 @@ export default function CashierCreateOrderPage() {
     try {
       await orderService.create({
         table_id: parseInt(selectedTableId),
+        customer_name: customerName.trim() || undefined,
         items: cart.map((i) => ({ menu_id: i.menu.id, quantity: i.quantity })),
       })
       router.push("/cashier/order")
@@ -137,6 +139,18 @@ export default function CashierCreateOrderPage() {
               ))}
             </SelectContent>
           </Select>
+
+          <div className="flex flex-col gap-1.5">
+            <p className="text-sm font-semibold">
+              Nama Pelanggan <span className="font-normal text-muted-foreground">(opsional)</span>
+            </p>
+            <Input
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Masukkan nama pelanggan"
+              maxLength={100}
+            />
+          </div>
         </div>
 
         {/* Cart */}

@@ -72,8 +72,9 @@ export async function downloadInvoiceAsPDF(order: Order) {
 
   const logoDataUrl = await loadLogoDataUrl();
 
+  const hasCustomer = !!order.customer_name;
   const iCount = items?.length ?? 0;
-  const cardH  = 216 + iCount * 9;
+  const cardH  = 216 + iCount * 9 + (hasCustomer ? 9 : 0);
   const pageH  = Math.max(297, cardH + 30);
 
   const doc = new jsPDF({ unit: "mm", format: [210, pageH] });
@@ -171,6 +172,21 @@ export async function downloadInvoiceAsPDF(order: Order) {
   doc.setTextColor(...C.primary);
   doc.text(statusLabel, sBX + sP, y);
   y += 9;
+
+  // ── PEMESAN (opsional) ────────────────────────────────────────
+  if (order.customer_name) {
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C.muted);
+    doc.text("PEMESAN", iX, y);
+    y += 5.5;
+
+    doc.setFontSize(9.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C.dark);
+    doc.text(String(order.customer_name), iX, y);
+    y += 9;
+  }
 
   // ── DATE & TIME box ───────────────────────────────────────────
   doc.setFillColor(...C.primaryLight);

@@ -93,7 +93,11 @@ class SalesTrendPredictor:
             "test_size": len(test_df),
         }
 
-        if len(test_df) > 0:
+        # R² (r2_score) tidak terdefinisi untuk < 2 sampel uji dan akan
+        # menghasilkan NaN. Hanya hitung metrik bila test set memadai agar
+        # UI menampilkan fallback "data terlalu sedikit", bukan R² = -1.0
+        # yang menyesatkan.
+        if len(test_df) >= 2:
             X_test = test_df[FEATURE_COLS]
             for target, model in eval_models.items():
                 y_true = test_df[target].values

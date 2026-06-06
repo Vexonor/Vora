@@ -3,6 +3,19 @@ import { InjectModel } from '@nestjs/sequelize';
 import { SellingReport } from '../selling-report/entities/selling-report.entity';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
 
+/**
+ * Format Date menjadi "YYYY-MM-DD" memakai komponen waktu LOKAL.
+ * Hindari toISOString() yang mengonversi ke UTC sehingga tanggal bisa
+ * mundur 1 hari pada zona waktu non-UTC (mis. WIB +7).
+ */
+function toLocalDateString(date: Date): string {
+  const d = date instanceof Date ? date : new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 @Injectable()
 export class AiPredictionService {
   private readonly logger = new Logger(AiPredictionService.name);
@@ -26,7 +39,7 @@ export class AiPredictionService {
     }
 
     const history = reports.map((r) => ({
-      date: (r.date as Date).toISOString().split('T')[0],
+      date: toLocalDateString(r.date as Date),
       gross_revenue: Number(r.gross_revenue),
       net_profit: Number(r.net_profit),
       total_transaction: Number(r.total_transaction),

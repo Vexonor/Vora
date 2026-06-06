@@ -5,9 +5,11 @@ import {
   DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { downloadReportAsExcel, downloadReportAsPDF } from "@/lib/report-download"
+import { sellingReportService } from "@/services/selling-report.service"
 import type { SellingReport } from "@/types/selling-report"
-import { DownloadIcon, FileSpreadsheetIcon, FileTextIcon } from "lucide-react"
+import { DownloadIcon, FileSpreadsheetIcon, FileTextIcon, Trash2Icon } from "lucide-react"
 import { useState } from "react"
+import { DeleteReportModal } from "./delete-report-modal"
 import { ReportDetailModal } from "./report-detail-modal"
 
 type Props = {
@@ -15,6 +17,7 @@ type Props = {
   currentPage: number
   onPageChange: (page: number) => void
   totalPages: number
+  onDeleted: () => void | Promise<void>
 }
 
 const PAGE_SIZE = 5
@@ -24,11 +27,29 @@ const formatDate = (dateStr: string) =>
     day: "numeric", month: "short", year: "numeric",
   })
 
-export function ReportTable({ reports, currentPage, onPageChange, totalPages }: Props) {
+export function ReportTable({ reports, currentPage, onPageChange, totalPages, onDeleted }: Props) {
   const [detailTarget, setDetailTarget] = useState<SellingReport | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<SellingReport | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const paginated = reports.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
   const offset = (currentPage - 1) * PAGE_SIZE
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setIsDeleting(true)
+    try {
+      await sellingReportService.remove(deleteTarget.id)
+      // Jika baris terakhir di halaman (bukan halaman 1) dihapus, mundur 1 halaman
+      if (paginated.length === 1 && currentPage > 1) {
+        onPageChange(currentPage - 1)
+      }
+      setDeleteTarget(null)
+      await onDeleted()
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const getPages = () => {
     const pages: (number | "...")[] = []
@@ -99,6 +120,13 @@ export function ReportTable({ reports, currentPage, onPageChange, totalPages }: 
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    <button
+                      onClick={() => setDeleteTarget(report)}
+                      title="Hapus laporan"
+                      className="p-1.5 rounded-lg border border-foreground/20 hover:border-destructive hover:text-destructive transition-colors"
+                    >
+                      <Trash2Icon className="size-3.5 text-muted-foreground" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -152,6 +180,15 @@ export function ReportTable({ reports, currentPage, onPageChange, totalPages }: 
         <ReportDetailModal
           report={detailTarget}
           onClose={() => setDetailTarget(null)}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteReportModal
+          title={deleteTarget.title}
+          isDeleting={isDeleting}
+          onConfirm={handleDelete}
+          onClose={() => !isDeleting && setDeleteTarget(null)}
         />
       )}
     </>

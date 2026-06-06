@@ -68,6 +68,11 @@ export default function KitchenOrderPage() {
     }
   }
 
+  const handleCancel = async (orderId: number, reason: string) => {
+    await orderService.cancel(orderId, { reason })
+    fetchOrders(true)
+  }
+
   const handleTabChange = (val: string) => {
     setActiveFilter(val)
     setStatusFilter([])
@@ -148,6 +153,7 @@ export default function KitchenOrderPage() {
               key={order.id}
               order={order}
               onUpdateStatus={handleUpdateStatus}
+              onCancel={handleCancel}
             />
           ))}
         </div>

@@ -5,6 +5,7 @@ import { Sequelize } from 'sequelize-typescript';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { CancelOrderDto } from './dto/cancel-order.dto';
 import { Order } from './entities/order.entity';
 import { OrderItem } from '../order-item/entities/order-item.entity';
 import { Menu } from '../menu/entities/menu.entity';
@@ -51,6 +52,7 @@ export class OrderService {
 
       const order = await this.orderModel.create({
         table_id: createOrderDto.table_id,
+        customer_name: createOrderDto.customer_name?.trim() || null,
         total_price: totalOrderPrice,
         status: OrderStatusEnum.PENDING,
       }, { transaction });
@@ -129,6 +131,34 @@ export class OrderService {
     try {
       await order.update({ status: updateDto.status });
       return this.response.success(order, 200, 'Successfully updated order status');
+    } catch (error: any) {
+      return this.response.fail(error.message, 400);
+    }
+  }
+
+  async cancel(id: number, dto: CancelOrderDto) {
+    const order = await this.orderModel.findByPk(id);
+    if (!order) {
+      return this.response.fail(`Order with ID ${id} not found`, 404);
+    }
+
+    const cancelableStatuses = [
+      OrderStatusEnum.PENDING,
+      OrderStatusEnum.PROCESSING,
+    ];
+    if (!cancelableStatuses.includes(Number(order.status))) {
+      return this.response.fail(
+        'Hanya pesanan yang masih menunggu atau diproses yang dapat dibatalkan',
+        400,
+      );
+    }
+
+    try {
+      await order.update({
+        status: OrderStatusEnum.CANCELED,
+        cancel_reason: dto.reason.trim(),
+      });
+      return this.response.success(order, 200, 'Successfully canceled order');
     } catch (error: any) {
       return this.response.fail(error.message, 400);
     }

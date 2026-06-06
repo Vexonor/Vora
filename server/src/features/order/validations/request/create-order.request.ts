@@ -2,6 +2,7 @@ import * as Joi from 'joi';
 
 export const createOrderSchema = Joi.object({
   table_id: Joi.number().required(),
+  customer_name: Joi.string().trim().max(100).allow('', null).optional(),
   items: Joi.array().items(
     Joi.object({
       menu_id: Joi.number().required(),

@@ -105,6 +105,17 @@ export function OrderDetailModal({ order, onClose }: Props) {
             <span>{time}</span>
           </div>
 
+          {/* Cancellation reason */}
+          {status === OrderStatus.CANCELED && order.cancel_reason && (
+            <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
+              <XCircleIcon className="size-4 text-destructive shrink-0 mt-0.5" />
+              <div className="text-xs">
+                <p className="font-semibold text-destructive">Alasan pembatalan</p>
+                <p className="text-foreground/80">{order.cancel_reason}</p>
+              </div>
+            </div>
+          )}
+
           <hr className="border-foreground/10" />
 
           {/* Item list */}

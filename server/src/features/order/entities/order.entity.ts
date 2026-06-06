@@ -24,6 +24,9 @@ export class Order extends Model {
   @Column(DataType.BIGINT)
   table_id: number;
 
+  @Column({ type: DataType.STRING, allowNull: true })
+  customer_name: string | null;
+
   @Column({
     type: DataType.DECIMAL(16, 3),
     allowNull: false,
@@ -40,6 +43,9 @@ export class Order extends Model {
     },
   })
   status_name: string;
+
+  @Column({ type: DataType.STRING, allowNull: true })
+  cancel_reason: string | null;
 
   @HasMany(() => OrderItem)
   items: OrderItem[];

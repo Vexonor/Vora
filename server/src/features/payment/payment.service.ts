@@ -41,7 +41,7 @@ export class PaymentService {
       return this.response.fail(`Order with ID ${orderId} not found`, 404);
     }
 
-    if (order.status === OrderStatusEnum.COMPLETED || order.status === OrderStatusEnum.CANCELED) {
+    if (order.status === OrderStatusEnum.COMPLETED) {
       return this.response.fail('Order cannot be paid in current status', 400);
     }
 
@@ -111,7 +111,7 @@ export class PaymentService {
       return this.response.fail(`Order with ID ${orderId} not found`, 404);
     }
 
-    if (order.status === OrderStatusEnum.COMPLETED || order.status === OrderStatusEnum.CANCELED) {
+    if (order.status === OrderStatusEnum.COMPLETED) {
       return this.response.fail('Order cannot be verified in current status', 400);
     }
 

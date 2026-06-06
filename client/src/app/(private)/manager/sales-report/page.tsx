@@ -198,6 +198,7 @@ export default function SalesReportPage() {
           currentPage={currentPage}
           onPageChange={setCurrentPage}
           totalPages={totalPages}
+          onDeleted={() => fetchReports(search, monthFilter, yearFilter)}
         />
       )}
 

@@ -19,9 +19,11 @@ export interface OrderItem {
 export interface Order {
   id: number;
   table_id: number;
+  customer_name?: string | null;
   total_price: number;
   status: number;
   status_name: string;
+  cancel_reason?: string | null;
   items: OrderItem[];
   created_at?: string;
 }
@@ -42,9 +44,14 @@ export interface CreateOrderItemRequest {
 
 export interface CreateOrderRequest {
   table_id: number;
+  customer_name?: string;
   items: CreateOrderItemRequest[];
 }
 
 export interface UpdateOrderStatusRequest {
   status: number;
+}
+
+export interface CancelOrderRequest {
+  reason: string;
 }

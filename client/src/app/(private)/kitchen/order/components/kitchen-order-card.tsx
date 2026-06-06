@@ -4,6 +4,7 @@ import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
 import { CheckCheckIcon, CircleAlertIcon, CircleCheckIcon, ClockIcon, TimerIcon } from "lucide-react"
 import { useState } from "react"
+import { CancelOrderModal } from "./cancel-order-modal"
 import { ConfirmCompleteModal } from "./confirm-complete-modal"
 import { OrderDetailModal } from "./order-detail-modal"
 
@@ -79,13 +80,16 @@ const formatTime = (dateStr?: string) => {
 type Props = {
   order: Order
   onUpdateStatus?: (orderId: number, newStatus: number) => void
+  onCancel?: (orderId: number, reason: string) => void | Promise<void>
 }
 
-export function KitchenOrderCard({ order, onUpdateStatus }: Props) {
+export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
   const { id, table_id, total_price, items, created_at } = order
   const status = Number(order.status)
   const [showDetail, setShowDetail] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showCancel, setShowCancel] = useState(false)
+  const [isCanceling, setIsCanceling] = useState(false)
 
   const config = STATUS_CONFIG[status] ?? DEFAULT_CONFIG
   const canAct = status === OrderStatus.PENDING || status === OrderStatus.PROCESSING
@@ -105,6 +109,17 @@ export function KitchenOrderCard({ order, onUpdateStatus }: Props) {
   const handleConfirm = () => {
     onUpdateStatus?.(id, OrderStatus.READY)
     setShowConfirm(false)
+  }
+
+  const handleCancelConfirm = async (reason: string) => {
+    if (!onCancel) return
+    setIsCanceling(true)
+    try {
+      await onCancel(id, reason)
+      setShowCancel(false)
+    } finally {
+      setIsCanceling(false)
+    }
   }
 
   return (
@@ -185,6 +200,15 @@ export function KitchenOrderCard({ order, onUpdateStatus }: Props) {
           </button>
         </div>
 
+        {canAct && onCancel && (
+          <button
+            onClick={() => setShowCancel(true)}
+            className="text-sm font-semibold py-2 rounded-lg border border-destructive/40 text-destructive hover:bg-destructive/5 transition-colors"
+          >
+            Batalkan Pesanan
+          </button>
+        )}
+
       </div>
 
       {showDetail && (
@@ -207,6 +231,15 @@ export function KitchenOrderCard({ order, onUpdateStatus }: Props) {
           tableName={tableName}
           onConfirm={handleConfirm}
           onClose={() => setShowConfirm(false)}
+        />
+      )}
+
+      {showCancel && (
+        <CancelOrderModal
+          tableName={tableName}
+          isSubmitting={isCanceling}
+          onConfirm={handleCancelConfirm}
+          onClose={() => setShowCancel(false)}
         />
       )}
     </>

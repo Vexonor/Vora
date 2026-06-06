@@ -1,4 +1,4 @@
-import type { Order, CreateOrderRequest, UpdateOrderStatusRequest } from "@/types/order";
+import type { Order, CreateOrderRequest, UpdateOrderStatusRequest, CancelOrderRequest } from "@/types/order";
 import apiClient from "./api-client";
 
 const ORDERS_PATH = "/orders";
@@ -25,5 +25,9 @@ export const orderService = {
 
   async updateStatus(id: number, data: UpdateOrderStatusRequest): Promise<Order> {
     return apiClient.patch(`${ORDERS_PATH}/${id}/status`, data);
+  },
+
+  async cancel(id: number, data: CancelOrderRequest): Promise<Order> {
+    return apiClient.patch(`${ORDERS_PATH}/${id}/cancel`, data);
   },
 };
