@@ -1,4 +1,4 @@
-import type { SellingReport } from "@/types/selling-report";
+import type { SellingReport, CreateSellingReportRequest } from "@/types/selling-report";
 import apiClient from "./api-client";
 
 const REPORTS_PATH = "/manager/selling-reports";
@@ -14,6 +14,13 @@ export const sellingReportService = {
 
   async getById(id: number): Promise<SellingReport> {
     return apiClient.get(`${REPORTS_PATH}/${id}`);
+  },
+
+  /**
+   * Create a selling report manually with the given values.
+   */
+  async create(data: CreateSellingReportRequest): Promise<SellingReport> {
+    return apiClient.post(REPORTS_PATH, data);
   },
 
   /**

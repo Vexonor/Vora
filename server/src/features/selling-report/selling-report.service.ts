@@ -8,6 +8,7 @@ import { OrderItem } from '../order-item/entities/order-item.entity';
 import { Menu } from '../menu/entities/menu.entity';
 import OrderStatusEnum from '../order/enums/order-status.enum';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
+import { CreateSellingReportDto } from './dto/create-selling-report.dto';
 
 @Injectable()
 export class SellingReportService {
@@ -122,6 +123,23 @@ export class SellingReportService {
     const where = conditions.length > 0 ? { [Op.and]: conditions } : {};
     const reports = await this.sellingReportModel.findAll({ where, order: [['date', 'DESC']] });
     return this.response.success(reports, 200, 'Successfully fetched all reports');
+  }
+
+  async create(dto: CreateSellingReportDto) {
+    const date = new Date(dto.date);
+    date.setHours(0, 0, 0, 0);
+
+    const report = await this.sellingReportModel.create({
+      title: dto.title.trim(),
+      date,
+      total_transaction: dto.total_transaction,
+      total_items_sold: dto.total_items_sold,
+      unit_cost: dto.unit_cost,
+      gross_revenue: dto.gross_revenue,
+      net_profit: dto.net_profit,
+    });
+
+    return this.response.success(report, 201, 'Successfully created selling report');
   }
 
   async findOne(id: number) {

@@ -98,7 +98,15 @@ export default function SalesReportPage() {
     title: string; date: string; totalTransactions: string
     totalProducts: string; capital: string; grossRevenue: string; netRevenue: string
   }): Promise<void> => {
-    await sellingReportService.generate(form.date)
+    await sellingReportService.create({
+      title: form.title.trim(),
+      date: form.date,
+      total_transaction: Number(form.totalTransactions),
+      total_items_sold: Number(form.totalProducts),
+      unit_cost: Number(form.capital),
+      gross_revenue: Number(form.grossRevenue),
+      net_profit: Number(form.netRevenue),
+    })
     await fetchReports(search, monthFilter, yearFilter)
   }
 

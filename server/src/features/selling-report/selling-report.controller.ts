@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
+import { JoiValidationPipe } from 'src/core/validators/joi-validation.pipe';
 import { SellingReportService } from './selling-report.service';
 import { CreateSellingReportDto } from './dto/create-selling-report.dto';
-import { UpdateSellingReportDto } from './dto/update-selling-report.dto';
+import { createSellingReportSchema } from './validations/request/create-selling-report.request';
 
 @Controller()
 export class SellingReportController {
@@ -10,6 +11,13 @@ export class SellingReportController {
   @Post('generate')
   generate(@Body('date') date: string) {
     return this.sellingReportService.generate(date);
+  }
+
+  @Post()
+  create(
+    @Body(new JoiValidationPipe(createSellingReportSchema)) createDto: CreateSellingReportDto,
+  ) {
+    return this.sellingReportService.create(createDto);
   }
 
   @Get()
