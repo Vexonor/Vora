@@ -90,6 +90,7 @@ type Props = {
 export function TransactionCard({ order, onRefresh }: Props) {
   const { id, table_id, total_price, items, created_at } = order
   const status = Number(order.status)
+  const isPaid = order.payment?.payment_status === "settlement"
   const [showModal, setShowModal] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
   const config = STATUS_CONFIG[status] ?? DEFAULT_CONFIG
@@ -168,7 +169,7 @@ export function TransactionCard({ order, onRefresh }: Props) {
             </button>
             <button
               onClick={() => setShowModal(true)}
-              disabled={status === OrderStatus.COMPLETED || status === OrderStatus.CANCELED}
+              disabled={isPaid || status === OrderStatus.CANCELED}
               className="bg-secondary text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Verifikasi Pembayaran

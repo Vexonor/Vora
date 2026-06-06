@@ -8,7 +8,6 @@ import { Order } from '../order/entities/order.entity';
 import { OrderItem } from '../order-item/entities/order-item.entity';
 import { Menu } from '../menu/entities/menu.entity';
 import PaymentTypeEnum from './enums/payment-type.enum';
-import OrderStatusEnum from '../order/enums/order-status.enum';
 import * as crypto from 'crypto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const midtransClient = require('midtrans-client');
@@ -41,8 +40,9 @@ export class PaymentService {
       return this.response.fail(`Order with ID ${orderId} not found`, 404);
     }
 
-    if (order.status === OrderStatusEnum.COMPLETED) {
-      return this.response.fail('Order cannot be paid in current status', 400);
+    const existingPayment = await this.paymentModel.findOne({ where: { order_id: order.id } });
+    if (existingPayment?.payment_status === 'settlement') {
+      return this.response.fail('Pesanan ini sudah dibayar', 400);
     }
 
     const parameter: any = {
@@ -111,14 +111,13 @@ export class PaymentService {
       return this.response.fail(`Order with ID ${orderId} not found`, 404);
     }
 
-    if (order.status === OrderStatusEnum.COMPLETED) {
-      return this.response.fail('Order cannot be verified in current status', 400);
+    const existingPayment = await this.paymentModel.findOne({ where: { order_id: orderId } });
+    if (existingPayment?.payment_status === 'settlement') {
+      return this.response.fail('Pesanan ini sudah dibayar', 400);
     }
 
     const transaction = await this.sequelize.transaction();
     try {
-      const existingPayment = await this.paymentModel.findOne({ where: { order_id: orderId }, transaction });
-
       if (!existingPayment) {
         await this.paymentModel.create({
           order_id: orderId,
@@ -131,7 +130,7 @@ export class PaymentService {
         await existingPayment.update({ paid: paidAmount, payment_status: 'settlement' }, { transaction });
       }
 
-      await order.update({ status: OrderStatusEnum.COMPLETED }, { transaction });
+      // Pembayaran TIDAK mengubah status alur dapur — itu urusan dapur.
       await transaction.commit();
 
       return this.response.success({}, 200, 'Payment verified successfully');
@@ -165,14 +164,11 @@ export class PaymentService {
       return this.response.fail('Payment not found', 404);
     }
 
-    const order = await this.orderModel.findByPk(payment.order_id);
-
+    // Pembayaran TIDAK mengubah status alur dapur. Status order tetap
+    // dikelola oleh dapur (Menunggu → Diproses → Siap → Selesai).
     if (transactionStatus === 'capture' || transactionStatus === 'settlement') {
       if (fraudStatus === 'accept' || !fraudStatus) {
         await payment.update({ payment_status: 'settlement', paid: payment.total });
-        if (order) {
-          await order.update({ status: OrderStatusEnum.COMPLETED });
-        }
       }
     } else if (
       transactionStatus === 'cancel' ||

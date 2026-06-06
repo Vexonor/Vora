@@ -92,8 +92,16 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
   const [isCanceling, setIsCanceling] = useState(false)
 
   const config = STATUS_CONFIG[status] ?? DEFAULT_CONFIG
-  const canAct = status === OrderStatus.PENDING || status === OrderStatus.PROCESSING
-  const actionLabel = status === OrderStatus.PENDING ? "Proses Pesanan" : "Selesaikan Pesanan"
+  const canAct =
+    status === OrderStatus.PENDING ||
+    status === OrderStatus.PROCESSING ||
+    status === OrderStatus.READY
+  const canCancel =
+    status === OrderStatus.PENDING || status === OrderStatus.PROCESSING
+  const actionLabel =
+    status === OrderStatus.PENDING ? "Proses Pesanan"
+      : status === OrderStatus.PROCESSING ? "Tandai Siap"
+        : "Selesaikan Pesanan"
   const tableCode = `T-${String(table_id).padStart(2, "0")}`
   const tableName = `Meja ${String(table_id).padStart(2, "0")}`
   const itemCount = items?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0
@@ -102,12 +110,14 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
     if (status === OrderStatus.PENDING) {
       onUpdateStatus?.(id, OrderStatus.PROCESSING)
     } else if (status === OrderStatus.PROCESSING) {
+      onUpdateStatus?.(id, OrderStatus.READY)
+    } else if (status === OrderStatus.READY) {
       setShowConfirm(true)
     }
   }
 
   const handleConfirm = () => {
-    onUpdateStatus?.(id, OrderStatus.READY)
+    onUpdateStatus?.(id, OrderStatus.COMPLETED)
     setShowConfirm(false)
   }
 
@@ -200,7 +210,7 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
           </button>
         </div>
 
-        {canAct && onCancel && (
+        {canCancel && onCancel && (
           <button
             onClick={() => setShowCancel(true)}
             className="text-sm font-semibold py-2 rounded-lg border border-destructive/40 text-destructive hover:bg-destructive/5 transition-colors"
@@ -217,11 +227,7 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
           onClose={() => setShowDetail(false)}
           onComplete={() => {
             setShowDetail(false)
-            if (status === OrderStatus.PENDING) {
-              onUpdateStatus?.(id, OrderStatus.PROCESSING)
-            } else if (status === OrderStatus.PROCESSING) {
-              setShowConfirm(true)
-            }
+            handleActionClick()
           }}
         />
       )}

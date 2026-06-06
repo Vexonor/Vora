@@ -6,7 +6,7 @@ import { SellingReport } from './entities/selling-report.entity';
 import { Order } from '../order/entities/order.entity';
 import { OrderItem } from '../order-item/entities/order-item.entity';
 import { Menu } from '../menu/entities/menu.entity';
-import OrderStatusEnum from '../order/enums/order-status.enum';
+import { Payment } from '../payment/entities/payment.entity';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
 import { CreateSellingReportDto } from './dto/create-selling-report.dto';
 
@@ -32,12 +32,14 @@ export class SellingReportService {
 
     const orders = await this.orderModel.findAll({
       where: {
-        status: OrderStatusEnum.COMPLETED,
         created_at: {
           [Op.between]: [startDate, endDate],
         },
       },
-      include: [{ model: OrderItem, include: [Menu] }],
+      include: [
+        { model: OrderItem, include: [Menu] },
+        { model: Payment, where: { payment_status: 'settlement' }, required: true },
+      ],
     });
 
     const totalTransaction = orders.length;

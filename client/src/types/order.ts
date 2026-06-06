@@ -24,6 +24,7 @@ export interface Order {
   status: number;
   status_name: string;
   cancel_reason?: string | null;
+  payment?: { payment_status?: string | null } | null;
   items: OrderItem[];
   created_at?: string;
 }

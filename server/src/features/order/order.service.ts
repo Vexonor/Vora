@@ -10,6 +10,7 @@ import { Order } from './entities/order.entity';
 import { OrderItem } from '../order-item/entities/order-item.entity';
 import { Menu } from '../menu/entities/menu.entity';
 import { Tables } from 'src/features/table/entities/table.entity';
+import { Payment } from '../payment/entities/payment.entity';
 import OrderStatusEnum from './enums/order-status.enum';
 
 @Injectable()
@@ -101,7 +102,7 @@ export class OrderService {
 
       const orders = await this.orderModel.findAll({
         where: whereClause,
-        include: [{ model: OrderItem, include: [Menu] }],
+        include: [{ model: OrderItem, include: [Menu] }, { model: Payment }],
         order: [['created_at', 'DESC']],
       });
       return this.response.success(orders, 200, 'Successfully retrieved all orders');
@@ -112,7 +113,7 @@ export class OrderService {
 
   async findOne(id: number) {
     const order = await this.orderModel.findByPk(id, {
-      include: [{ model: OrderItem, include: [Menu] }],
+      include: [{ model: OrderItem, include: [Menu] }, { model: Payment }],
     });
 
     if (!order) {

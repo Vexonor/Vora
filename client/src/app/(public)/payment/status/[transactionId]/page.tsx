@@ -58,8 +58,10 @@ export default function PaymentStatusPage() {
   const status = order ? Number(order.status) : null
   const isCanceled = status === OrderStatus.CANCELED
   const isTerminal = status === OrderStatus.COMPLETED || isCanceled
-  // Struk hanya tersedia setelah pesanan dikonfirmasi kasir / diproses dapur
+  const isPaid = order?.payment?.payment_status === "settlement"
+  // Struk tersedia jika sudah lunas, atau pesanan sudah diproses dapur
   const canPrintInvoice =
+    isPaid ||
     status === OrderStatus.PROCESSING ||
     status === OrderStatus.READY ||
     status === OrderStatus.COMPLETED
@@ -197,9 +199,9 @@ export default function PaymentStatusPage() {
         {/* Footer */}
         {canPrintInvoice && InvoiceButton}
 
-        {status === OrderStatus.PENDING && (
+        {status === OrderStatus.PENDING && !canPrintInvoice && (
           <p className="text-center text-xs text-muted-foreground">
-            Menunggu konfirmasi. Struk dapat dicetak setelah pesanan dikonfirmasi kasir atau diproses dapur.
+            Menunggu konfirmasi. Struk dapat dicetak setelah pesanan dibayar atau diproses dapur.
           </p>
         )}
 

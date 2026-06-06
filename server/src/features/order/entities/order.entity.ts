@@ -5,9 +5,11 @@ import {
   Model,
   Table,
   HasMany,
+  HasOne,
 } from 'sequelize-typescript';
 import { Tables } from 'src/features/table/entities/table.entity';
 import { OrderItem } from 'src/features/order-item/entities/order-item.entity';
+import { Payment } from 'src/features/payment/entities/payment.entity';
 import { getOrderStatusEnumLabel } from '../enums/order-status.enum';
 
 @Table({
@@ -49,4 +51,7 @@ export class Order extends Model {
 
   @HasMany(() => OrderItem)
   items: OrderItem[];
+
+  @HasOne(() => Payment)
+  payment: Payment;
 }

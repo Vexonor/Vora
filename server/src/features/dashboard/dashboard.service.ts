@@ -6,7 +6,11 @@ import { Order } from '../order/entities/order.entity';
 import { OrderItem } from '../order-item/entities/order-item.entity';
 import { Menu } from '../menu/entities/menu.entity';
 import { Tables } from '../table/entities/table.entity';
+import { Payment } from '../payment/entities/payment.entity';
 import OrderStatusEnum from '../order/enums/order-status.enum';
+
+const isPaid = (order: Order) =>
+  order.payment?.payment_status === 'settlement';
 
 type ChartPeriod = '7d' | '30d' | '6m';
 
@@ -101,7 +105,8 @@ export class DashboardService {
 
     const orders = await this.orderModel.findAll({
       where: { created_at: { [Op.between]: [startDate, endDate] } },
-      attributes: ['total_price', 'status', 'created_at'],
+      attributes: ['id', 'total_price', 'status', 'created_at'],
+      include: [{ model: Payment, attributes: ['payment_status'] }],
     });
 
     const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -124,7 +129,7 @@ export class DashboardService {
         const bucket = buckets.find((b) => b.key === key);
         if (bucket) {
           bucket.count++;
-          if (Number(order.status) === OrderStatusEnum.COMPLETED) {
+          if (isPaid(order)) {
             bucket.revenue += Number(order.total_price);
           }
         }
@@ -148,7 +153,7 @@ export class DashboardService {
         const bucket = buckets.find((b) => b.key === key);
         if (bucket) {
           bucket.count++;
-          if (Number(order.status) === OrderStatusEnum.COMPLETED) {
+          if (isPaid(order)) {
             bucket.revenue += Number(order.total_price);
           }
         }
@@ -160,7 +165,7 @@ export class DashboardService {
     const todayOrders = orders.filter((o) => new Date(o.createdAt) >= todayStart);
 
     const totalRevenueInPeriod = orders
-      .filter((o) => Number(o.status) === OrderStatusEnum.COMPLETED)
+      .filter(isPaid)
       .reduce((sum, o) => sum + Number(o.total_price), 0);
     const canceledRevenue = orders
       .filter((o) => Number(o.status) === OrderStatusEnum.CANCELED)
@@ -177,7 +182,7 @@ export class DashboardService {
           chart: buckets.map((b) => ({ label: b.label, revenue: b.revenue })),
           totalInPeriod: totalRevenueInPeriod,
           todayRevenue: todayOrders
-            .filter((o) => Number(o.status) === OrderStatusEnum.COMPLETED)
+            .filter(isPaid)
             .reduce((sum, o) => sum + Number(o.total_price), 0),
           completed: totalRevenueInPeriod,
           canceled: canceledRevenue,

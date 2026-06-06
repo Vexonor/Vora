@@ -56,7 +56,9 @@ const InvoiceContent = () => {
   // Struk hanya tersedia setelah pesanan dikonfirmasi kasir / diproses dapur.
   // Cegah akses langsung saat pesanan masih menunggu atau telah dibatalkan.
   const status = Number(order.status)
+  const isPaid = order.payment?.payment_status === "settlement"
   const invoiceAllowed =
+    isPaid ||
     status === OrderStatus.PROCESSING ||
     status === OrderStatus.READY ||
     status === OrderStatus.COMPLETED
