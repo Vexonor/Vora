@@ -1,4 +1,4 @@
-import { Icon } from "@/lib/type/icon"
+import Icon from "@/lib/type/icon"
 
 export const CashRegisterIcon: React.FC<Icon> = ({ className }) => {
   return (

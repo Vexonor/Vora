@@ -5,11 +5,11 @@ import { downloadInvoiceAsPDF } from "@/lib/invoice-download"
 import { OrderStatus, type Order } from "@/types/order"
 import { DownloadIcon, Loader2Icon, ReceiptTextIcon } from "lucide-react"
 import { useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
 
-const Invoice = () => {
+const InvoiceContent = () => {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("orderId")
   
@@ -198,4 +198,16 @@ const Invoice = () => {
   )
 }
 
-export default Invoice
+export default function Invoice() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full h-dvh bg-primary flex items-center justify-center">
+          <Loader2Icon className="size-10 animate-spin text-primary-foreground" />
+        </div>
+      }
+    >
+      <InvoiceContent />
+    </Suspense>
+  )
+}

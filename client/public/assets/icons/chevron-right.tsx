@@ -1,4 +1,4 @@
-import { Icon } from "@/lib/type/icon"
+import Icon from "@/lib/type/icon"
 import React from "react"
 
 const ChevronRightIcon: React.FC<Icon> = ({ className }) => {
