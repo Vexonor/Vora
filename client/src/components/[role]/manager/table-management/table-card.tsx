@@ -13,7 +13,7 @@ type Props = {
 export function TableCard({ table, onDelete }: Props) {
   const qrRef = useRef<HTMLDivElement>(null)
   const tableCode = `T-${String(table.number).padStart(2, "0")}`
-  const qrValue = `${typeof window !== "undefined" ? window.location.origin : ""}/order?table=${table.id}`
+  const qrValue = `${typeof window !== "undefined" ? window.location.origin : ""}/?table=${table.id}`
 
   const handleDownload = () => {
     const svg = qrRef.current?.querySelector("svg")
