@@ -32,7 +32,9 @@ const loadSnap = (): Promise<boolean> =>
     const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY
     if (!clientKey) return resolve(false)
 
-    const isProd = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true"
+    // Sandbox client keys are prefixed "SB-"; production keys are not.
+    // Auto-pick the matching Snap.js so the env always matches the key.
+    const isProd = !clientKey.startsWith("SB-")
     const script = document.createElement("script")
     script.src = isProd
       ? "https://app.midtrans.com/snap/snap.js"
