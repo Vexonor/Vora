@@ -60,8 +60,12 @@ export class SellingReportService {
     const netProfit = grossRevenue - unitCost;
     const title = `Laporan Penjualan ${dateStr}`;
 
-    // Update if exists, else create
-    let report = await this.sellingReportModel.findOne({ where: { date: startDate } });
+    // Update if a report already exists for this calendar day, else create.
+    // Match by day range (not exact timestamp) so reports stored at a different
+    // time-of-day — e.g. seeded data — are updated instead of duplicated.
+    let report = await this.sellingReportModel.findOne({
+      where: { date: { [Op.between]: [startDate, endDate] } },
+    });
     
     if (report) {
       await report.update({

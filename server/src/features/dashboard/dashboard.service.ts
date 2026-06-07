@@ -12,6 +12,11 @@ import OrderStatusEnum from '../order/enums/order-status.enum';
 const isPaid = (order: Order) =>
   order.payment?.payment_status === 'settlement';
 
+// The timestamp attribute is named `created_at` (see @Table createdAt mapping),
+// so read it via get() — `order.createdAt` is undefined at runtime.
+const getCreatedAt = (order: Order): Date =>
+  new Date(order.get('created_at') as string | Date);
+
 type ChartPeriod = '7d' | '30d' | '6m';
 
 const ACTIVE_ORDER_STATUSES = [
@@ -124,7 +129,7 @@ export class DashboardService {
         buckets.push({ label: MONTH_NAMES[d.getMonth()], count: 0, revenue: 0, key });
       }
       orders.forEach((order) => {
-        const d = new Date(order.createdAt);
+        const d = getCreatedAt(order);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const bucket = buckets.find((b) => b.key === key);
         if (bucket) {
@@ -148,7 +153,7 @@ export class DashboardService {
         buckets.push({ label, count: 0, revenue: 0, key });
       }
       orders.forEach((order) => {
-        const d = new Date(order.createdAt);
+        const d = getCreatedAt(order);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const bucket = buckets.find((b) => b.key === key);
         if (bucket) {
@@ -162,7 +167,7 @@ export class DashboardService {
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
-    const todayOrders = orders.filter((o) => new Date(o.createdAt) >= todayStart);
+    const todayOrders = orders.filter((o) => getCreatedAt(o) >= todayStart);
 
     const totalRevenueInPeriod = orders
       .filter(isPaid)
