@@ -18,6 +18,12 @@ import {
 
 type Range = 7 | 14 | 30
 
+// Bagian "Evaluasi Model" bersifat teknis (RMSE/MAE/R²) — disembunyikan di
+// produksi untuk pengguna akhir. Set NEXT_PUBLIC_SHOW_MODEL_EVALUATION=true
+// untuk menampilkannya saat demo/sidang.
+const SHOW_MODEL_EVALUATION =
+  process.env.NEXT_PUBLIC_SHOW_MODEL_EVALUATION === "true"
+
 const formatCurrency = (v: number) => {
   if (v >= 1_000_000) return `Rp ${(v / 1_000_000).toFixed(1)}jt`
   if (v >= 1_000) return `Rp ${(v / 1_000).toFixed(0)}rb`
@@ -253,7 +259,7 @@ export function PredictionChart() {
         {isLoading ? (
           <div className="h-full flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2Icon className="size-5 animate-spin" />
-            <span className="text-sm">Melatih model prediksi...</span>
+            <span className="text-sm">Sedang menghasilkan data prediksi...</span>
           </div>
         ) : error ? (
           <div className="h-full flex flex-col items-center justify-center gap-2 text-center px-4">
@@ -313,8 +319,8 @@ export function PredictionChart() {
         )}
       </div>
 
-      {/* Evaluation metrics */}
-      {data && !isLoading && !error && (
+      {/* Evaluation metrics (teknis — hanya tampil bila flag diaktifkan) */}
+      {SHOW_MODEL_EVALUATION && data && !isLoading && !error && (
         <EvaluationSection evaluation={data.evaluation} />
       )}
 
