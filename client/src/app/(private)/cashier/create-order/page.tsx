@@ -278,7 +278,7 @@ export default function CashierCreateOrderPage() {
             <p className="text-sm">Tidak ada menu ditemukan</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto flex-1 min-h-0 content-start">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 overflow-y-auto flex-1 min-h-0 content-start items-start">
             {filteredMenus.map((menu) => {
               const qty = getQty(menu.id)
               return (
@@ -287,7 +287,7 @@ export default function CashierCreateOrderPage() {
                   className="bg-white border border-foreground/10 rounded-xl overflow-hidden flex flex-col"
                 >
                   {/* Image */}
-                  <div className="relative w-full aspect-[4/3] bg-muted">
+                  <div className="relative w-full h-32 sm:h-36 bg-muted shrink-0">
                     <Image
                       src={menu.image_url ?? "/image/menu/nasi-goreng.jpg"}
                       alt={menu.name}
@@ -297,7 +297,7 @@ export default function CashierCreateOrderPage() {
                   </div>
 
                   {/* Info */}
-                  <div className="p-3 flex flex-col gap-2 flex-1">
+                  <div className="p-3 flex flex-col gap-2 flex-1 shrink-0">
                     <div className="flex-1">
                       <p className="text-sm font-semibold leading-tight line-clamp-2">{menu.name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{menu.type_name}</p>
