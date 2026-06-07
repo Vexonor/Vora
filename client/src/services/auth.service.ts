@@ -20,4 +20,14 @@ export const authService = {
   async changePassword(data: { current_password: string; new_password: string }): Promise<void> {
     return apiClient.patch(`${AUTH_PATH}/change-password`, data);
   },
+
+  /**
+   * Update the logged-in user's own profile (username, email, avatar).
+   * Uses FormData because of the avatar image upload. Role is not editable.
+   */
+  async updateProfile(data: FormData): Promise<User> {
+    return apiClient.patch(`${AUTH_PATH}/profile`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };

@@ -28,7 +28,7 @@ export default function KitchenLayout({ children }: { children: React.ReactNode 
   const kitchenUser = {
     name: user?.username ?? "Dapur Utama",
     email: user?.email ?? "kitchen@vora.com",
-    avatar: "/avatars/kitchen.jpg",
+    avatar: user?.avatar_url ?? "",
   }
 
   return (

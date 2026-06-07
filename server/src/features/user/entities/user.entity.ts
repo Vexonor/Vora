@@ -22,6 +22,12 @@ export class User extends Model {
   @Column({ type: DataType.STRING, unique: true })
   email: string;
 
+  @Column({ type: DataType.STRING, allowNull: true })
+  avatar_path: string | null;
+
+  @Column({ type: DataType.STRING, allowNull: true })
+  avatar_url: string | null;
+
   @Column(DataType.STRING)
   password: string;
 

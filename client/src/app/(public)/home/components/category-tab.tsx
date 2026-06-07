@@ -110,15 +110,15 @@ const MenuGrid = ({ menus }: { menus: ReturnType<typeof adaptMenu>[] }) => {
   )
 }
 
-const CategoryTab = () => {
+const CategoryTab = ({ search = "" }: { search?: string }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [apiMenus, setApiMenus] = useState<Menu[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  const fetchMenus = useCallback(async () => {
+  const fetchMenus = useCallback(async (q: string) => {
     setIsLoading(true)
     try {
-      const data = await menuService.getAll()
+      const data = await menuService.getAll({ q: q.trim() || undefined })
       setApiMenus(Array.isArray(data) ? data : [])
     } catch {
       setApiMenus([])
@@ -127,9 +127,11 @@ const CategoryTab = () => {
     }
   }, [])
 
+  // Debounce search so we hit the endpoint's `q` param, not filter client-side
   useEffect(() => {
-    fetchMenus()
-  }, [fetchMenus])
+    const handler = setTimeout(() => fetchMenus(search), 400)
+    return () => clearTimeout(handler)
+  }, [search, fetchMenus])
 
   const menusByCategory = useMemo(() => {
     const counts: Record<string, number> = { all: apiMenus.length }

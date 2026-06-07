@@ -9,14 +9,14 @@ interface PaymentMethodProps {
 }
 
 const PaymentMethodSection = ({ value, onValueChange }: PaymentMethodProps) => {
-  // Mapping to Midtrans payment method IDs
+  // Maps to Midtrans `enabled_payments` IDs. Hanya channel yang lazim aktif
+  // di akun Midtrans (sandbox) & punya logo yang benar.
   const paymentMethod = [
-    { id: "bni_va", name: "BNI", src: "/assets/brand-logo/bni.svg" },
-    { id: "echannel", name: "Mandiri", src: "/assets/brand-logo/mandiri.svg" },
-    { id: "bri_va", name: "BRI", src: "/assets/brand-logo/bri.svg" },
-    { id: "gopay", name: "Gopay", src: "/assets/brand-logo/gopay.svg" },
-    { id: "shopeepay", name: "ShopeePay", src: "/assets/brand-logo/dana.svg" }, // Assuming Dana maps to Shopeepay or similar if not supported directly, or we can use qris
     { id: "qris", name: "QRIS", src: "/assets/brand-logo/qris.svg" },
+    { id: "gopay", name: "GoPay", src: "/assets/brand-logo/gopay.svg" },
+    { id: "bni_va", name: "BNI", src: "/assets/brand-logo/bni.svg" },
+    { id: "bri_va", name: "BRI", src: "/assets/brand-logo/bri.svg" },
+    { id: "echannel", name: "Mandiri", src: "/assets/brand-logo/mandiri.svg" },
   ]
   return (
     <div className="min-h-[200px]">

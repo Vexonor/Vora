@@ -8,7 +8,7 @@ import { CirclePlusIcon, Loader2Icon, SearchIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 20
 
 export default function ManagerMenuPage() {
   const router = useRouter()

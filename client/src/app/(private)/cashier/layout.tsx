@@ -35,7 +35,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
   const cashierUser = {
     name: user?.username ?? "Kasir Utama",
     email: user?.email ?? "cashier@vora.com",
-    avatar: "/avatars/cashier.jpg",
+    avatar: user?.avatar_url ?? "",
   }
 
   return (

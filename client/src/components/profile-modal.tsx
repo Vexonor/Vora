@@ -1,15 +1,17 @@
 "use client"
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { FormField } from "@/components/ui/form-field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useAuth } from "@/hooks/use-auth"
 import { authService } from "@/services/auth.service"
 import type { User } from "@/types/user"
 import { USER_ROLE_LABELS } from "@/types/user"
-import { CheckCircleIcon, EyeIcon, EyeOffIcon, KeyRoundIcon, Loader2Icon, UserIcon } from "lucide-react"
-import { useState } from "react"
+import { CameraIcon, CheckCircleIcon, EyeIcon, EyeOffIcon, KeyRoundIcon, Loader2Icon, UserIcon } from "lucide-react"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 
 type Tab = "info" | "password"
@@ -29,34 +31,161 @@ type Props = {
 }
 
 function InfoTab({ user }: { user: User }) {
+  const { updateUser } = useAuth()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [username, setUsername] = useState(user.username)
+  const [email, setEmail] = useState(user.email)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(user.avatar_url ?? null)
+  const [errors, setErrors] = useState<{ username?: string; email?: string }>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const initials = user.username.charAt(0).toUpperCase()
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar.")
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran gambar maksimal 5MB.")
+      return
+    }
+    setAvatarFile(file)
+    setPreview(URL.createObjectURL(file))
+  }
+
+  const validate = () => {
+    const e: { username?: string; email?: string } = {}
+    if (!username.trim()) e.username = "Username tidak boleh kosong."
+    if (!email.trim()) e.email = "Email tidak boleh kosong."
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+      e.email = "Format email tidak valid."
+    return e
+  }
+
+  const handleSubmit = async () => {
+    const errs = validate()
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs)
+      return
+    }
+
+    const fd = new FormData()
+    if (username.trim() !== user.username) fd.append("username", username.trim())
+    if (email.trim() !== user.email) fd.append("email", email.trim())
+    if (avatarFile) fd.append("avatar", avatarFile)
+
+    if ([...fd.keys()].length === 0) {
+      toast.info("Tidak ada perubahan untuk disimpan.")
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const updated = await authService.updateProfile(fd)
+      updateUser(updated)
+      setAvatarFile(null)
+      setPreview(updated.avatar_url ?? null)
+      toast.success("Profil berhasil diperbarui.")
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      if (msg === "Email sudah digunakan") {
+        setErrors({ email: "Email sudah digunakan." })
+      } else {
+        toast.error("Gagal memperbarui profil. Coba lagi.")
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-4">
-        <div className="size-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-          <span className="text-xl font-bold text-primary">
-            {user.username.charAt(0).toUpperCase()}
+      {/* Avatar */}
+      <div className="flex flex-col items-center gap-2">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="relative group rounded-full"
+        >
+          <Avatar className="size-20">
+            <AvatarImage src={preview ?? undefined} alt={user.username} />
+            <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <span className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <CameraIcon className="size-6 text-white" />
           </span>
-        </div>
-        <div>
-          <p className="font-semibold text-base">{user.username}</p>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
+          <span className="absolute bottom-0 right-0 size-7 rounded-full bg-primary text-white flex items-center justify-center border-2 border-background">
+            <CameraIcon className="size-3.5" />
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="text-xs text-primary hover:underline"
+        >
+          Ubah foto profil
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </div>
+
+      {/* Fields */}
+      <div className="flex flex-col gap-4">
+        <FormField label="Username" error={errors.username}>
+          <Input
+            value={username}
+            onChange={(e) => {
+              setUsername(e.target.value)
+              setErrors((prev) => ({ ...prev, username: undefined }))
+            }}
+            placeholder="Masukkan username"
+            aria-invalid={!!errors.username}
+            maxLength={100}
+          />
+        </FormField>
+
+        <FormField label="Email" error={errors.email}>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              setErrors((prev) => ({ ...prev, email: undefined }))
+            }}
+            placeholder="Masukkan email"
+            aria-invalid={!!errors.email}
+            maxLength={150}
+          />
+        </FormField>
+
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Role</Label>
+          <p className="text-sm font-medium border border-foreground/20 rounded-lg px-3 py-2 bg-muted/30 text-muted-foreground">
+            {USER_ROLE_LABELS[user.role] ?? user.role_name}
+          </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        {[
-          { label: "Username", value: user.username },
-          { label: "Email", value: user.email },
-          { label: "Role", value: USER_ROLE_LABELS[user.role] ?? user.role_name },
-        ].map(({ label, value }) => (
-          <div key={label} className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">{label}</Label>
-            <p className="text-sm font-medium border border-foreground/20 rounded-lg px-3 py-2 bg-muted/30">
-              {value}
-            </p>
-          </div>
-        ))}
-      </div>
+      <Button
+        onClick={handleSubmit}
+        disabled={isSubmitting}
+        className="w-full bg-primary text-white flex items-center gap-2"
+      >
+        {isSubmitting && <Loader2Icon className="size-4 animate-spin" />}
+        {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+      </Button>
     </div>
   )
 }

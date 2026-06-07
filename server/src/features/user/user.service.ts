@@ -14,7 +14,12 @@ export class UserService {
   ) {}
 
   async findAll(query: { q?: string; role?: string } = {}) {
-    let allowedRoles = [UserRoleEnum.CASHIER, UserRoleEnum.KITCHEN];
+    const STAFF_ROLES = [
+      UserRoleEnum.CASHIER,
+      UserRoleEnum.KITCHEN,
+      UserRoleEnum.MANAGER,
+    ];
+    let allowedRoles = STAFF_ROLES;
 
     if (query.role !== undefined && query.role !== '') {
       try {
@@ -22,7 +27,7 @@ export class UserService {
         if (Array.isArray(parsed) && parsed.length > 0) {
           const filtered = parsed
             .map(Number)
-            .filter((r) => [UserRoleEnum.CASHIER, UserRoleEnum.KITCHEN].includes(r));
+            .filter((r) => STAFF_ROLES.includes(r));
           if (filtered.length > 0) allowedRoles = filtered;
         }
       } catch {
@@ -83,6 +88,19 @@ export class UserService {
     if (!user) {
       return this.response.fail(`User with ID ${id} not found`, 404);
     }
+
+    if (user.role === UserRoleEnum.MANAGER) {
+      const managerCount = await this.userModel.count({
+        where: { role: UserRoleEnum.MANAGER },
+      });
+      if (managerCount <= 1) {
+        return this.response.fail(
+          'Tidak dapat menghapus akun Manager terakhir',
+          400,
+        );
+      }
+    }
+
     await user.destroy();
     return this.response.success({}, 200, `User with ID ${id} has been deleted`);
   }

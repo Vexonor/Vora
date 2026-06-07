@@ -2,7 +2,9 @@
 "use client"
 
 import { Menu } from "@/lib/type/menu"
-import { createContext, ReactNode, useContext, useState } from "react"
+import { createContext, ReactNode, useContext, useEffect, useState } from "react"
+
+const CART_STORAGE_KEY = "cart"
 
 export interface CartItem {
   menu: Menu
@@ -28,6 +30,25 @@ interface CartProviderProps {
 
 export const CartProvider = ({ children }: CartProviderProps) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [hydrated, setHydrated] = useState(false)
+
+  // Restore cart from localStorage so it survives a page refresh
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(CART_STORAGE_KEY)
+      if (stored) setCartItems(JSON.parse(stored))
+    } catch {
+      localStorage.removeItem(CART_STORAGE_KEY)
+    } finally {
+      setHydrated(true)
+    }
+  }, [])
+
+  // Persist cart on every change (only after the initial restore)
+  useEffect(() => {
+    if (!hydrated) return
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems))
+  }, [cartItems, hydrated])
 
   const addToCart = (menu: Menu) => {
     setCartItems(prev => {

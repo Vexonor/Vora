@@ -8,6 +8,7 @@ import { userService } from "@/services/user.service"
 import type { User } from "@/types/user"
 import { Loader2Icon, SearchIcon, UserPlusIcon } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 
 const PAGE_SIZE = 5
 
@@ -76,8 +77,10 @@ export default function StaffPage() {
     try {
       await userService.remove(staff.id)
       setStaffs((prev) => prev.filter((s) => s.id !== staff.id))
-    } catch {
-      // silent fail
+      toast.success("Staf berhasil dihapus.")
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      toast.error(msg ?? "Gagal menghapus staf. Coba lagi.")
     }
   }
 

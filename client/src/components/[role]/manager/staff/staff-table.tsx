@@ -4,6 +4,7 @@ import {
   DropdownMenu, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/hooks/use-auth"
 import type { User } from "@/types/user"
 import { UserRole } from "@/types/user"
 import { EllipsisIcon, PencilIcon, Trash2Icon } from "lucide-react"
@@ -29,6 +30,7 @@ type Props = {
 const PAGE_SIZE = 5
 
 export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDelete, onUpdated }: Props) {
+  const { user: currentUser } = useAuth()
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const [editTarget, setEditTarget] = useState<User | null>(null)
 
@@ -91,27 +93,31 @@ export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDe
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="p-1 hover:bg-muted rounded-md transition-colors">
-                          <EllipsisIcon className="size-4 text-muted-foreground" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-36">
-                        <DropdownMenuItem
-                          onClick={() => setEditTarget(staff)}
-                          className="gap-2 cursor-pointer"
-                        >
-                          <PencilIcon className="size-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setDeleteTarget(staff)}
-                          className="gap-2 cursor-pointer text-destructive focus:text-destructive"
-                        >
-                          <Trash2Icon className="size-4" /> Hapus
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {staff.id === currentUser?.id ? (
+                      <span className="text-xs text-muted-foreground italic">Akun Anda</span>
+                    ) : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1 hover:bg-muted rounded-md transition-colors">
+                            <EllipsisIcon className="size-4 text-muted-foreground" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-36">
+                          <DropdownMenuItem
+                            onClick={() => setEditTarget(staff)}
+                            className="gap-2 cursor-pointer"
+                          >
+                            <PencilIcon className="size-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDeleteTarget(staff)}
+                            className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                          >
+                            <Trash2Icon className="size-4" /> Hapus
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </td>
                 </tr>
               )

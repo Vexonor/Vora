@@ -70,7 +70,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
   const managerUser = {
     name: user?.username ?? "Manajer",
     email: user?.email ?? "manager@vora.com",
-    avatar: "/avatars/manager.jpg",
+    avatar: user?.avatar_url ?? "",
   }
 
   return (

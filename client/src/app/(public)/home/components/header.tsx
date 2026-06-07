@@ -2,7 +2,12 @@ import { Input } from "@/components/ui/input"
 import { MagnifyingGlass } from "@icons/magnifying-glass"
 import Image from "next/image"
 
-const Header = () => {
+interface HeaderProps {
+  search: string
+  onSearchChange: (value: string) => void
+}
+
+const Header = ({ search, onSearchChange }: HeaderProps) => {
   return (
     <div className="w-full flex items-center gap-4 p-4">
       {/* Brand */}
@@ -21,7 +26,8 @@ const Header = () => {
         <MagnifyingGlass className="size-6 text-foreground" />
         <Input
           placeholder="Cari menu..."
-          className=""
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
         />
       </div>
     </div>

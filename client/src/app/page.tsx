@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import CartDrawer from "./(public)/home/components/cart-drawer";
 import CategoryTab from "./(public)/home/components/category-tab";
 import Header from "./(public)/home/components/header";
 
 export default function Home() {
+  const [search, setSearch] = useState("");
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -19,8 +21,8 @@ export default function Home() {
   return (
     <main className="w-full h-dvh bg-primary">
       <div className="max-w-3xl h-full mx-auto bg-background flex flex-col gap-2 relative">
-        <Header />
-        <CategoryTab />
+        <Header search={search} onSearchChange={setSearch} />
+        <CategoryTab search={search} />
 
         <div className="absolute bottom-4 right-4 bg-secondary size-20 flex justify-center items-center rounded-full z-30">
           <CartDrawer />

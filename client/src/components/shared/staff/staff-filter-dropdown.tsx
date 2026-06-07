@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react"
 const ROLE_OPTIONS = [
   { value: UserRole.CASHIER, label: "Kasir",   dotClass: "bg-secondary" },
   { value: UserRole.KITCHEN, label: "Kitchen", dotClass: "bg-amber-500" },
+  { value: UserRole.MANAGER, label: "Manager", dotClass: "bg-primary" },
 ]
 
 type Props = {
