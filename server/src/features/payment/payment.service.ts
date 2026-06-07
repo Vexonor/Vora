@@ -45,12 +45,22 @@ export class PaymentService {
       return this.response.fail('Pesanan ini sudah dibayar', 400);
     }
 
+    // Sebagian channel punya beberapa ID di Midtrans. Mis. QRIS bisa aktif
+    // sebagai `qris` atau `other_qris` tergantung akun, jadi kita kirim semua
+    // varian agar cocok dengan channel mana pun yang aktif di akun.
+    const CHANNEL_MAP: Record<string, string[]> = {
+      qris: ['qris', 'other_qris'],
+    };
+    const enabledPayments = paymentMethod
+      ? CHANNEL_MAP[paymentMethod] ?? [paymentMethod]
+      : ['qris', 'other_qris', 'gopay', 'shopeepay'];
+
     const parameter: any = {
       transaction_details: {
         order_id: `VORA-ORDER-${order.id}-${Date.now()}`,
         gross_amount: Math.round(order.total_price),
       },
-      enabled_payments: paymentMethod ? [paymentMethod] : ['qris', 'gopay', 'shopeepay', 'other_qris'],
+      enabled_payments: enabledPayments,
       item_details: order.items?.map(item => ({
         id: item.menu_id.toString(),
         price: Math.round(item.price),
