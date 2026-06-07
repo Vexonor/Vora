@@ -8,6 +8,12 @@ export interface User {
   updated_at?: string;
 }
 
+export interface UpdateUserRequest {
+  username?: string;
+  email?: string;
+  role?: number;
+}
+
 /** Maps to server UserRoleEnum */
 export enum UserRole {
   CASHIER = 0,

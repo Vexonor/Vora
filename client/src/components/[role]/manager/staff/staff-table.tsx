@@ -9,6 +9,7 @@ import { UserRole } from "@/types/user"
 import { EllipsisIcon, PencilIcon, Trash2Icon } from "lucide-react"
 import { useState } from "react"
 import { DeleteStaffModal } from "./delete-staff-modal"
+import { EditStaffModal } from "./edit-staff-modal"
 
 const ROLE_BADGE: Record<number, { label: string; badgeClass: string }> = {
   [UserRole.MANAGER]: { label: "Manager", badgeClass: "border-primary/40 bg-primary/10 text-primary" },
@@ -22,12 +23,14 @@ type Props = {
   onPageChange: (page: number) => void
   totalPages: number
   onDelete: (staff: User) => void
+  onUpdated: () => void | Promise<void>
 }
 
 const PAGE_SIZE = 5
 
-export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDelete }: Props) {
+export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDelete, onUpdated }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
+  const [editTarget, setEditTarget] = useState<User | null>(null)
 
   const paginated = staffs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
   const offset = (currentPage - 1) * PAGE_SIZE
@@ -95,7 +98,10 @@ export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDe
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-36">
-                        <DropdownMenuItem className="gap-2 cursor-pointer">
+                        <DropdownMenuItem
+                          onClick={() => setEditTarget(staff)}
+                          className="gap-2 cursor-pointer"
+                        >
                           <PencilIcon className="size-4" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -156,6 +162,14 @@ export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDe
           username={deleteTarget.username}
           onConfirm={handleConfirmDelete}
           onClose={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {editTarget && (
+        <EditStaffModal
+          staff={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={onUpdated}
         />
       )}
     </>

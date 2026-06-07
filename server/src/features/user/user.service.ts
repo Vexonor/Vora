@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
 import { User } from './entities/user.entity';
+import { UpdateUserDto } from './dto/update-user.dto';
 import UserRoleEnum from './enums/user-role.enum';
 
 @Injectable()
@@ -51,6 +52,30 @@ export class UserService {
       return this.response.fail(`User with ID ${id} not found`, 404);
     }
     return this.response.success(user, 200, 'Successfully retrieved user');
+  }
+
+  async update(id: number, dto: UpdateUserDto) {
+    const user = await this.userModel.findByPk(id);
+    if (!user) {
+      return this.response.fail(`User with ID ${id} not found`, 404);
+    }
+
+    if (dto.email && dto.email !== user.email) {
+      const existing = await this.userModel.findOne({
+        where: { email: dto.email, id: { [Op.ne]: id } },
+      });
+      if (existing) {
+        return this.response.fail('Email sudah digunakan', 409);
+      }
+    }
+
+    await user.update({
+      ...(dto.username !== undefined ? { username: dto.username } : {}),
+      ...(dto.email !== undefined ? { email: dto.email } : {}),
+      ...(dto.role !== undefined ? { role: dto.role } : {}),
+    });
+
+    return this.response.success(user, 200, 'Successfully updated user');
   }
 
   async remove(id: number) {

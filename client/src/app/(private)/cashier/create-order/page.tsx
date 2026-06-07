@@ -119,10 +119,10 @@ export default function CashierCreateOrderPage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-full p-4 lg:p-6">
+    <div className="flex flex-col lg:flex-row gap-4 p-4 lg:p-6 lg:h-[calc(100svh-5rem)] lg:overflow-hidden">
 
       {/* ── Left panel: cart & table ── */}
-      <aside className="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col gap-4">
+      <aside className="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col gap-4 lg:h-full lg:min-h-0">
 
         {/* Table selector */}
         <div className="bg-white border border-foreground/10 rounded-xl p-4 flex flex-col gap-3">
@@ -233,7 +233,7 @@ export default function CashierCreateOrderPage() {
         <Button
           onClick={handleSubmit}
           disabled={!selectedTableId || cart.length === 0 || submitting}
-          className="w-full bg-secondary text-primary font-semibold py-5"
+          className="w-full bg-secondary text-primary font-semibold py-5 shrink-0"
         >
           {submitting ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
           Buat Pesanan
@@ -242,7 +242,7 @@ export default function CashierCreateOrderPage() {
       </aside>
 
       {/* ── Right panel: menu browsing ── */}
-      <div className="flex-1 flex flex-col gap-4 min-w-0">
+      <div className="flex-1 flex flex-col gap-4 min-w-0 lg:h-full lg:min-h-0">
 
         {/* Search */}
         <div className="relative">
@@ -278,7 +278,7 @@ export default function CashierCreateOrderPage() {
             <p className="text-sm">Tidak ada menu ditemukan</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto flex-1 min-h-0 content-start">
             {filteredMenus.map((menu) => {
               const qty = getQty(menu.id)
               return (

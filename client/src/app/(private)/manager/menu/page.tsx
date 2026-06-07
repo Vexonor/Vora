@@ -103,6 +103,7 @@ export default function ManagerMenuPage() {
           currentPage={currentPage}
           onPageChange={setCurrentPage}
           totalPages={totalPages}
+          onDeleted={() => fetchMenus(search, statusFilter)}
         />
       )}
 

@@ -4,6 +4,7 @@ import {
   DropdownMenu, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { menuService } from "@/services/menu.service"
 import type { Menu } from "@/types/menu"
 import { MenuStatus } from "@/types/menu"
 import { EllipsisIcon, EyeIcon, PencilIcon, Trash2Icon } from "lucide-react"
@@ -22,16 +23,33 @@ type Props = {
   currentPage: number
   onPageChange: (page: number) => void
   totalPages: number
+  onDeleted: () => void | Promise<void>
 }
 
 const PAGE_SIZE = 5
 const formatCurrency = (value: number) => `Rp. ${value.toLocaleString("id-ID")}`
 
-export function MenuTable({ menus, currentPage, onPageChange, totalPages }: Props) {
+export function MenuTable({ menus, currentPage, onPageChange, totalPages, onDeleted }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<Menu | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const paginated = menus.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
   const offset = (currentPage - 1) * PAGE_SIZE
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return
+    setIsDeleting(true)
+    try {
+      await menuService.remove(deleteTarget.id)
+      if (paginated.length === 1 && currentPage > 1) {
+        onPageChange(currentPage - 1)
+      }
+      setDeleteTarget(null)
+      await onDeleted()
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const getPages = () => {
     const pages: (number | "...")[] = []
@@ -158,8 +176,9 @@ export function MenuTable({ menus, currentPage, onPageChange, totalPages }: Prop
       {deleteTarget && (
         <DeleteMenuModal
           menuName={deleteTarget.name}
-          onConfirm={() => setDeleteTarget(null)}
-          onClose={() => setDeleteTarget(null)}
+          isDeleting={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onClose={() => !isDeleting && setDeleteTarget(null)}
         />
       )}
     </>

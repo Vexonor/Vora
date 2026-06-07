@@ -158,8 +158,9 @@ export default function PaymentStatusPage() {
           <div className="flex flex-col">
             {STEPS.map((step, i) => {
               const stepIndex = STEPS.findIndex((s) => s.status === status)
+              const reached = i <= stepIndex
               const done = i < stepIndex
-              const current = i === stepIndex
+              const current = i === stepIndex && !isTerminal
               const Icon = step.icon
               const isLast = i === STEPS.length - 1
               return (
@@ -168,7 +169,7 @@ export default function PaymentStatusPage() {
                   <div className="flex flex-col items-center">
                     <div
                       className={`size-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                        done || current ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                        reached ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                       } ${current ? "ring-4 ring-primary/20" : ""}`}
                     >
                       <Icon className="size-4" />
@@ -178,7 +179,7 @@ export default function PaymentStatusPage() {
                     )}
                   </div>
                   {/* Text */}
-                  <div className={`pb-6 ${current ? "" : "opacity-70"}`}>
+                  <div className={`pb-6 ${reached ? "" : "opacity-70"}`}>
                     <p className={`text-sm font-semibold ${current ? "text-primary" : "text-foreground"}`}>
                       {step.label}
                       {current && (

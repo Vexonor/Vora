@@ -2,15 +2,16 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { Trash2Icon } from "lucide-react"
+import { Loader2Icon, Trash2Icon } from "lucide-react"
 
 type Props = {
   menuName: string
+  isDeleting?: boolean
   onConfirm: () => void
   onClose: () => void
 }
 
-export function DeleteMenuModal({ menuName, onConfirm, onClose }: Props) {
+export function DeleteMenuModal({ menuName, isDeleting, onConfirm, onClose }: Props) {
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-sm text-center">
@@ -28,8 +29,15 @@ export function DeleteMenuModal({ menuName, onConfirm, onClose }: Props) {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 w-full">
-            <Button variant="outline" onClick={onClose}>Batal</Button>
-            <Button onClick={onConfirm} className="bg-destructive hover:bg-destructive/90 text-white">Ya</Button>
+            <Button variant="outline" onClick={onClose} disabled={isDeleting}>Batal</Button>
+            <Button
+              onClick={onConfirm}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90 text-white"
+            >
+              {isDeleting ? <Loader2Icon className="size-4 animate-spin mr-1" /> : null}
+              Ya
+            </Button>
           </div>
         </div>
       </DialogContent>

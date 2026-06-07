@@ -128,6 +128,7 @@ export default function StaffPage() {
           onPageChange={setCurrentPage}
           totalPages={totalPages}
           onDelete={handleDelete}
+          onUpdated={() => fetchStaffs(search, roleFilter)}
         />
       )}
 
