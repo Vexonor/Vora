@@ -123,6 +123,23 @@ class SalesTrendPredictor:
         for col in ["gross_revenue", "net_profit", "total_transaction"]:
             self._rolling[col] = list(df[col].tail(tail))
 
+    def feature_importances(self) -> dict[str, dict[str, float]]:
+        """Feature importance Random Forest per target model.
+
+        Mengembalikan { target: { nama_fitur: importance } } dari model yang
+        sudah dilatih pada seluruh data. Berguna untuk dokumentasi/skripsi
+        (visualisasi penerapan metode AI). Panggil setelah `fit()`.
+        """
+        if not self._models:
+            raise RuntimeError("Model belum dilatih — panggil fit() lebih dulu.")
+
+        result: dict[str, dict[str, float]] = {}
+        for target, model in self._models.items():
+            result[target] = dict(
+                zip(FEATURE_COLS, model.feature_importances_.tolist())
+            )
+        return result
+
     def predict(
         self, last_date: pd.Timestamp, days: int = 30
     ) -> list[dict[str, Any]]:

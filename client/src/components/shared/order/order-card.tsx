@@ -135,19 +135,21 @@ export function TransactionCard({ order, onRefresh }: Props) {
         <hr className="border-foreground/10" />
 
         {/* Menu Table */}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-1 flex-col gap-1 min-h-0">
           <div className="grid grid-cols-3 text-xs text-muted-foreground">
             <span>Menu</span>
             <span className="text-center">Jumlah</span>
             <span className="text-right">Harga</span>
           </div>
-          {items?.map((item) => (
-            <div key={item.id} className="grid grid-cols-3 text-sm">
-              <span>{item.menu?.name ?? `Menu #${item.menu_id}`}</span>
-              <span className="text-center">{item.quantity}</span>
-              <span className="text-right">{formatCurrency(item.total_price)}</span>
-            </div>
-          ))}
+          <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
+            {items?.map((item) => (
+              <div key={item.id} className="grid grid-cols-3 text-sm">
+                <span>{item.menu?.name ?? `Menu #${item.menu_id}`}</span>
+                <span className="text-center">{item.quantity}</span>
+                <span className="text-right">{formatCurrency(item.total_price)}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <hr className="border-foreground/10" />
@@ -169,7 +171,7 @@ export function TransactionCard({ order, onRefresh }: Props) {
             </button>
             <button
               onClick={() => setShowModal(true)}
-              disabled={isPaid || status === OrderStatus.CANCELED}
+              disabled={isPaid || status !== OrderStatus.PENDING}
               className="bg-secondary text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Verifikasi Pembayaran
