@@ -13,6 +13,7 @@ import { unitService } from "@/services/unit.service"
 import type { Unit } from "@/types/unit"
 import { PencilIcon, PlusIcon, Trash2Icon, Loader2Icon, SearchIcon } from "lucide-react"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function ManagerUnitPage() {
   const [units, setUnits] = useState<Unit[]>([])
@@ -92,7 +93,7 @@ export default function ManagerUnitPage() {
       fetchUnits() // Refresh table
     } catch (err) {
       console.error("Failed to delete unit:", err)
-      alert("Gagal menghapus satuan. Pastikan tidak ada stok yang menggunakan satuan ini.")
+      toast.error("Gagal menghapus satuan. Pastikan tidak ada stok yang menggunakan satuan ini.")
     }
   }
 

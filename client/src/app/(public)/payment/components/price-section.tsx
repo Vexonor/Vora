@@ -9,6 +9,7 @@ import { paymentService } from "@/services/payment.service"
 import { Loader2Icon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { toast } from "sonner"
 
 interface PriceSectionProps {
   paymentType?: string
@@ -62,12 +63,12 @@ const PriceSection = ({ paymentType, paymentMethod, customerName }: PriceSection
 
   const handlePayment = async () => {
     if (!paymentType) {
-      alert("Silakan pilih tipe pembayaran terlebih dahulu.")
+      toast.warning("Silakan pilih tipe pembayaran terlebih dahulu.")
       return
     }
-    
+
     if (paymentType === "online" && !paymentMethod) {
-      alert("Silakan pilih metode pembayaran (Bank/E-Wallet) terlebih dahulu.")
+      toast.warning("Silakan pilih metode pembayaran (Bank/E-Wallet) terlebih dahulu.")
       return
     }
 
@@ -122,7 +123,7 @@ const PriceSection = ({ paymentType, paymentMethod, customerName }: PriceSection
 
     } catch (error) {
       console.error("Gagal memproses pembayaran:", error)
-      alert("Terjadi kesalahan saat memproses pesanan Anda. Silakan coba lagi.")
+      toast.error("Terjadi kesalahan saat memproses pesanan Anda. Silakan coba lagi.")
     } finally {
       setIsLoading(false)
     }
