@@ -10,7 +10,7 @@ import { Loader2Icon, SearchIcon, UserPlusIcon } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 20
 
 export default function StaffPage() {
   const [staffs, setStaffs] = useState<User[]>([])

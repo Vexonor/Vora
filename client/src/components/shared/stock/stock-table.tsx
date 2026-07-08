@@ -20,13 +20,12 @@ type Props = {
   currentPage: number
   onPageChange: (page: number) => void
   totalPages: number
+  pageSize: number
   basePath: string
   onDelete: (stock: Stock) => Promise<void>
 }
 
-const PAGE_SIZE = 5
-
-export function StockTable({ stocks, currentPage, onPageChange, totalPages, basePath, onDelete }: Props) {
+export function StockTable({ stocks, currentPage, onPageChange, totalPages, pageSize, basePath, onDelete }: Props) {
   const router = useRouter()
   const [deleteTarget, setDeleteTarget] = useState<Stock | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -42,8 +41,8 @@ export function StockTable({ stocks, currentPage, onPageChange, totalPages, base
     }
   }
 
-  const paginated = stocks.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-  const offset = (currentPage - 1) * PAGE_SIZE
+  // Data is already paginated by the server; render as-is.
+  const offset = (currentPage - 1) * pageSize
 
   const getPages = () => {
     const pages: (number | "...")[] = []
@@ -75,14 +74,14 @@ export function StockTable({ stocks, currentPage, onPageChange, totalPages, base
             </tr>
           </thead>
           <tbody>
-            {paginated.length === 0 && (
+            {stocks.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-6 py-16 text-center text-sm text-muted-foreground">
                   Bahan tidak ditemukan.
                 </td>
               </tr>
             )}
-            {paginated.map((stock, i) => {
+            {stocks.map((stock, i) => {
               const config = STOCK_STATUS_BADGE[stock.status] ?? { label: stock.status_name ?? "Unknown", badgeClass: "border-foreground/30 bg-foreground/5 text-foreground" }
               return (
                 <tr key={stock.id} className="border-b border-foreground/5 last:border-0 hover:bg-muted/30 transition-colors">

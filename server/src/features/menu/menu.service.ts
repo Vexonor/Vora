@@ -70,7 +70,10 @@ export class MenuService {
       }
     }
 
-    const menus = await this.menuModel.findAll({ where });
+    const menus = await this.menuModel.findAll({
+      where,
+      order: [['created_at', 'DESC']],
+    });
     return this.response.success(menus, 200, 'Successfully retrieved all menus');
   }
 

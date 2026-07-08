@@ -22,7 +22,7 @@ export default function TableManagementPage() {
     setIsLoading(true)
     setError(null)
     try {
-      const data = await tableService.getAll()
+      const data = await tableService.getAll({ order_by: "created_at", direction: "DESC" })
       setTables(Array.isArray(data) ? data : [])
     } catch {
       setError("Gagal memuat data meja.")

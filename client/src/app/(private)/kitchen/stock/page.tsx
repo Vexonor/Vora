@@ -9,7 +9,7 @@ import { Loader2Icon, SearchIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 20
 
 export default function StockPage() {
   const router = useRouter()
@@ -29,6 +29,8 @@ export default function StockPage() {
       const params: Record<string, string> = {
         page: String(page),
         limit: String(PAGE_SIZE),
+        order_by: "created_at",
+        direction: "DESC",
       }
       if (q.trim()) params.q = q.trim()
       if (statuses.length === 1) params.status = String(statuses[0])
@@ -116,6 +118,7 @@ export default function StockPage() {
           currentPage={currentPage}
           onPageChange={handlePageChange}
           totalPages={totalPages}
+          pageSize={PAGE_SIZE}
           basePath="/kitchen/stock"
           onDelete={handleDelete}
         />

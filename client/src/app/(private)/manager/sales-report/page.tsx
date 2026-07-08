@@ -9,7 +9,7 @@ import type { SellingReport } from "@/types/selling-report"
 import { Loader2Icon, PlusIcon, SearchIcon } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 20
 
 const MONTHS = [
   { value: "1", label: "Januari" },

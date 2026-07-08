@@ -27,7 +27,7 @@ type Props = {
   onUpdated: () => void | Promise<void>
 }
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 20
 
 export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDelete, onUpdated }: Props) {
   const { user: currentUser } = useAuth()

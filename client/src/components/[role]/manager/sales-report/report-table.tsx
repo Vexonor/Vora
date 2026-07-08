@@ -20,7 +20,7 @@ type Props = {
   onDeleted: () => void | Promise<void>
 }
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 20
 const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`
 const formatDate = (dateStr: string) =>
   new Date(dateStr).toLocaleDateString("id-ID", {

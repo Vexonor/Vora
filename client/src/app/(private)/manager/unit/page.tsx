@@ -33,7 +33,7 @@ export default function ManagerUnitPage() {
   const fetchUnits = async () => {
     setIsLoading(true)
     try {
-      const data = await unitService.getAll()
+      const data = await unitService.getAll({ order_by: "created_at", direction: "DESC" })
       setUnits(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error("Failed to fetch units:", err)
