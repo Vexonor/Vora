@@ -123,6 +123,9 @@ pip install -r requirements.txt
 # 3. Siapkan environment
 cp .env.example .env      # berisi PORT=8090
 
+# 4. Masuk ke venv
+source venv/Scripts/activate
+
 # 4. Jalankan service
 uvicorn main:app --reload --port 8090
 ```

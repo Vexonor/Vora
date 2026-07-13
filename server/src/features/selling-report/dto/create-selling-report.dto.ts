@@ -4,6 +4,6 @@ export class CreateSellingReportDto {
   total_transaction: number;
   total_items_sold: number;
   unit_cost: number;
+  operational_cost: number;
   gross_revenue: number;
-  net_profit: number;
 }

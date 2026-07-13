@@ -21,6 +21,7 @@ import { UnitModule } from './features/unit/unit.module';
 import { UserModule } from './features/user/user.module';
 import { DashboardModule } from './features/dashboard/dashboard.module';
 import { AiPredictionModule } from './features/ai-prediction/ai-prediction.module';
+import { SellingTrendModule } from './features/selling-trend/selling-trend.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { AiPredictionModule } from './features/ai-prediction/ai-prediction.modul
     SellingReportModule,
     DashboardModule,
     AiPredictionModule,
+    SellingTrendModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -3,11 +3,12 @@
 import { orderService } from "@/services/order.service"
 import { downloadInvoiceAsPDF } from "@/lib/invoice-download"
 import { OrderStatus, type Order } from "@/types/order"
-import { DownloadIcon, Loader2Icon, ReceiptTextIcon } from "lucide-react"
+import { DownloadIcon, Loader2Icon, MailIcon, ReceiptTextIcon } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useState } from "react"
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
+import { toast } from "sonner"
 
 const InvoiceContent = () => {
   const searchParams = useSearchParams()
@@ -17,6 +18,36 @@ const InvoiceContent = () => {
   const [isLoading, setIsLoading] = useState(true)
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  const [email, setEmail] = useState("")
+  const [isSending, setIsSending] = useState(false)
+
+  const handleSendEmail = async (currentOrder: Order) => {
+    if (!email.trim()) {
+      toast.warning("Silakan masukkan alamat email terlebih dahulu.")
+      return
+    }
+
+    setIsSending(true)
+    try {
+      const invoiceUrl = `${window.location.origin}/payment/invoice?orderId=${currentOrder.id}`
+      const res = await fetch("/api/send-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), order: currentOrder, invoiceUrl }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error ?? "Gagal mengirim email.")
+      }
+      toast.success(`Invoice berhasil dikirim ke ${email.trim()}.`)
+      setEmail("")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengirim email. Coba lagi.")
+    } finally {
+      setIsSending(false)
+    }
+  }
 
   useEffect(() => {
     if (!orderId) {
@@ -186,8 +217,8 @@ const InvoiceContent = () => {
         <div className="absolute -bottom-2 left-0 right-0 h-4 bg-white" style={{ clipPath: 'polygon(0% 0%, 5% 100%, 10% 0%, 15% 100%, 20% 0%, 25% 100%, 30% 0%, 35% 100%, 40% 0%, 45% 100%, 50% 0%, 55% 100%, 60% 0%, 65% 100%, 70% 0%, 75% 100%, 80% 0%, 85% 100%, 90% 0%, 95% 100%, 100% 0%)' }}></div>
       </div>
 
-      {/* Download Button */}
-      <div className="max-w-md mx-auto mt-8 px-4 pb-8">
+      {/* Actions */}
+      <div className="max-w-md mx-auto mt-8 px-4 pb-8 flex flex-col gap-3">
         <button
           onClick={() => downloadInvoiceAsPDF(order)}
           className="w-full flex items-center justify-center gap-2 bg-white text-primary font-semibold py-3 rounded-xl shadow-md hover:bg-white/90 active:scale-95 transition-all"
@@ -195,6 +226,33 @@ const InvoiceContent = () => {
           <DownloadIcon className="size-4" />
           Download Invoice (PDF)
         </button>
+
+        {/* Send invoice via email */}
+        <div className="flex flex-col gap-2 rounded-xl bg-white/10 p-3">
+          <label htmlFor="invoice-email" className="text-xs font-medium text-primary-foreground/90">
+            Kirim invoice ke email
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              id="invoice-email"
+              type="email"
+              inputMode="email"
+              placeholder="nama@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isSending}
+              className="flex-1 rounded-lg bg-white px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-60"
+            />
+            <button
+              onClick={() => handleSendEmail(order)}
+              disabled={isSending}
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-primary hover:bg-secondary/90 active:scale-95 transition-all disabled:opacity-60 disabled:active:scale-100"
+            >
+              {isSending ? <Loader2Icon className="size-4 animate-spin" /> : <MailIcon className="size-4" />}
+              Kirim
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
