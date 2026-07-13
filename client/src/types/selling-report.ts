@@ -8,6 +8,7 @@ export interface SellingReport {
   total_transaction: number;
   total_items_sold: number;
   unit_cost: number;
+  operational_cost: number | null;
   gross_revenue: number;
   net_profit: number;
   created_at?: string;
@@ -20,6 +21,6 @@ export interface CreateSellingReportRequest {
   total_transaction: number;
   total_items_sold: number;
   unit_cost: number;
+  operational_cost: number;
   gross_revenue: number;
-  net_profit: number;
 }

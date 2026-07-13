@@ -27,7 +27,7 @@ type Props = {
 }
 
 const PAGE_SIZE = 20
-const formatCurrency = (value: number) => `Rp. ${value.toLocaleString("id-ID")}`
+const formatCurrency = (value: number) => `Rp. ${Number(value).toLocaleString("id-ID")}`
 
 export function MenuTable({ menus, currentPage, onPageChange, totalPages, onDeleted }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<Menu | null>(null)

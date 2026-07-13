@@ -42,4 +42,10 @@ export class SellingReport extends Model {
     allowNull: false,
   })
   net_profit: number;
+
+  @Column({
+    type: DataType.DECIMAL(16, 3),
+    allowNull: true,
+  })
+  operational_cost: number | null;
 }

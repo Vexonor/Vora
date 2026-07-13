@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "types": ["bun-types", "express", "multer"],
+    "types": ["bun-types", "express", "multer", "jest"],
     "module": "commonjs",
     "strictPropertyInitialization": false,
     "declaration": true,

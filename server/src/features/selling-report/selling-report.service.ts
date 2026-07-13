@@ -57,26 +57,26 @@ export class SellingReportService {
       }
     }
 
-    const netProfit = grossRevenue - unitCost;
     const title = `Laporan Penjualan ${dateStr}`;
 
     // Update if a report already exists for this calendar day, else create.
-    // Match by day range (not exact timestamp) so reports stored at a different
-    // time-of-day — e.g. seeded data — are updated instead of duplicated.
     let report = await this.sellingReportModel.findOne({
       where: { date: { [Op.between]: [startDate, endDate] } },
     });
-    
+
     if (report) {
+      // Pertahankan operational_cost yang sudah diisi manajer; hitung ulang net_profit dengannya.
+      const operationalCost = Number(report.operational_cost ?? 0);
       await report.update({
         title,
         total_transaction: totalTransaction,
         total_items_sold: totalItemsSold,
         unit_cost: unitCost,
         gross_revenue: grossRevenue,
-        net_profit: netProfit,
+        net_profit: grossRevenue - unitCost - operationalCost,
       });
     } else {
+      // Laporan baru: operational_cost belum diketahui (NULL), net_profit = gross - HPP.
       report = await this.sellingReportModel.create({
         title,
         date: startDate,
@@ -84,7 +84,7 @@ export class SellingReportService {
         total_items_sold: totalItemsSold,
         unit_cost: unitCost,
         gross_revenue: grossRevenue,
-        net_profit: netProfit,
+        net_profit: grossRevenue - unitCost,
       });
     }
 
@@ -135,17 +135,36 @@ export class SellingReportService {
     const date = new Date(dto.date);
     date.setHours(0, 0, 0, 0);
 
+    const netProfit =
+      Number(dto.gross_revenue) - Number(dto.unit_cost) - Number(dto.operational_cost);
+
     const report = await this.sellingReportModel.create({
       title: dto.title.trim(),
       date,
       total_transaction: dto.total_transaction,
       total_items_sold: dto.total_items_sold,
       unit_cost: dto.unit_cost,
+      operational_cost: dto.operational_cost,
       gross_revenue: dto.gross_revenue,
-      net_profit: dto.net_profit,
+      net_profit: netProfit,
     });
 
     return this.response.success(report, 201, 'Successfully created selling report');
+  }
+
+  async updateOperationalCost(id: number, operationalCost: number) {
+    const report = await this.sellingReportModel.findByPk(id);
+    if (!report) return this.response.fail('Report not found', 404);
+
+    const netProfit =
+      Number(report.gross_revenue) - Number(report.unit_cost) - operationalCost;
+
+    await report.update({
+      operational_cost: operationalCost,
+      net_profit: netProfit,
+    });
+
+    return this.response.success(report, 200, 'Successfully updated operational cost');
   }
 
   async findOne(id: number) {

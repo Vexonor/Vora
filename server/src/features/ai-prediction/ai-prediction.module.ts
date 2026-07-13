@@ -8,5 +8,6 @@ import { AiPredictionService } from './ai-prediction.service';
   imports: [SequelizeModule.forFeature([SellingReport])],
   controllers: [AiPredictionController],
   providers: [AiPredictionService],
+  exports: [AiPredictionService],
 })
 export class AiPredictionModule {}

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Menu, MenuStatus, MenuType } from "@/types/menu"
+import { formatThousands, digitsOnly } from "@/lib/currency"
 import { CirclePlusIcon, ImagePlusIcon, Loader2Icon, PencilIcon } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
@@ -57,8 +58,8 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
     if (initialData) {
       setForm({
         name: initialData.name,
-        price: String(initialData.price),
-        cost: String(initialData.cost ?? ""),
+        price: String(Number(initialData.price)),
+        cost: initialData.cost != null ? String(Number(initialData.cost)) : "",
         description: initialData.description ?? "",
         type: String(initialData.type),
         status: String(initialData.status),
@@ -79,6 +80,13 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
   const handleChange = (key: keyof Omit<MenuFormData, "image" | "type">) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setForm((prev) => ({ ...prev, [key]: e.target.value }))
+      setErrors((prev) => ({ ...prev, [key]: undefined }))
+    }
+
+  // Simpan angka mentah (digit saja) di state, tampilkan dengan pemisah ribuan.
+  const handleNumericChange = (key: "price" | "cost") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setForm((prev) => ({ ...prev, [key]: digitsOnly(e.target.value) }))
       setErrors((prev) => ({ ...prev, [key]: undefined }))
     }
 
@@ -136,10 +144,11 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
             <div className={`flex items-center border rounded-md overflow-hidden transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 ${errors.price ? "border-destructive" : "border-input"}`}>
               <span className="px-3 text-sm text-muted-foreground border-r border-input bg-muted h-full flex items-center">Rp.</span>
               <Input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 placeholder="Masukkan harga"
-                value={form.price}
-                onChange={handleChange("price")}
+                value={formatThousands(form.price)}
+                onChange={handleNumericChange("price")}
                 className="border-0 rounded-none focus-visible:ring-0 shadow-none"
               />
             </div>
@@ -186,10 +195,11 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
           <div className="flex items-center border border-input rounded-md overflow-hidden transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
             <span className="px-3 text-sm text-muted-foreground border-r border-input bg-muted h-full flex items-center">Rp.</span>
             <Input
-              type="number"
+              type="text"
+              inputMode="numeric"
               placeholder="Masukkan harga modal (opsional)"
-              value={form.cost}
-              onChange={handleChange("cost")}
+              value={formatThousands(form.cost)}
+              onChange={handleNumericChange("cost")}
               className="border-0 rounded-none focus-visible:ring-0 shadow-none"
             />
           </div>

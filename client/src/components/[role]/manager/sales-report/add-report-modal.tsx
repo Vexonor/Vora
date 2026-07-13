@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Loader2Icon, SaveIcon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { formatThousands, digitsOnly } from "@/lib/currency"
 
 type ReportForm = {
   title: string
@@ -14,8 +15,8 @@ type ReportForm = {
   totalTransactions: string
   totalProducts: string
   capital: string
+  operational: string
   grossRevenue: string
-  netRevenue: string
 }
 
 type ReportFormErrors = Partial<Record<keyof ReportForm, string>>
@@ -28,7 +29,7 @@ type Props = {
 export function AddReportModal({ onSubmit, onClose }: Props) {
   const [form, setForm] = useState<ReportForm>({
     title: "", date: "", totalTransactions: "",
-    totalProducts: "", capital: "", grossRevenue: "", netRevenue: "",
+    totalProducts: "", capital: "", operational: "", grossRevenue: "",
   })
   const [errors, setErrors] = useState<ReportFormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -41,12 +42,18 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
     if (!form.totalProducts || isNaN(Number(form.totalProducts))) e.totalProducts = "Tidak valid."
     if (!form.capital || isNaN(Number(form.capital))) e.capital = "Tidak valid."
     if (!form.grossRevenue || isNaN(Number(form.grossRevenue))) e.grossRevenue = "Tidak valid."
-    if (!form.netRevenue || isNaN(Number(form.netRevenue))) e.netRevenue = "Tidak valid."
+    if (!form.operational || isNaN(Number(form.operational))) e.operational = "Tidak valid."
     return e
   }
 
   const handleChange = (key: keyof ReportForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
+    setErrors((prev) => ({ ...prev, [key]: undefined }))
+  }
+
+  // Field uang: simpan angka mentah, tampilkan dengan pemisah ribuan.
+  const handleMoneyChange = (key: keyof ReportForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, [key]: digitsOnly(e.target.value) }))
     setErrors((prev) => ({ ...prev, [key]: undefined }))
   }
 
@@ -114,35 +121,49 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Modal" error={errors.capital}>
+            <FormField label="HPP (modal bahan)" error={errors.capital}>
               <Input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 placeholder="Masukkan jumlah modal"
-                value={form.capital}
-                onChange={handleChange("capital")}
+                value={formatThousands(form.capital)}
+                onChange={handleMoneyChange("capital")}
                 aria-invalid={!!errors.capital}
               />
             </FormField>
             <FormField label="Pendapatan kotor" error={errors.grossRevenue}>
               <Input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 placeholder="Masukkan jumlah pendapatan kotor"
-                value={form.grossRevenue}
-                onChange={handleChange("grossRevenue")}
+                value={formatThousands(form.grossRevenue)}
+                onChange={handleMoneyChange("grossRevenue")}
                 aria-invalid={!!errors.grossRevenue}
               />
             </FormField>
           </div>
 
-          <FormField label="Pendapatan bersih" error={errors.netRevenue}>
+          <FormField label="Modal operasional" error={errors.operational}>
             <Input
-              type="number"
-              placeholder="Masukkan jumlah pendapatan bersih"
-              value={form.netRevenue}
-              onChange={handleChange("netRevenue")}
-              aria-invalid={!!errors.netRevenue}
+              type="text"
+              inputMode="numeric"
+              placeholder="Belanja harian, gas, kemasan, dll."
+              value={formatThousands(form.operational)}
+              onChange={handleMoneyChange("operational")}
+              aria-invalid={!!errors.operational}
             />
           </FormField>
+
+          <div className="rounded-lg bg-muted/30 p-3 flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Pendapatan bersih (otomatis)</span>
+            <span className="text-sm font-semibold">
+              Rp {(
+                Number(form.grossRevenue || 0) -
+                Number(form.capital || 0) -
+                Number(form.operational || 0)
+              ).toLocaleString("id-ID")}
+            </span>
+          </div>
 
           <div className="grid grid-cols-2 gap-3 mt-2">
             <Button variant="outline" onClick={onClose}>Batal</Button>

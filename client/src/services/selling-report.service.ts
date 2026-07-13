@@ -23,6 +23,10 @@ export const sellingReportService = {
     return apiClient.post(REPORTS_PATH, data);
   },
 
+  async updateOperationalCost(id: number, operational_cost: number): Promise<SellingReport> {
+    return apiClient.patch(`${REPORTS_PATH}/${id}/operational-cost`, { operational_cost });
+  },
+
   /**
    * Generate a selling report for a given date (YYYY-MM-DD).
    */

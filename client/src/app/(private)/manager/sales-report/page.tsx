@@ -1,7 +1,9 @@
 "use client"
 
 import { AddReportModal } from "@/components/[role]/manager/sales-report/add-report-modal"
+import { OperationalCostModal } from "@/components/[role]/manager/sales-report/operational-cost-modal"
 import { PredictionChart } from "@/components/[role]/manager/sales-report/prediction-chart"
+import { PredictionAccuracyChart } from "@/components/[role]/manager/sales-report/prediction-accuracy-chart"
 import { ReportTable } from "@/components/[role]/manager/sales-report/report-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { sellingReportService } from "@/services/selling-report.service"
@@ -43,6 +45,8 @@ export default function SalesReportPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [operationalTarget, setOperationalTarget] = useState<SellingReport | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchReports = useCallback(async (q: string, month: string, year: string) => {
@@ -92,11 +96,20 @@ export default function SalesReportPage() {
   const totalTransactions = reports.reduce((sum, r) => sum + Number(r.total_transaction), 0)
   const totalProducts = reports.reduce((sum, r) => sum + Number(r.total_items_sold), 0)
   const totalNetRevenue = reports.reduce((sum, r) => sum + Number(r.net_profit), 0)
-  const totalCapital = reports.reduce((sum, r) => sum + Number(r.unit_cost), 0)
+  const totalCapital = reports.reduce(
+    (sum, r) => sum + Number(r.unit_cost) + Number(r.operational_cost ?? 0),
+    0,
+  )
+
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const unfilledReports = reports
+    .filter((r) => r.operational_cost == null && new Date(r.date) >= thirtyDaysAgo)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   const handleAdd = async (form: {
     title: string; date: string; totalTransactions: string
-    totalProducts: string; capital: string; grossRevenue: string; netRevenue: string
+    totalProducts: string; capital: string; operational: string; grossRevenue: string
   }): Promise<void> => {
     await sellingReportService.create({
       title: form.title.trim(),
@@ -104,8 +117,8 @@ export default function SalesReportPage() {
       total_transaction: Number(form.totalTransactions),
       total_items_sold: Number(form.totalProducts),
       unit_cost: Number(form.capital),
+      operational_cost: Number(form.operational),
       gross_revenue: Number(form.grossRevenue),
-      net_profit: Number(form.netRevenue),
     })
     await fetchReports(search, monthFilter, yearFilter)
   }
@@ -115,6 +128,33 @@ export default function SalesReportPage() {
 
       {/* AI Prediction */}
       <PredictionChart />
+
+      {/* Akurasi Prediksi (prediksi vs realisasi) */}
+      <PredictionAccuracyChart />
+
+      {/* Banner: laporan belum diisi modal operasional */}
+      {!bannerDismissed && unfilledReports.length > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-50 px-4 py-3">
+          <p className="text-sm text-amber-700">
+            {unfilledReports.length} laporan belum diisi modal operasional
+            <span className="text-amber-600"> (mis. {new Date(unfilledReports[0].date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })})</span>
+          </p>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setOperationalTarget(unfilledReports[0])}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+            >
+              Isi Modal
+            </button>
+            <button
+              onClick={() => setBannerDismissed(true)}
+              className="text-xs text-amber-700/70 hover:text-amber-700"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -207,6 +247,7 @@ export default function SalesReportPage() {
           onPageChange={setCurrentPage}
           totalPages={totalPages}
           onDeleted={() => fetchReports(search, monthFilter, yearFilter)}
+          onUpdated={() => fetchReports(search, monthFilter, yearFilter)}
         />
       )}
 
@@ -214,6 +255,14 @@ export default function SalesReportPage() {
         <AddReportModal
           onSubmit={handleAdd}
           onClose={() => setShowAddModal(false)}
+        />
+      )}
+
+      {operationalTarget && (
+        <OperationalCostModal
+          report={operationalTarget}
+          onSaved={() => fetchReports(search, monthFilter, yearFilter)}
+          onClose={() => setOperationalTarget(null)}
         />
       )}
 
