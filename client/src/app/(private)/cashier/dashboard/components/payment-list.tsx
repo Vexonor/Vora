@@ -1,6 +1,7 @@
 "use client"
 
 import { PaymentVerificationModal } from "@/components/shared/order/payment-verification-modal"
+import { getOrderPlace } from "@/lib/order-place"
 import { dashboardService } from "@/services/dashboard.service"
 import type { Order } from "@/types/order"
 import { Loader2Icon } from "lucide-react"
@@ -14,17 +15,16 @@ type Props = {
 function PaymentItem({ order, onVerified }: { order: Order; onVerified: () => void }) {
   const [showModal, setShowModal] = useState(false)
 
-  const tableCode = `T-${String(order.table_id).padStart(2, "0")}`
-  const tableName = `Meja ${String(order.table_id).padStart(2, "0")}`
+  const place = getOrderPlace(order)
 
   return (
     <>
       <div className="flex items-center gap-3">
         <div className="bg-secondary text-white text-sm font-bold rounded-lg px-3 py-4 min-w-14 text-center">
-          {tableCode}
+          {place.code}
         </div>
         <div className="flex-1">
-          <p className="font-semibold text-sm">{tableName}</p>
+          <p className="font-semibold text-sm">{place.name}</p>
           <p className="text-xs text-muted-foreground">Order #{order.id}</p>
         </div>
         <button
@@ -39,9 +39,10 @@ function PaymentItem({ order, onVerified }: { order: Order; onVerified: () => vo
         <PaymentVerificationModal
           transaction={{
             id: String(order.id),
-            tableCode,
-            tableName,
+            placeCode: place.code,
+            placeName: place.name,
             total: Number(order.total_price),
+            items: order.items,
           }}
           orderId={order.id}
           onClose={() => setShowModal(false)}

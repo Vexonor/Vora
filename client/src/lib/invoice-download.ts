@@ -1,5 +1,6 @@
 import type { Order } from "@/types/order";
 import { OrderStatus } from "@/types/order";
+import { getOrderPlace } from "./order-place";
 import jsPDF from "jspdf";
 
 // App color palette  ── #056A68 primary (teal), #F4F4F4 background, #0F172A foreground
@@ -64,9 +65,8 @@ function drawNotchedSep(doc: jsPDF, cx: number, y: number, cw: number, r: number
 }
 
 export async function downloadInvoiceAsPDF(order: Order) {
-  const { id, table_id, total_price, items, status, created_at } = order;
-  const tableCode  = `T-${String(table_id).padStart(2, "0")}`;
-  const tableName  = `Meja ${String(table_id).padStart(2, "0")}`;
+  const { id, total_price, items, status, created_at } = order;
+  const place = getOrderPlace(order);
   const statusLabel = STATUS_LABELS[Number(status)] ?? "Unknown";
   const { date, time } = formatDateTime(created_at);
 
@@ -148,18 +148,18 @@ export async function downloadInvoiceAsPDF(order: Order) {
   doc.text(formatCurrency(Number(total_price)), oX, y, { align: "right" });
   y += 9;
 
-  // ── MEJA & STATUS ─────────────────────────────────────────────
+  // ── TEMPAT & STATUS ─────────────────────────────────────────────
   doc.setFontSize(7.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.muted);
-  doc.text("MEJA",   iX, y);
+  doc.text("TEMPAT", iX, y);
   doc.text("STATUS", oX, y, { align: "right" });
   y += 5.5;
 
   doc.setFontSize(9.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.dark);
-  doc.text(`${tableCode}  —  ${tableName}`, iX, y);
+  doc.text(`${place.code}  —  ${place.name}`, iX, y);
 
   // Status badge
   doc.setFontSize(8.5);

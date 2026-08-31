@@ -1,23 +1,3 @@
-"""
-Grafik Feature Importance — Random Forest Regression (Penerapan Metode AI).
-
-Skrip ini melatih model prediksi (SalesTrendPredictor) lalu menyimpan grafik
-seberapa besar pengaruh tiap fitur terhadap prediksi, untuk dokumentasi/skripsi.
-
-Catatan: model di proyek ini ada 4 (satu per target: pendapatan kotor, laba
-bersih, jumlah transaksi, item terjual), jadi grafik dibuat 1 subplot per target.
-
-Cara pakai:
-    # A) Pakai data ASLI dari backend (disarankan):
-    #    PowerShell:  $env:VORA_API_URL="http://localhost:3000/api/v1"; python feature_importance.py
-    #    (opsional)   $env:VORA_TOKEN="<jwt manager>"   # bila endpoint butuh login
-    #
-    # B) Tanpa backend: otomatis memakai data contoh 90 hari (pola mirip seeder)
-    #    python feature_importance.py
-
-Output: feature_importance.png
-"""
-
 import json
 import os
 import urllib.request
@@ -25,13 +5,12 @@ from datetime import datetime, timedelta
 
 import matplotlib
 
-matplotlib.use("Agg")  # headless: tidak butuh layar/display
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
+matplotlib.use("Agg")  
+import matplotlib.pyplot as plt  
+import numpy as np  
 
-from predictor import TARGETS, SalesTrendPredictor  # noqa: E402
+from predictor import TARGETS, SalesTrendPredictor  
 
-# Label fitur & target yang lebih ramah dibaca pada grafik
 FEATURE_LABELS = {
     "day_of_week": "Hari dalam minggu",
     "day_of_month": "Tanggal",
@@ -54,23 +33,22 @@ TARGET_LABELS = {
     "total_items_sold": "Item Terjual",
 }
 
-PRIMARY = "#056A68"  # warna brand Vora
+PRIMARY = "#056A68"  
 
 
 def _sample_history(days: int = 90) -> list[dict]:
-    """Data contoh deterministik: tren naik + musiman akhir pekan + noise."""
     rng = np.random.default_rng(42)
     today = datetime.now()
     rows = []
     for i in range(days - 1, -1, -1):
         date = today - timedelta(days=i)
         idx = days - 1 - i
-        dow = date.weekday()  # 0=Senin ... 5=Sabtu, 6=Minggu
+        dow = date.weekday()  
         base = 40 + idx * 0.25
         if dow >= 5:
-            base += 28  # akhir pekan ramai
+            base += 28  
         elif dow == 4:
-            base += 14  # Jumat sedang
+            base += 14  
         tx = max(8, round(base * (1 + (rng.random() - 0.5) * 0.3)))
         items = round(tx * (2.2 + rng.random() * 0.8))
         avg_ticket = 38000 + rng.random() * 12000
@@ -89,7 +67,6 @@ def _sample_history(days: int = 90) -> list[dict]:
 
 
 def _fetch_history() -> list[dict] | None:
-    """Ambil laporan penjualan asli dari backend bila VORA_API_URL di-set."""
     base = os.environ.get("VORA_API_URL")
     if not base:
         return None
@@ -115,7 +92,7 @@ def _fetch_history() -> list[dict] | None:
             for r in reports
         ]
         return history if len(history) >= 2 else None
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  
         print(f"[!] Gagal ambil data backend ({exc}). Memakai data contoh.")
         return None
 
@@ -135,7 +112,6 @@ def main() -> None:
     predictor.fit(history)
     importances = predictor.feature_importances()
 
-    # Satu subplot per target (2x2)
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle(
         "Feature Importance — Random Forest Regression (Penerapan Metode AI)",
@@ -145,7 +121,7 @@ def main() -> None:
 
     for ax, target in zip(axes.flat, TARGETS):
         imp = importances[target]
-        items = sorted(imp.items(), key=lambda kv: kv[1])  # ascending utuk barh
+        items = sorted(imp.items(), key=lambda kv: kv[1])  
         labels = [FEATURE_LABELS.get(k, k) for k, _ in items]
         values = [v for _, v in items]
 
@@ -160,7 +136,6 @@ def main() -> None:
     plt.savefig(out_path, dpi=150)
     print(f"[OK] Grafik disimpan: {out_path}")
 
-    # Ringkasan ke terminal
     print("\nFitur paling berpengaruh per target:")
     for target in TARGETS:
         top_feat, top_val = max(importances[target].items(), key=lambda kv: kv[1])

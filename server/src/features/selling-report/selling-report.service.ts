@@ -1,14 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/sequelize';
-import { fn, col, Op, where as seqWhere } from 'sequelize';
-import { SellingReport } from './entities/selling-report.entity';
-import { Order } from '../order/entities/order.entity';
-import { OrderItem } from '../order-item/entities/order-item.entity';
-import { Menu } from '../menu/entities/menu.entity';
-import { Payment } from '../payment/entities/payment.entity';
+import { col, fn, Op, where as seqWhere } from 'sequelize';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
+import { Menu } from '../menu/entities/menu.entity';
+import { OrderItem } from '../order-item/entities/order-item.entity';
+import { Order } from '../order/entities/order.entity';
+import { Payment } from '../payment/entities/payment.entity';
 import { CreateSellingReportDto } from './dto/create-selling-report.dto';
+import { SellingReport } from './entities/selling-report.entity';
 
 @Injectable()
 export class SellingReportService {
@@ -16,7 +16,8 @@ export class SellingReportService {
 
   constructor(
     private response: ResponseHelper,
-    @InjectModel(SellingReport) private readonly sellingReportModel: typeof SellingReport,
+    @InjectModel(SellingReport)
+    private readonly sellingReportModel: typeof SellingReport,
     @InjectModel(Order) private readonly orderModel: typeof Order,
   ) {}
 
@@ -38,7 +39,11 @@ export class SellingReportService {
       },
       include: [
         { model: OrderItem, include: [Menu] },
-        { model: Payment, where: { payment_status: 'settlement' }, required: true },
+        {
+          model: Payment,
+          where: { payment_status: 'settlement' },
+          required: true,
+        },
       ],
     });
 
@@ -59,13 +64,11 @@ export class SellingReportService {
 
     const title = `Laporan Penjualan ${dateStr}`;
 
-    // Update if a report already exists for this calendar day, else create.
     let report = await this.sellingReportModel.findOne({
       where: { date: { [Op.between]: [startDate, endDate] } },
     });
 
     if (report) {
-      // Pertahankan operational_cost yang sudah diisi manajer; hitung ulang net_profit dengannya.
       const operationalCost = Number(report.operational_cost ?? 0);
       await report.update({
         title,
@@ -76,7 +79,6 @@ export class SellingReportService {
         net_profit: grossRevenue - unitCost - operationalCost,
       });
     } else {
-      // Laporan baru: operational_cost belum diketahui (NULL), net_profit = gross - HPP.
       report = await this.sellingReportModel.create({
         title,
         date: startDate,
@@ -88,7 +90,11 @@ export class SellingReportService {
       });
     }
 
-    return this.response.success(report, 201, 'Successfully generated selling report');
+    return this.response.success(
+      report,
+      201,
+      'Successfully generated selling report',
+    );
   }
 
   @Cron('0 22 * * *')
@@ -100,7 +106,10 @@ export class SellingReportService {
       await this.generate(dateStr);
       this.logger.log(`Daily report for ${dateStr} generated successfully`);
     } catch (err) {
-      this.logger.error(`Failed to auto-generate daily report for ${dateStr}`, err);
+      this.logger.error(
+        `Failed to auto-generate daily report for ${dateStr}`,
+        err,
+      );
     }
   }
 
@@ -127,8 +136,15 @@ export class SellingReportService {
     }
 
     const where = conditions.length > 0 ? { [Op.and]: conditions } : {};
-    const reports = await this.sellingReportModel.findAll({ where, order: [['date', 'DESC']] });
-    return this.response.success(reports, 200, 'Successfully fetched all reports');
+    const reports = await this.sellingReportModel.findAll({
+      where,
+      order: [['date', 'DESC']],
+    });
+    return this.response.success(
+      reports,
+      200,
+      'Successfully fetched all reports',
+    );
   }
 
   async create(dto: CreateSellingReportDto) {
@@ -136,7 +152,9 @@ export class SellingReportService {
     date.setHours(0, 0, 0, 0);
 
     const netProfit =
-      Number(dto.gross_revenue) - Number(dto.unit_cost) - Number(dto.operational_cost);
+      Number(dto.gross_revenue) -
+      Number(dto.unit_cost) -
+      Number(dto.operational_cost);
 
     const report = await this.sellingReportModel.create({
       title: dto.title.trim(),
@@ -149,7 +167,11 @@ export class SellingReportService {
       net_profit: netProfit,
     });
 
-    return this.response.success(report, 201, 'Successfully created selling report');
+    return this.response.success(
+      report,
+      201,
+      'Successfully created selling report',
+    );
   }
 
   async updateOperationalCost(id: number, operationalCost: number) {
@@ -164,7 +186,11 @@ export class SellingReportService {
       net_profit: netProfit,
     });
 
-    return this.response.success(report, 200, 'Successfully updated operational cost');
+    return this.response.success(
+      report,
+      200,
+      'Successfully updated operational cost',
+    );
   }
 
   async findOne(id: number) {

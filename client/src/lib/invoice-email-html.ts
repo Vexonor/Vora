@@ -1,4 +1,5 @@
 import type { Order } from "@/types/order";
+import { getOrderPlace } from "./order-place";
 
 /**
  * Builds the HTML body for the invoice email.
@@ -13,6 +14,8 @@ import type { Order } from "@/types/order";
 export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string {
   const rupiah = (v: number) =>
     `Rp ${Number(v).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
+
+  const place = getOrderPlace(order);
 
   const subtotal = order.total_price / 1.1;
   const tax = order.total_price - subtotal;
@@ -71,8 +74,8 @@ export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string 
         <!-- Meta -->
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
           <tr>
-            <td style="padding:2px 0;color:#6b7280;font-size:13px;">Meja</td>
-            <td style="padding:2px 0;text-align:right;color:#0f172a;font-size:13px;font-weight:500;">${String(order.table_id).padStart(2, "0")}</td>
+            <td style="padding:2px 0;color:#6b7280;font-size:13px;">Tempat</td>
+            <td style="padding:2px 0;text-align:right;color:#0f172a;font-size:13px;font-weight:500;">${place.name}</td>
           </tr>
           ${customerRow}
           <tr>

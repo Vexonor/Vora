@@ -1,5 +1,6 @@
 "use client"
 
+import { getOrderPlace } from "@/lib/order-place"
 import { dashboardService } from "@/services/dashboard.service"
 import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
@@ -51,17 +52,16 @@ const DEFAULT_STATUS = {
 
 function OrderItem({ order }: { order: Order }) {
   const config = STATUS_UI[Number(order.status)] ?? DEFAULT_STATUS
-  const tableCode = `T-${String(order.table_id).padStart(2, "0")}`
-  const tableName = `Meja ${String(order.table_id).padStart(2, "0")}`
+  const place = getOrderPlace(order)
   const itemCount = order.items?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0
 
   return (
     <div className="flex items-center gap-3">
       <div className={`${config.tableBg} text-white text-sm font-bold rounded-lg px-3 py-4 min-w-14 text-center`}>
-        {tableCode}
+        {place.code}
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-sm">{tableName}</p>
+        <p className="font-semibold text-sm">{place.name}</p>
         <p className="text-xs text-muted-foreground">{itemCount} items</p>
       </div>
       <div className="flex flex-col items-end gap-1">

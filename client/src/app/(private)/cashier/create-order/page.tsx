@@ -12,6 +12,7 @@ import { tableService } from "@/services/table.service"
 import type { Menu } from "@/types/menu"
 import { MenuStatus, MenuType } from "@/types/menu"
 import type { Table } from "@/types/table"
+import { OrderType } from "@/types/order"
 import { Loader2, Minus, Plus, Search, ShoppingCart, Trash2 } from "lucide-react"
 
 type CartItem = {
@@ -44,6 +45,10 @@ export default function CashierCreateOrderPage() {
   const [search, setSearch] = useState("")
   const [pageLoading, setPageLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [orderType, setOrderType] = useState<number>(OrderType.DINE_IN)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  const isTakeAway = orderType === OrderType.TAKE_AWAY
 
   useEffect(() => {
     const load = async () => {
@@ -94,17 +99,32 @@ export default function CashierCreateOrderPage() {
   })
 
   const handleSubmit = async () => {
-    if (!selectedTableId || cart.length === 0) return
+    if (cart.length === 0) {
+      setFormError("Tambahkan minimal satu item pesanan.")
+      return
+    }
+    if (!isTakeAway && !selectedTableId) {
+      setFormError("Pilih nomor meja untuk pesanan Dine In.")
+      return
+    }
+    if (isTakeAway && !customerName.trim()) {
+      setFormError("Nama pelanggan wajib diisi untuk pesanan Take Away.")
+      return
+    }
+
+    setFormError(null)
     setSubmitting(true)
     try {
       await orderService.create({
-        table_id: parseInt(selectedTableId),
+        order_type: orderType,
+        table_id: isTakeAway ? undefined : parseInt(selectedTableId),
         customer_name: customerName.trim() || undefined,
         items: cart.map((i) => ({ menu_id: i.menu.id, quantity: i.quantity })),
       })
       router.push("/cashier/order")
     } catch (error) {
       console.error("Gagal membuat pesanan:", error)
+      setFormError("Gagal membuat pesanan. Periksa koneksi lalu coba lagi.")
     } finally {
       setSubmitting(false)
     }
@@ -124,25 +144,56 @@ export default function CashierCreateOrderPage() {
       {/* ── Left panel: cart & table ── */}
       <aside className="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col gap-4 lg:h-full lg:min-h-0">
 
-        {/* Table selector */}
+        {/* Order type, table selector & customer */}
         <div className="bg-white border border-foreground/10 rounded-xl p-4 flex flex-col gap-3">
-          <p className="text-sm font-semibold">Pilih Meja</p>
-          <Select value={selectedTableId} onValueChange={setSelectedTableId}>
-            <SelectTrigger>
-              <SelectValue placeholder="— Pilih nomor meja —" />
-            </SelectTrigger>
-            <SelectContent>
-              {tables.map((t) => (
-                <SelectItem key={t.id} value={String(t.id)}>
-                  Meja {String(t.number).padStart(2, "0")}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <p className="text-sm font-semibold">Tipe Pesanan</p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { value: OrderType.DINE_IN, label: "Dine In" },
+              { value: OrderType.TAKE_AWAY, label: "Take Away" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  setOrderType(opt.value)
+                  setFormError(null)
+                }}
+                className={`text-sm font-semibold rounded-lg py-2 border transition-colors ${
+                  orderType === opt.value
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-foreground/15 text-muted-foreground hover:bg-muted/50"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {!isTakeAway && (
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-semibold">Pilih Meja</p>
+              <Select value={selectedTableId} onValueChange={setSelectedTableId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="— Pilih nomor meja —" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tables.map((t) => (
+                    <SelectItem key={t.id} value={String(t.id)}>
+                      Meja {String(t.number).padStart(2, "0")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <p className="text-sm font-semibold">
-              Nama Pelanggan <span className="font-normal text-muted-foreground">(opsional)</span>
+              Nama Pelanggan{" "}
+              <span className="font-normal text-muted-foreground">
+                {isTakeAway ? "(wajib)" : "(opsional)"}
+              </span>
             </p>
             <Input
               value={customerName}
@@ -151,6 +202,10 @@ export default function CashierCreateOrderPage() {
               maxLength={100}
             />
           </div>
+
+          {formError && (
+            <p className="text-xs text-destructive">{formError}</p>
+          )}
         </div>
 
         {/* Cart */}
@@ -232,7 +287,11 @@ export default function CashierCreateOrderPage() {
         {/* Submit */}
         <Button
           onClick={handleSubmit}
-          disabled={!selectedTableId || cart.length === 0 || submitting}
+          // Hanya dikunci saat pengiriman berlangsung. Syarat lain ditolak oleh
+          // handleSubmit dengan pesan yang terlihat — tombol mati tanpa alasan
+          // membuat kasir menebak-nebak, dan pada Take Away (tanpa meja) tombol
+          // itu tidak akan pernah bisa ditekan sama sekali.
+          disabled={submitting}
           className="w-full bg-secondary text-primary font-semibold py-5 shrink-0"
         >
           {submitting ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
