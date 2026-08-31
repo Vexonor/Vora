@@ -12,6 +12,7 @@ import { Menu } from '../menu/entities/menu.entity';
 import { Tables } from 'src/features/table/entities/table.entity';
 import { Payment } from '../payment/entities/payment.entity';
 import OrderStatusEnum from './enums/order-status.enum';
+import { resolveOrderPlacement } from './order-placement.util';
 
 @Injectable()
 export class OrderService {
@@ -25,11 +26,23 @@ export class OrderService {
   ) {}
 
   async create(createOrderDto: CreateOrderDto) {
+    const placement = resolveOrderPlacement(
+      createOrderDto.order_type,
+      createOrderDto.table_id,
+      createOrderDto.customer_name,
+    );
+    if (!placement.valid) {
+      return this.response.fail(placement.message, 400);
+    }
+    const { order_type, table_id, customer_name } = placement.placement;
+
     const transaction = await this.sequelize.transaction();
     try {
-      const table = await this.tableModel.findByPk(createOrderDto.table_id, { transaction });
-      if (!table) {
-        throw new Error(`Table with ID ${createOrderDto.table_id} not found`);
+      if (table_id !== null) {
+        const table = await this.tableModel.findByPk(table_id, { transaction });
+        if (!table) {
+          throw new Error(`Table with ID ${table_id} not found`);
+        }
       }
 
       let totalOrderPrice = 0;
@@ -52,8 +65,9 @@ export class OrderService {
       }
 
       const order = await this.orderModel.create({
-        table_id: createOrderDto.table_id,
-        customer_name: createOrderDto.customer_name?.trim() || null,
+        table_id,
+        order_type,
+        customer_name,
         total_price: totalOrderPrice,
         status: OrderStatusEnum.PENDING,
       }, { transaction });

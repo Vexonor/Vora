@@ -18,7 +18,9 @@ export interface OrderItem {
  */
 export interface Order {
   id: number;
-  table_id: number;
+  table_id: number | null;
+  order_type: number;
+  order_type_name: string;
   customer_name?: string | null;
   total_price: number;
   status: number;
@@ -38,13 +40,20 @@ export enum OrderStatus {
   CANCELED = 4,
 }
 
+/** Maps to server OrderTypeEnum */
+export enum OrderType {
+  DINE_IN = 0,
+  TAKE_AWAY = 1,
+}
+
 export interface CreateOrderItemRequest {
   menu_id: number;
   quantity: number;
 }
 
 export interface CreateOrderRequest {
-  table_id: number;
+  order_type?: number;
+  table_id?: number;
   customer_name?: string;
   items: CreateOrderItemRequest[];
 }

@@ -8,6 +8,7 @@ import { Order } from '../order/entities/order.entity';
 import { OrderItem } from '../order-item/entities/order-item.entity';
 import { Menu } from '../menu/entities/menu.entity';
 import PaymentTypeEnum from './enums/payment-type.enum';
+import { resolveCashPayment } from './cash-payment.util';
 import * as crypto from 'crypto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const midtransClient = require('midtrans-client');
@@ -126,24 +127,31 @@ export class PaymentService {
       return this.response.fail('Pesanan ini sudah dibayar', 400);
     }
 
+    const cash = resolveCashPayment(order.total_price, paidAmount);
+    if (!cash.valid) {
+      return this.response.fail(cash.message, 400);
+    }
+    const { total, paid, change_amount } = cash.payment;
+
     const transaction = await this.sequelize.transaction();
     try {
       if (!existingPayment) {
         await this.paymentModel.create({
           order_id: orderId,
-          total: order.total_price,
-          paid: paidAmount,
+          total,
+          paid,
+          change_amount,
           type: PaymentTypeEnum.OFFLINE,
           payment_status: 'settlement',
         }, { transaction });
       } else {
-        await existingPayment.update({ paid: paidAmount, payment_status: 'settlement' }, { transaction });
+        await existingPayment.update({ paid, change_amount, payment_status: 'settlement' }, { transaction });
       }
 
       // Pembayaran TIDAK mengubah status alur dapur — itu urusan dapur.
       await transaction.commit();
 
-      return this.response.success({}, 200, 'Payment verified successfully');
+      return this.response.success({ total, paid, change_amount }, 200, 'Payment verified successfully');
     } catch (error: any) {
       await transaction.rollback();
       return this.response.fail(error.message, 400);

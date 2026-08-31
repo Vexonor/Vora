@@ -4,7 +4,8 @@ export class OrderItemDto {
 }
 
 export class CreateOrderDto {
-  table_id: number;
+  order_type?: number;
+  table_id?: number;
   customer_name?: string;
   items: OrderItemDto[];
 }

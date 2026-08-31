@@ -3,6 +3,7 @@
 import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
 import { downloadInvoiceAsPDF } from "@/lib/invoice-download"
+import { getOrderPlace } from "@/lib/order-place"
 import { CheckCheckIcon, CircleAlertIcon, TimerIcon, ClockIcon, XCircleIcon, DownloadIcon } from "lucide-react"
 import { useState } from "react"
 import { OrderDetailModal } from "./order-detail-modal"
@@ -88,15 +89,14 @@ type Props = {
 }
 
 export function TransactionCard({ order, onRefresh }: Props) {
-  const { id, table_id, total_price, items, created_at } = order
+  const { id, total_price, items, created_at } = order
   const status = Number(order.status)
   const isPaid = order.payment?.payment_status === "settlement"
   const [showModal, setShowModal] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
   const config = STATUS_CONFIG[status] ?? DEFAULT_CONFIG
 
-  const tableCode = `T-${String(table_id).padStart(2, "0")}`
-  const tableName = `Meja ${String(table_id).padStart(2, "0")}`
+  const place = getOrderPlace(order)
   const itemCount = items?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0
 
   return (
@@ -107,10 +107,17 @@ export function TransactionCard({ order, onRefresh }: Props) {
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-primary text-white text-sm font-bold rounded-lg px-2 py-3 min-w-[52px] text-center">
-              {tableCode}
+              {place.code}
             </div>
             <div>
-              <p className="font-semibold text-sm">{tableName}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-sm">{place.name}</p>
+                {place.isTakeAway && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/30">
+                    Take Away
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">{itemCount} items</p>
             </div>
           </div>
@@ -197,7 +204,7 @@ export function TransactionCard({ order, onRefresh }: Props) {
 
       {showModal && (
         <PaymentVerificationModal
-          transaction={{ id: String(id), tableCode, tableName, total: Number(total_price) }}
+          transaction={{ id: String(id), placeCode: place.code, placeName: place.name, total: Number(total_price), items }}
           orderId={id}
           onClose={() => setShowModal(false)}
           onVerified={() => { setShowModal(false); onRefresh?.() }}

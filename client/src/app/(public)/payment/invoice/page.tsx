@@ -2,6 +2,7 @@
 
 import { orderService } from "@/services/order.service"
 import { downloadInvoiceAsPDF } from "@/lib/invoice-download"
+import { getOrderPlace } from "@/lib/order-place"
 import { OrderStatus, type Order } from "@/types/order"
 import { DownloadIcon, Loader2Icon, MailIcon, ReceiptTextIcon } from "lucide-react"
 import { useSearchParams } from "next/navigation"
@@ -133,7 +134,7 @@ const InvoiceContent = () => {
           {/* Invoice Detail */}
           <div className="w-full flex flex-col gap-2">
             <div className="flex justify-between items-end border-b border-dashed border-foreground/30 pb-4 mb-2">
-              <span className="text-2xl text-foreground font-bold">Meja {String(order.table_id).padStart(2, "0")}</span>
+              <span className="text-2xl text-foreground font-bold">{getOrderPlace(order).name}</span>
               <span className="text-xs px-2 py-1 bg-success/20 text-success font-semibold rounded uppercase">
                 {order.status_name || "Lunas"}
               </span>

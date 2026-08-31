@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { orderService } from "@/services/order.service"
+import { getOrderPlace } from "@/lib/order-place"
 import { OrderStatus, type Order } from "@/types/order"
 import {
   BellIcon,
@@ -133,7 +134,7 @@ export default function PaymentStatusPage() {
 
         {/* Meja & nomor pesanan */}
         <div className="flex items-center justify-between bg-muted/40 rounded-lg px-4 py-3 text-sm">
-          <span className="font-semibold">Meja {String(order.table_id).padStart(2, "0")}</span>
+          <span className="font-semibold">{getOrderPlace(order).name}</span>
           <span className="text-muted-foreground">Pesanan #{order.id}</span>
         </div>
 

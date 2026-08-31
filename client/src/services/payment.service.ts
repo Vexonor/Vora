@@ -1,5 +1,5 @@
 import apiClient from "./api-client";
-import type { Payment } from "@/types/payment";
+import type { CashPaymentResult, Payment } from "@/types/payment";
 
 const PAYMENTS_PATH = "/payments";
 
@@ -12,7 +12,7 @@ export const paymentService = {
     return apiClient.get(`${PAYMENTS_PATH}/order/${orderId}`);
   },
 
-  async verifyOffline(orderId: number, paidAmount: number): Promise<void> {
+  async verifyOffline(orderId: number, paidAmount: number): Promise<CashPaymentResult> {
     return apiClient.post(`${PAYMENTS_PATH}/order/${orderId}/verify-offline`, { paid_amount: paidAmount });
   },
 };

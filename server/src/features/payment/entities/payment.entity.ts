@@ -41,6 +41,13 @@ export class Payment extends Model {
   paid: number;
 
   @Column({
+    type: DataType.DECIMAL(16, 3),
+    allowNull: true,
+    defaultValue: 0,
+  })
+  change_amount: number;
+
+  @Column({
     type: DataType.TINYINT,
     allowNull: true,
   })

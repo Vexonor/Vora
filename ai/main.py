@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 
-# ── Schemas ────────────────────────────────────────────────────────────────────
+# Schemas 
 
 class HistoryItem(BaseModel):
     date: str
@@ -61,7 +61,7 @@ class PredictResponse(BaseModel):
     evaluation: ModelEvaluation
 
 
-# ── Endpoints ──────────────────────────────────────────────────────────────────
+# Endpoints 
 
 @app.get("/health")
 def health():

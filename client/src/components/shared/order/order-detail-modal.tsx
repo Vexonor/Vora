@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { downloadInvoiceAsPDF } from "@/lib/invoice-download"
+import { getOrderPlace } from "@/lib/order-place"
 import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
 import {
@@ -66,9 +67,8 @@ type Props = {
 }
 
 export function OrderDetailModal({ order, onClose }: Props) {
-  const { id, table_id, total_price, status, items, created_at } = order
-  const tableCode = `T-${String(table_id).padStart(2, "0")}`
-  const tableName = `Meja ${String(table_id).padStart(2, "0")}`
+  const { id, total_price, status, items, created_at } = order
+  const place = getOrderPlace(order)
   const statusCfg = STATUS_CONFIG[status] ?? DEFAULT_STATUS
   const { date, time } = formatDateTime(created_at)
   const itemCount = items?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0
@@ -86,10 +86,13 @@ export function OrderDetailModal({ order, onClose }: Props) {
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="bg-primary text-white text-sm font-bold rounded-lg px-2 py-3 min-w-[52px] text-center leading-tight">
-                {tableCode}
+                {place.code}
               </div>
               <div>
-                <p className="font-semibold text-sm">{tableName}</p>
+                <p className="font-semibold text-sm">{place.name}</p>
+                {order.customer_name && (
+                  <p className="text-xs font-medium text-foreground/80">a.n. {order.customer_name}</p>
+                )}
                 <p className="text-xs text-muted-foreground">Order #{id} · {itemCount} item</p>
               </div>
             </div>

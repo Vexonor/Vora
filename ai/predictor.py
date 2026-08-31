@@ -77,7 +77,6 @@ class SalesTrendPredictor:
         df = _build_features(df)
         self._min_date = df["date"].min()
 
-        # Chronological train/test split 80/20
         split_idx = max(1, int(len(df) * 0.8))
         train_df = df.iloc[:split_idx]
         test_df = df.iloc[split_idx:]
@@ -85,7 +84,6 @@ class SalesTrendPredictor:
         X_train = train_df[FEATURE_COLS]
         y_train = {t: train_df[t] for t in TARGETS}
 
-        # Evaluate on held-out test set
         eval_models = _train_models(X_train, y_train)
 
         metrics: dict[str, Any] = {
@@ -93,10 +91,6 @@ class SalesTrendPredictor:
             "test_size": len(test_df),
         }
 
-        # R² (r2_score) tidak terdefinisi untuk < 2 sampel uji dan akan
-        # menghasilkan NaN. Hanya hitung metrik bila test set memadai agar
-        # UI menampilkan fallback "data terlalu sedikit", bukan R² = -1.0
-        # yang menyesatkan.
         if len(test_df) >= 2:
             X_test = test_df[FEATURE_COLS]
             for target, model in eval_models.items():
@@ -104,7 +98,6 @@ class SalesTrendPredictor:
                 y_pred = model.predict(X_test)
                 rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
                 mae = float(mean_absolute_error(y_true, y_pred))
-                # r2 bisa negatif jika model sangat buruk — clamp ke -1
                 r2 = float(max(-1.0, r2_score(y_true, y_pred)))
                 metrics[target] = {
                     "rmse": round(rmse, 4),
@@ -114,7 +107,6 @@ class SalesTrendPredictor:
 
         self.evaluation = metrics
 
-        # Retrain pada seluruh data agar prediksi semaksimal mungkin
         X_full = df[FEATURE_COLS]
         y_full = {t: df[t] for t in TARGETS}
         self._models = _train_models(X_full, y_full)
@@ -124,12 +116,6 @@ class SalesTrendPredictor:
             self._rolling[col] = list(df[col].tail(tail))
 
     def feature_importances(self) -> dict[str, dict[str, float]]:
-        """Feature importance Random Forest per target model.
-
-        Mengembalikan { target: { nama_fitur: importance } } dari model yang
-        sudah dilatih pada seluruh data. Berguna untuk dokumentasi/skripsi
-        (visualisasi penerapan metode AI). Panggil setelah `fit()`.
-        """
         if not self._models:
             raise RuntimeError("Model belum dilatih — panggil fit() lebih dulu.")
 
