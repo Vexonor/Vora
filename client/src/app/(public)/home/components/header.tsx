@@ -13,13 +13,13 @@ const Header = ({ search, onSearchChange }: HeaderProps) => {
       {/* Brand */}
       <div className="flex items-center gap-1">
         <Image
-          src="/image/app-logo.svg"
-          alt="Vora Logo"
+          src="/image/catalog-logo.svg"
+          alt="Cat-a Log Logo"
           width={100}
           height={100}
           className="size-12"
         />
-        <h1 className="text-xl text-primary font-black">Vora</h1>
+        <h1 className="text-lg text-primary font-black">Cat-a <br /> Log</h1>
       </div>
       {/* Search Input */}
       <div className="flex grow items-center gap-1 border-2 border-primary px-2 py-1 rounded-xl">
@@ -28,9 +28,10 @@ const Header = ({ search, onSearchChange }: HeaderProps) => {
           placeholder="Cari menu..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
+          className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
         />
       </div>
-    </div>
+    </div >
   )
 }
 

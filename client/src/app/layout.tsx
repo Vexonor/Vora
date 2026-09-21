@@ -6,7 +6,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vora",
+  title: "Cat-a Log",
   description: "POS Application",
 };
 

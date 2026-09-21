@@ -125,7 +125,7 @@ const InvoiceContent = () => {
         <div className="bg-white px-6 py-10 flex flex-col items-center shadow-xl">
           {/* Header */}
           <div className="w-full flex flex-col items-center gap-1 text-xs text-foreground text-center font-medium mb-8">
-            <span className="text-xl font-bold uppercase tracking-wider mb-2">Vora POS</span>
+            <span className="text-xl font-bold uppercase tracking-wider mb-2">Cat-a Log POS</span>
             <span>Asam Pedas Tepi Danau</span>
             <p className="text-muted-foreground">Jl. Ruko Greenland No.9-11 Blok R, Tlk. Tering, Kec. Batam Kota, Batam</p>
             <span className="text-muted-foreground">TEL: 0812-9501-2089</span>

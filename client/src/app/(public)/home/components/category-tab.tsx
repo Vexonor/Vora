@@ -178,7 +178,7 @@ const CategoryTab = ({ search = "" }: { search?: string }) => {
       </Tabs>
 
       <span className="text-xs text-foreground/80 mt-12 mb-6 text-center">
-        © {new Date().getFullYear()} Vora All rights reserved.
+        © {new Date().getFullYear()} Cat-a Log All rights reserved.
       </span>
     </div>
   )

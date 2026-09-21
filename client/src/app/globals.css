@@ -76,10 +76,10 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
   /* Custom Color */
-  --primary: #056A68;
+  --primary: #F49250;
   --primary-foreground: #F8FAFC;
-  --secondary: #FECA46;
-  --background: #F4F4F4;
+  --secondary: #F9D44D;
+  --background: #F1F0F0;
   --foreground: #0F172A;
   --success: #10B981;
   --error: #FF6B6B;
@@ -91,7 +91,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    background-color: var(--color-base-color);
+    background-color: var(--color-background);
     font-family: var(--font-gilroy);
   }
   .scrollbar-hide {

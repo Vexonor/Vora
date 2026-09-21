@@ -4,7 +4,7 @@ import type { ApiResponse } from "@/types/api";
 const BASE_URL = "/api/v1";
 
 /**
- * Configured Axios instance for the Vora API.
+ * Configured Axios instance for the Cat-a Log API.
  *
  * - Automatically attaches JWT token from localStorage.
  * - Unwraps the `{ statusCode, message, data }` envelope on success.

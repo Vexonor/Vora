@@ -6,13 +6,13 @@ export default function NotFound() {
     <div className="min-h-svh flex flex-col items-center justify-center gap-6 p-6 bg-background">
       <div className="flex items-center gap-3">
         <Image
-          src="/image/app-logo.svg"
-          alt="Vora Logo"
-          width={40}
-          height={40}
-          className="size-10"
+          src="/image/catalog-logo.svg"
+          alt="Cat-a Log Logo"
+          width={48}
+          height={48}
+          className="size-12"
         />
-        <h1 className="text-2xl font-bold text-primary">Vora</h1>
+        <h1 className="text-lg font-bold text-primary">Cat-a <br /> Log</h1>
       </div>
 
       <div className="flex flex-col items-center gap-3 text-center max-w-sm">

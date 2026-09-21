@@ -54,13 +54,13 @@ export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string 
     : "";
 
   return `
-<!-- Invoice email — Vora POS -->
-<div style="background-color:#f4f4f4;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
+<!-- Invoice email — Cat-a Log POS -->
+<div style="background-color:#F1F0F0;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;margin:0 auto;background-color:#ffffff;border-radius:12px;overflow:hidden;">
     <!-- Header -->
     <tr>
-      <td style="background-color:#056A68;padding:28px 32px;text-align:center;">
-        <div style="color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:2px;">VORA POS</div>
+      <td style="background-color:#F49250;padding:28px 32px;text-align:center;">
+        <div style="color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:2px;">CAT-A LOG POS</div>
         <div style="color:#d6eaea;font-size:13px;margin-top:4px;">Asam Pedas Tepi Danau</div>
       </td>
     </tr>
@@ -84,7 +84,7 @@ export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string 
           </tr>
           <tr>
             <td style="padding:2px 0;color:#6b7280;font-size:13px;">Status</td>
-            <td style="padding:2px 0;text-align:right;color:#056A68;font-size:13px;font-weight:600;">${escapeHtml(order.status_name || "Lunas")}</td>
+            <td style="padding:2px 0;text-align:right;color:#F49250;font-size:13px;font-weight:600;">${escapeHtml(order.status_name || "Lunas")}</td>
           </tr>
         </table>
 
@@ -109,7 +109,7 @@ export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string 
           </tr>
         </table>
 
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;background-color:#056A68;border-radius:8px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;background-color:#F49250;border-radius:8px;">
           <tr>
             <td style="padding:12px 16px;color:#ffffff;font-size:15px;font-weight:bold;">TOTAL</td>
             <td style="padding:12px 16px;text-align:right;color:#ffffff;font-size:15px;font-weight:bold;">${rupiah(order.total_price)}</td>
@@ -121,7 +121,7 @@ export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string 
           <tr>
             <td align="center">
               <a href="${invoiceUrl}"
-                 style="display:inline-block;background-color:#056A68;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 28px;border-radius:10px;">
+                 style="display:inline-block;background-color:#F49250;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 28px;border-radius:10px;">
                 Lihat &amp; Unduh Invoice (PDF)
               </a>
             </td>
@@ -137,7 +137,7 @@ export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string 
     <tr>
       <td style="padding:20px 32px;text-align:center;border-top:1px solid #f0f0f0;">
         <p style="margin:0;color:#9ca3af;font-size:11px;">
-          Email ini dikirim otomatis oleh sistem VORA. Mohon tidak membalas email ini.
+          Email ini dikirim otomatis oleh sistem CAT-A LOG. Mohon tidak membalas email ini.
         </p>
       </td>
     </tr>

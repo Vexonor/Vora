@@ -131,7 +131,7 @@ export function PredictionAccuracyChart() {
               <YAxis tickFormatter={(v) => formatNumber(v)} tick={{ fontSize: 10, fill: "#9ca3af" }} tickLine={false} axisLine={false} width={70} />
               <Tooltip formatter={(v: number) => formatNumber(v)} />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-              <Line type="monotone" dataKey="actual" name="Aktual" stroke="#056A68" strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey="actual" name="Aktual" stroke="#F49250" strokeWidth={2} dot={false} connectNulls />
               <Line type="monotone" dataKey="predicted" name="Prediksi" stroke="#f59e0b" strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls />
             </LineChart>
           </ResponsiveContainer>

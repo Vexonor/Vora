@@ -10,15 +10,15 @@ export default function LoginPage() {
           <a href="#" className="flex items-center gap-2 font-medium">
             <div className="flex size-6 items-center justify-center gap-3">
               <Image
-                src="/image/app-logo.svg"
-                alt="Vora Logo"
+                src="/image/catalog-logo.svg"
+                alt="Cat-a Log Logo"
                 width={100}
                 height={100}
-                className="size-10"
+                className="size-12"
               />
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <h1 className="text-2xl font-bold text-primary truncate">Vora</h1>
+              <h1 className="text-lg font-bold text-primary">Cat-a <br />Log</h1>
             </div>
           </a>
         </div>
@@ -30,11 +30,11 @@ export default function LoginPage() {
       </div>
       <div className="relative hidden bg-muted lg:block">
         <Image
-          src="/image/store.jpg"
+          src="/image/pos-assets.jpg"
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover"
-          width={512}
-          height={512}
+          width={1080}
+          height={1080}
         />
       </div>
     </div>
