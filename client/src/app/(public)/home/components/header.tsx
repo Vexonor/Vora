@@ -19,7 +19,7 @@ const Header = ({ search, onSearchChange }: HeaderProps) => {
           height={100}
           className="size-12"
         />
-        <h1 className="text-lg text-primary font-black">Cat-a <br /> Log</h1>
+        {/* <h1 className="text-lg text-primary font-black">Cat-a <br /> Log</h1> */}
       </div>
       {/* Search Input */}
       <div className="flex grow items-center gap-1 border-2 border-primary px-2 py-1 rounded-xl">
