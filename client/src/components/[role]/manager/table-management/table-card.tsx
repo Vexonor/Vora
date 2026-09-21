@@ -59,7 +59,7 @@ export function TableCard({ table, onDelete }: Props) {
           value={qrValue}
           size={80}
           bgColor="transparent"
-          fgColor="#056A68"
+          fgColor="#8A4A22"
         />
       </div>
 

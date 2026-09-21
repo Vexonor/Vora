@@ -3,11 +3,11 @@ import { OrderStatus } from "@/types/order";
 import { getOrderPlace } from "./order-place";
 import jsPDF from "jspdf";
 
-// App color palette  ── #056A68 primary (teal), #F4F4F4 background, #0F172A foreground
+// App color palette  ── #F49250 primary (orange), #F1F0F0 background, #0F172A foreground
 const C = {
-  primary:      [5,   106, 104] as const, // #056A68
-  primaryLight: [230, 240, 240] as const, // #056A68 @ 10% on white
-  pageBg:       [244, 244, 244] as const, // #F4F4F4
+  primary:      [244, 146, 80 ] as const, // #F49250
+  primaryLight: [253, 239, 229] as const, // #F49250 @ 10% on white
+  pageBg:       [241, 240, 240] as const, // #F1F0F0
   white:        [255, 255, 255] as const,
   dark:         [15,  23,  42 ] as const, // #0F172A
   muted:        [107, 114, 128] as const,
@@ -47,7 +47,7 @@ async function loadLogoDataUrl(): Promise<string | null> {
       resolve(canvas.toDataURL("image/png"));
     };
     img.onerror = () => resolve(null);
-    img.src = "/image/app-logo.svg";
+    img.src = "/image/catalog-logo.svg";
   });
 }
 
@@ -103,13 +103,13 @@ export async function downloadInvoiceAsPDF(order: Order) {
   if (logoDataUrl) {
     doc.addImage(logoDataUrl, "PNG", mX - logoSize / 2, y - logoSize / 2, logoSize, logoSize);
   } else {
-    // Fallback: solid teal circle
+    // Fallback: solid orange circle
     doc.setFillColor(...C.primary);
     doc.circle(mX, y, 10, "F");
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...C.white);
-    doc.text("V", mX, y + 2, { align: "center" });
+    doc.text("C", mX, y + 2, { align: "center" });
   }
   y += 16;
 
@@ -125,7 +125,7 @@ export async function downloadInvoiceAsPDF(order: Order) {
   doc.setTextColor(...C.muted);
   doc.text("Pesanan Anda telah berhasil diproses.", mX, y, { align: "center" });
   y += 4.5;
-  doc.text("Sistem Manajemen Restoran VORA", mX, y, { align: "center" });
+  doc.text("Sistem Manajemen Restoran CAT-A LOG", mX, y, { align: "center" });
   y += 9;
 
   // ── SEPARATOR 1 ───────────────────────────────────────────────
@@ -282,14 +282,14 @@ export async function downloadInvoiceAsPDF(order: Order) {
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.primary);
-  doc.text("Terima kasih telah memesan di VORA!", mX, y, { align: "center" });
+  doc.text("Terima kasih telah memesan di CAT-A LOG!", mX, y, { align: "center" });
   y += 5;
   doc.setFontSize(7.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.faint);
   doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")}`, mX, y, { align: "center" });
   y += 4;
-  doc.text("Invoice ini diterbitkan secara otomatis oleh sistem VORA.", mX, y, { align: "center" });
+  doc.text("Invoice ini diterbitkan secara otomatis oleh sistem CAT-A LOG.", mX, y, { align: "center" });
 
   // ── Bottom scalloped edge ─────────────────────────────────────
   const botY = cardY + cardH;

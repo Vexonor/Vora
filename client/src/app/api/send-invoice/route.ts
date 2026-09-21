@@ -38,9 +38,9 @@ export async function POST(req: Request) {
   const resend = new Resend(apiKey);
 
   const { error } = await resend.emails.send({
-    from: `Vora POS <${from}>`,
+    from: `Cat-a Log POS <${from}>`,
     to: email,
-    subject: `Invoice Pesanan #${order.id} — Vora POS`,
+    subject: `Invoice Pesanan #${order.id} — Cat-a Log POS`,
     html: buildInvoiceEmailHtml(order, invoiceUrl),
   });
 

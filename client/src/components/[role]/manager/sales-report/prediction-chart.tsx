@@ -307,11 +307,11 @@ export function PredictionChart() {
                 />
               )}
               <Line type="monotone" dataKey="hist_revenue" name="Pendapatan (aktual)"
-                stroke="#056A68" strokeWidth={2} dot={false} connectNulls />
+                stroke="#F49250" strokeWidth={2} dot={false} connectNulls />
               <Line type="monotone" dataKey="hist_profit" name="Laba bersih (aktual)"
                 stroke="#10b981" strokeWidth={2} dot={false} connectNulls />
               <Line type="monotone" dataKey="pred_revenue" name="Pendapatan (prediksi)"
-                stroke="#056A68" strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls />
+                stroke="#F49250" strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls />
               <Line type="monotone" dataKey="pred_profit" name="Laba bersih (prediksi)"
                 stroke="#10b981" strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls />
             </LineChart>
