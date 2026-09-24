@@ -51,7 +51,6 @@ export function AddReportModal({ onSubmit, onClose }: Props) {
     setErrors((prev) => ({ ...prev, [key]: undefined }))
   }
 
-  // Field uang: simpan angka mentah, tampilkan dengan pemisah ribuan.
   const handleMoneyChange = (key: keyof ReportForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [key]: digitsOnly(e.target.value) }))
     setErrors((prev) => ({ ...prev, [key]: undefined }))

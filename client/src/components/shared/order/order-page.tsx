@@ -93,7 +93,6 @@ export function OrderPage({ filterTabs = DEFAULT_FILTER_TABS }: Props) {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
 
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-1 lg:flex-2 order-2 lg:order-1 items-center gap-2">
           {filterTabs.map((tab) => (
@@ -126,7 +125,6 @@ export function OrderPage({ filterTabs = DEFAULT_FILTER_TABS }: Props) {
         </div>
       </div>
 
-      {/* Content */}
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center py-20">
           <Loader2Icon className="size-6 animate-spin text-muted-foreground" />

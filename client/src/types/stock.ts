@@ -1,6 +1,3 @@
-/**
- * Stock type matching the server Stock entity.
- */
 export interface Stock {
   id: number;
   unit_id: number;
@@ -14,7 +11,6 @@ export interface Stock {
   updated_at?: string;
 }
 
-/** Maps to server StockStatusEnum */
 export enum StockStatus {
   OUT_OF_STOCK = 0,
   IN_STOCK = 1,

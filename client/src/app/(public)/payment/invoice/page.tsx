@@ -102,18 +102,15 @@ const InvoiceContent = () => {
     )
   }
 
-  // Calculate taxes since the backend returns total_price directly, we infer subtotal
   const subtotal = order.total_price / 1.10
   const tax = order.total_price - subtotal
 
   return (
     <div className="w-full min-h-dvh bg-primary py-8 px-4">
       <div className="max-w-md mx-auto relative">
-        {/* Receipt Top Zigzag Decor */}
         <div className="absolute -top-2 left-0 right-0 h-4 bg-white" style={{ clipPath: 'polygon(0% 100%, 5% 0%, 10% 100%, 15% 0%, 20% 100%, 25% 0%, 30% 100%, 35% 0%, 40% 100%, 45% 0%, 50% 100%, 55% 0%, 60% 100%, 65% 0%, 70% 100%, 75% 0%, 80% 100%, 85% 0%, 90% 100%, 95% 0%, 100% 100%)' }}></div>
         
         <div className="bg-white px-6 py-10 flex flex-col items-center shadow-xl">
-          {/* Header */}
           <div className="w-full flex flex-col items-center gap-1 text-xs text-foreground text-center font-medium mb-8">
             <span className="text-xl font-bold uppercase tracking-wider mb-2">Cat-a Log POS</span>
             <span>Asam Pedas Tepi Danau</span>
@@ -121,7 +118,6 @@ const InvoiceContent = () => {
             <span className="text-muted-foreground">TEL: 0812-9501-2089</span>
           </div>
           
-          {/* Invoice Detail */}
           <div className="w-full flex flex-col gap-2">
             <div className="flex justify-between items-end border-b border-dashed border-foreground/30 pb-4 mb-2">
               <span className="text-2xl text-foreground font-bold">{getOrderPlace(order).name}</span>
@@ -154,7 +150,6 @@ const InvoiceContent = () => {
             <div className="w-full my-2 border-t border-dashed border-foreground/30" />
           </div>
 
-          {/* Order Detail */}
           <div className="w-full flex flex-col gap-2 mt-2">
             <table className="w-full text-sm">
               <tbody className="flex flex-col gap-3">
@@ -174,7 +169,6 @@ const InvoiceContent = () => {
             <div className="w-full my-4 border-t border-dashed border-foreground/30" />
           </div>
 
-          {/* Price Detail */}
           <div className="w-full flex flex-col gap-2">
             <table className="w-full text-sm text-muted-foreground">
               <tbody className="flex flex-col gap-2">
@@ -195,7 +189,6 @@ const InvoiceContent = () => {
             <div className="w-full my-4 border-t border-dashed border-foreground/30" />
           </div>
 
-          {/* Footer */}
           <div className="flex flex-col items-center justify-center mt-4 gap-2">
             <ReceiptTextIcon className="size-8 text-muted-foreground/30" />
             <p className="text-center text-xs text-muted-foreground font-medium max-w-[200px]">
@@ -204,11 +197,9 @@ const InvoiceContent = () => {
           </div>
         </div>
 
-        {/* Receipt Bottom Zigzag Decor */}
         <div className="absolute -bottom-2 left-0 right-0 h-4 bg-white" style={{ clipPath: 'polygon(0% 0%, 5% 100%, 10% 0%, 15% 100%, 20% 0%, 25% 100%, 30% 0%, 35% 100%, 40% 0%, 45% 100%, 50% 0%, 55% 100%, 60% 0%, 65% 100%, 70% 0%, 75% 100%, 80% 0%, 85% 100%, 90% 0%, 95% 100%, 100% 0%)' }}></div>
       </div>
 
-      {/* Actions */}
       <div className="max-w-md mx-auto mt-8 px-4 pb-8 flex flex-col gap-3">
         <button
           onClick={() => downloadInvoiceAsPDF(order)}
@@ -218,7 +209,6 @@ const InvoiceContent = () => {
           Download Invoice (PDF)
         </button>
 
-        {/* Send invoice via email */}
         <div className="flex flex-col gap-2 rounded-xl bg-white/10 p-3">
           <label htmlFor="invoice-email" className="text-xs font-medium text-primary-foreground/90">
             Kirim invoice ke email

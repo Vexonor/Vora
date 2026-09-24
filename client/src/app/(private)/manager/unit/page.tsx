@@ -20,13 +20,11 @@ export default function ManagerUnitPage() {
   const [search, setSearch] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   
-  // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [modalMode, setModalMode] = useState<"add" | "edit">("add")
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null)
   
-  // Form states
   const [unitName, setUnitName] = useState("")
   const [unitAbbreviation, setUnitAbbreviation] = useState("")
 
@@ -100,7 +98,6 @@ export default function ManagerUnitPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-hidden">
       
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           onClick={openAddModal}
@@ -124,7 +121,6 @@ export default function ManagerUnitPage() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="bg-white rounded-xl border border-foreground/10 overflow-x-auto flex-1">
         <table className="w-full min-w-3xl text-sm">
           <thead>

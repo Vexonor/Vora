@@ -116,7 +116,6 @@ const CartDrawer = () => {
                         </Button>
                       </div>
                     </div>
-                    {/* Note */}
                     <div className="flex items-center gap-1 bg-primary-foreground border-2 border-primary rounded-lg p-2">
                       <NoteIcon className="size-5 text-foreground" />
                       <Input

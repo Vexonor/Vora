@@ -1,6 +1,3 @@
-/**
- * Unit type for stock measurement units.
- */
 export interface Unit {
   id: number;
   name?: string;

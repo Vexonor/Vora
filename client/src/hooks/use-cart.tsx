@@ -1,4 +1,3 @@
-// hooks/use-cart.ts
 "use client"
 
 import { Menu } from "@/lib/type/menu"
@@ -32,7 +31,6 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [hydrated, setHydrated] = useState(false)
 
-  // Restore cart from localStorage so it survives a page refresh
   useEffect(() => {
     try {
       const stored = localStorage.getItem(CART_STORAGE_KEY)
@@ -44,7 +42,6 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     }
   }, [])
 
-  // Persist cart on every change (only after the initial restore)
   useEffect(() => {
     if (!hydrated) return
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems))

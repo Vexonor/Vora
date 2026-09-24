@@ -104,7 +104,6 @@ export default function KitchenOrderPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
 
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {KITCHEN_FILTER_TABS.map((tab) => (
@@ -137,7 +136,6 @@ export default function KitchenOrderPage() {
         </div>
       </div>
 
-      {/* Content */}
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center py-20">
           <Loader2Icon className="size-6 animate-spin text-muted-foreground" />

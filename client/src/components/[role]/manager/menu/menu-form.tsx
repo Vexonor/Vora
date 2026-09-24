@@ -79,7 +79,6 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
       setErrors((prev) => ({ ...prev, [key]: undefined }))
     }
 
-  // Simpan angka mentah (digit saja) di state, tampilkan dengan pemisah ribuan.
   const handleNumericChange = (key: "price" | "cost") =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => ({ ...prev, [key]: digitsOnly(e.target.value) }))
@@ -107,7 +106,6 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
     <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
       <div className="flex flex-col gap-6 max-w-4xl">
 
-        {/* Foto Menu */}
         <div className="flex flex-col gap-2">
           <Label className="font-semibold">
             Foto menu{" "}
@@ -126,7 +124,6 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
           </label>
         </div>
 
-        {/* Nama & Harga */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="Nama menu" error={errors.name} labelClassName="font-semibold">
             <Input
@@ -151,7 +148,6 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
           </FormField>
         </div>
 
-        {/* Deskripsi & Tipe */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="Deskripsi menu" labelClassName="font-semibold">
             <Textarea
@@ -182,7 +178,6 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
           </FormField>
         </div>
 
-        {/* Harga Modal */}
         <FormField
           label="Harga modal"
           labelClassName="font-semibold"
@@ -201,7 +196,6 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
           </div>
         </FormField>
 
-        {/* Status — hanya muncul saat mode edit */}
         {isEdit && (
           <FormField label="Status menu" labelClassName="font-semibold" className="max-w-xs">
             <Select
@@ -220,7 +214,6 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
           </FormField>
         )}
 
-        {/* Submit */}
         <div className="flex justify-end">
           <Button
             onClick={handleSubmit}

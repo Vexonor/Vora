@@ -82,7 +82,6 @@ export function OrderDetailModal({ order, onClose }: Props) {
 
         <div className="flex flex-col gap-5">
 
-          {/* Order info */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="bg-primary text-white text-sm font-bold rounded-lg px-2 py-3 min-w-[52px] text-center leading-tight">
@@ -102,13 +101,11 @@ export function OrderDetailModal({ order, onClose }: Props) {
             </span>
           </div>
 
-          {/* Date & time */}
           <div className="flex justify-between text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
             <span>{date}</span>
             <span>{time}</span>
           </div>
 
-          {/* Cancellation reason */}
           {status === OrderStatus.CANCELED && order.cancel_reason && (
             <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
               <XCircleIcon className="size-4 text-destructive shrink-0 mt-0.5" />
@@ -121,7 +118,6 @@ export function OrderDetailModal({ order, onClose }: Props) {
 
           <hr className="border-foreground/10" />
 
-          {/* Item list */}
           <div className="flex flex-col gap-1">
             <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 text-xs font-semibold text-muted-foreground pb-1">
               <span>Menu</span>
@@ -146,13 +142,11 @@ export function OrderDetailModal({ order, onClose }: Props) {
 
           <hr className="border-foreground/10" />
 
-          {/* Total */}
           <div className="flex justify-between items-center font-bold text-base">
             <span>Total</span>
             <span>{formatCurrency(total_price)}</span>
           </div>
 
-          {/* Download Invoice */}
           <Button
             variant="outline"
             className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"

@@ -1,7 +1,3 @@
-/**
- * Table type matching the server Tables entity.
- * The server entity only has `number` column.
- */
 export interface Table {
   id: number;
   number: number;

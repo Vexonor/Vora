@@ -17,18 +17,12 @@ export const menuService = {
     return apiClient.get(`${MENUS_PATH}/${id}`);
   },
 
-  /**
-   * Create a new menu. Uses FormData because of image upload.
-   */
   async create(data: FormData): Promise<Menu> {
     return apiClient.post(MENUS_PATH, data, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
 
-  /**
-   * Update an existing menu. Uses FormData because of image upload.
-   */
   async update(id: number, data: FormData): Promise<Menu> {
     return apiClient.put(`${MENUS_PATH}/${id}`, data, {
       headers: { "Content-Type": "multipart/form-data" },

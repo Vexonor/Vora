@@ -10,7 +10,7 @@ export type Payment = {
   total: number
   paid: number
   change_amount: number
-  type: number // PaymentType enum
+  type: number
   qr_image_url: string | null
   payment_status: string | null
   snap_token: string | null
@@ -18,7 +18,6 @@ export type Payment = {
   created_at?: string
 }
 
-/** Hasil verifikasi pembayaran tunai yang dikembalikan server. */
 export type CashPaymentResult = {
   total: number
   paid: number

@@ -6,7 +6,6 @@ const TABLES_PATH = "/tables";
 export const tableService = {
   async getAll(query?: Record<string, string>): Promise<Table[]> {
     const data = await apiClient.get(TABLES_PATH, { params: query });
-    // Server returns { count, tables: [...] } — extract the array
     if (Array.isArray(data)) return data;
     return (data as { tables?: Table[] }).tables ?? [];
   },

@@ -126,7 +126,6 @@ export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDe
         </table>
       </div>
 
-      {/* Pagination */}
       {staffs.length > 0 && (
         <div className="flex items-center justify-end gap-1 pt-2">
           <button

@@ -42,7 +42,6 @@ export function TableCard({ table, onDelete }: Props) {
   return (
     <div className="bg-white rounded-xl border border-foreground/10 p-4 flex flex-col items-center gap-3">
 
-      {/* Header */}
       <div className="flex items-center justify-between w-full">
         <span className="font-semibold text-sm">{tableCode}</span>
         <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30">
@@ -50,7 +49,6 @@ export function TableCard({ table, onDelete }: Props) {
         </span>
       </div>
 
-      {/* QR Code */}
       <div
         ref={qrRef}
         className="bg-muted rounded-lg p-3 flex items-center justify-center"
@@ -63,12 +61,10 @@ export function TableCard({ table, onDelete }: Props) {
         />
       </div>
 
-      {/* URL hint */}
       <p className="text-[10px] text-muted-foreground text-center truncate w-full px-1">
         {qrValue}
       </p>
 
-      {/* Actions */}
       <div className="flex gap-2 w-full">
         <button
           onClick={handleDownload}

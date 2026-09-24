@@ -66,7 +66,6 @@ export function OrderDetailModal({ order, actionLabel, canAdvanceStatus, onClose
           <DialogTitle>Detail pesanan</DialogTitle>
         </DialogHeader>
 
-        {/* Info Pemesanan */}
         <div className="flex flex-col gap-3">
           <p className="text-sm font-semibold text-muted-foreground">Informasi Pemesanan</p>
           <div className="flex items-start justify-between gap-4">
@@ -92,7 +91,6 @@ export function OrderDetailModal({ order, actionLabel, canAdvanceStatus, onClose
 
         <hr className="border-foreground/10" />
 
-        {/* Menu Items */}
         <div className="flex flex-col gap-3">
           <p className="font-semibold text-sm">Item Pesanan</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -102,7 +100,6 @@ export function OrderDetailModal({ order, actionLabel, canAdvanceStatus, onClose
           </div>
         </div>
 
-        {/* Footer */}
         {canAdvanceStatus && (
           <div className="flex justify-end pt-2">
             <Button onClick={onAdvanceStatus} className="bg-secondary text-white hover:bg-secondary/90">

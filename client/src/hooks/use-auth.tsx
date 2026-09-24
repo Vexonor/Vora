@@ -12,7 +12,6 @@ import {
   useState,
 } from "react";
 
-// ── Context shape ────────────────────────────────────────────────────
 interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -25,13 +24,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ── Provider ─────────────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore session from localStorage on mount
   useEffect(() => {
     try {
       const storedToken = localStorage.getItem("access_token");
@@ -41,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(JSON.parse(storedUser));
       }
     } catch {
-      // Corrupted data — clear it
       localStorage.removeItem("access_token");
       localStorage.removeItem("user");
     } finally {
@@ -99,7 +95,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// ── Hook ─────────────────────────────────────────────────────────────
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {

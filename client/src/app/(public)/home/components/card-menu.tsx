@@ -1,4 +1,3 @@
-// components/CardMenu.tsx
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Menu } from "@/lib/type/menu"

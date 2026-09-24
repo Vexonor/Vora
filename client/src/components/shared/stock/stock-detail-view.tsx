@@ -99,7 +99,6 @@ export function StockDetailView({ id, backPath, editPath }: Props) {
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 pt-0 max-w-2xl">
-      {/* Actions */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.push(backPath)}
@@ -117,7 +116,6 @@ export function StockDetailView({ id, backPath, editPath }: Props) {
         </button>
       </div>
 
-      {/* Card */}
       <div className="bg-white border border-foreground/10 rounded-xl p-6 flex flex-col gap-5">
         <div className="flex items-start justify-between gap-4">
           <div>

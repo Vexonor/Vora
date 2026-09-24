@@ -20,9 +20,6 @@ import {
 
 type Range = 7 | 14 | 30
 
-// Bagian "Evaluasi Model" bersifat teknis (RMSE/MAE/R²) — disembunyikan di
-// produksi untuk pengguna akhir. Set NEXT_PUBLIC_SHOW_MODEL_EVALUATION=true
-// untuk menampilkannya saat demo/sidang.
 const SHOW_MODEL_EVALUATION =
   process.env.NEXT_PUBLIC_SHOW_MODEL_EVALUATION === "true"
 
@@ -74,7 +71,6 @@ function buildChartData(
     isPrediction: true,
   }))
 
-  // bridge: duplicate last history point as first pred point so lines connect
   if (histPoints.length > 0 && predPoints.length > 0) {
     const last = histPoints[histPoints.length - 1]
     predPoints[0] = {
@@ -206,7 +202,6 @@ export function PredictionChart() {
   return (
     <div className="bg-white rounded-xl border border-foreground/10 p-5 flex flex-col gap-5">
 
-      {/* Header */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="bg-primary/10 p-2 rounded-lg">
@@ -243,7 +238,6 @@ export function PredictionChart() {
         </div>
       </div>
 
-      {/* Summary cards */}
       {data && !isLoading && (
         <div className="grid grid-cols-3 gap-3">
           {[
@@ -259,7 +253,6 @@ export function PredictionChart() {
         </div>
       )}
 
-      {/* Chart */}
       <div className="h-64">
         {isLoading ? (
           <div className="h-full flex items-center justify-center gap-2 text-muted-foreground">
@@ -324,12 +317,10 @@ export function PredictionChart() {
         )}
       </div>
 
-      {/* Evaluation metrics (teknis — hanya tampil bila flag diaktifkan) */}
       {SHOW_MODEL_EVALUATION && data && !isLoading && !error && (
         <EvaluationSection evaluation={data.evaluation} />
       )}
 
-      {/* Footer note */}
       {!isLoading && !error && data && (
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <InfoIcon className="size-3 shrink-0" />

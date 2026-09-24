@@ -3,13 +3,6 @@ import type { ApiResponse } from "@/types/api";
 
 const BASE_URL = "/api/v1";
 
-/**
- * Configured Axios instance for the Cat-a Log API.
- *
- * - Automatically attaches JWT token from localStorage.
- * - Unwraps the `{ statusCode, message, data }` envelope on success.
- * - Redirects to /login on 401 Unauthorized.
- */
 const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -18,7 +11,6 @@ const apiClient = axios.create({
   },
 });
 
-// ── Request Interceptor ──────────────────────────────────────────────
 apiClient.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
@@ -32,10 +24,8 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// ── Response Interceptor ─────────────────────────────────────────────
 apiClient.interceptors.response.use(
   (response) => {
-    // Unwrap the API envelope — return only `data` field
     const body = response.data as ApiResponse<unknown>;
     return body.data as never;
   },

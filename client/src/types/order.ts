@@ -1,8 +1,5 @@
 import type { Menu } from "./menu";
 
-/**
- * OrderItem type matching the server OrderItem entity.
- */
 export interface OrderItem {
   id: number;
   order_id: number;
@@ -13,9 +10,6 @@ export interface OrderItem {
   menu?: Menu;
 }
 
-/**
- * Order type matching the server Order entity.
- */
 export interface Order {
   id: number;
   table_id: number | null;
@@ -31,7 +25,6 @@ export interface Order {
   created_at?: string;
 }
 
-/** Maps to server OrderStatusEnum */
 export enum OrderStatus {
   PENDING = 0,
   PROCESSING = 1,
@@ -40,7 +33,6 @@ export enum OrderStatus {
   CANCELED = 4,
 }
 
-/** Maps to server OrderTypeEnum */
 export enum OrderType {
   DINE_IN = 0,
   TAKE_AWAY = 1,

@@ -17,13 +17,6 @@ interface PriceSectionProps {
   customerName?: string
 }
 
-/**
- * Lazily load Midtrans Snap.js so we can open the payment popup and react to
- * its callbacks (onSuccess/onPending/onClose) — this guarantees the customer is
- * redirected to the order-status page instead of being stranded on Midtrans.
- * Resolves to `false` when Snap can't be used (no client key / load error) so
- * the caller can fall back to the full-page redirect URL.
- */
 const loadSnap = (): Promise<boolean> =>
   new Promise((resolve) => {
     if (typeof window === "undefined") return resolve(false)
@@ -33,8 +26,6 @@ const loadSnap = (): Promise<boolean> =>
     const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY
     if (!clientKey) return resolve(false)
 
-    // Don't infer env from the key prefix — some Midtrans sandbox accounts use
-    // "Mid-..." keys (no "SB-"). Default to sandbox; set the flag for production.
     const isProd = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true"
     const script = document.createElement("script")
     script.src = isProd
@@ -74,32 +65,26 @@ const PriceSection = ({ paymentType, paymentMethod, customerName }: PriceSection
 
     setIsLoading(true)
     try {
-      // 1. Dapatkan table_id dari localStorage (hasil scan QR)
       const storedTableId = localStorage.getItem("table_id")
       const tableId = storedTableId ? parseInt(storedTableId, 10) : 1
 
-      // 2. Siapkan data pesanan
       const items = cartItems.map(item => ({
         menu_id: item.menu.id,
         quantity: item.quantity
       }))
 
-      // 3. Buat pesanan ke backend
       const order = await orderService.create({
         table_id: tableId,
         customer_name: customerName?.trim() || undefined,
         items
       })
 
-      // 4. Proses berdasarkan tipe pembayaran
       const statusUrl = `/payment/status/${order.id}`
       if (paymentType === "online") {
-        // Panggil Midtrans beserta metode yang dipilih dan URL kembali
         const returnUrl = window.location.origin + statusUrl
         const snap = await paymentService.createSnap(order.id, paymentMethod, returnUrl)
         clearCart()
 
-        // Coba pakai Snap popup agar bisa redirect otomatis lewat callback.
         const snapReady = await loadSnap()
         const w = window as unknown as {
           snap?: { pay: (token: string, opts: Record<string, () => void>) => void }
@@ -112,11 +97,9 @@ const PriceSection = ({ paymentType, paymentMethod, customerName }: PriceSection
             onClose: () => router.push(statusUrl),
           })
         } else {
-          // Fallback: full-page redirect (finish callback sudah di-set di server)
           window.location.href = snap.redirect_url
         }
       } else {
-        // Bayar di kasir, langsung ke halaman sukses
         clearCart()
         router.push(statusUrl)
       }

@@ -62,7 +62,6 @@ export function PredictionAccuracyChart() {
 
   return (
     <div className="bg-white rounded-xl border border-foreground/10 p-5 flex flex-col gap-5">
-      {/* Header */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="bg-primary/10 p-2 rounded-lg">
@@ -89,7 +88,6 @@ export function PredictionAccuracyChart() {
         </div>
       </div>
 
-      {/* Summary */}
       {data && !isLoading && !error && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
@@ -106,7 +104,6 @@ export function PredictionAccuracyChart() {
         </div>
       )}
 
-      {/* Chart */}
       <div className="h-64">
         {isLoading ? (
           <div className="h-full flex items-center justify-center gap-2 text-muted-foreground">

@@ -74,7 +74,6 @@ export default function TableManagementPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
 
-      {/* Toolbar */}
       <div className="flex items-center justify-end gap-2">
         <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
           <SearchIcon className="size-4 text-muted-foreground shrink-0" />

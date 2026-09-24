@@ -9,7 +9,6 @@ import { CancelOrderModal } from "./cancel-order-modal"
 import { ConfirmCompleteModal } from "./confirm-complete-modal"
 import { OrderDetailModal } from "./order-detail-modal"
 
-/** Map API order status to UI config */
 const STATUS_CONFIG: Record<number, {
   label: string
   description: string
@@ -136,7 +135,6 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
     <>
       <div className="bg-white border border-foreground/20 rounded-xl p-4 flex flex-col gap-3">
 
-        {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-primary text-white text-sm font-bold rounded-lg px-2 py-3 min-w-[52px] text-center">
@@ -166,7 +164,6 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
           </div>
         </div>
 
-        {/* Date & Time */}
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{formatDate(created_at)}</span>
           <span>{formatTime(created_at)}</span>
@@ -174,7 +171,6 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
 
         <hr className="border-foreground/10" />
 
-        {/* Menu Table */}
         <div className="flex flex-1 flex-col gap-1 min-h-0">
           <div className="grid grid-cols-3 text-xs text-muted-foreground">
             <span>Menu</span>
@@ -194,7 +190,6 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
 
         <hr className="border-foreground/10" />
 
-        {/* Summary */}
         <div className="flex flex-col gap-1 text-sm">
           <div className="flex justify-between font-bold text-base mt-1">
             <span>Total</span>
@@ -202,7 +197,6 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="grid grid-cols-2 gap-2 mt-1">
           <button
             onClick={() => setShowDetail(true)}
@@ -227,7 +221,6 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
             Batalkan Pesanan
           </button>
         ) : (
-          // Reserve the cancel-button row so action buttons stay aligned across cards
           <div aria-hidden className="h-9.5" />
         )}
 

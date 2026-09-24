@@ -118,7 +118,6 @@ export default function ManagerDashboardPage() {
         ))}
       </div>
 
-      {/* Period toggle */}
       <div className="flex items-center gap-1 bg-muted rounded-lg p-1 w-fit">
         {PERIODS.map((p) => (
           <button

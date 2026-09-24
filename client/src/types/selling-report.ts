@@ -1,6 +1,3 @@
-/**
- * SellingReport type matching the server SellingReport entity.
- */
 export interface SellingReport {
   id: number;
   title: string;

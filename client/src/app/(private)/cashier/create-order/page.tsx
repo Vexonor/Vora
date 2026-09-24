@@ -141,10 +141,8 @@ export default function CashierCreateOrderPage() {
   return (
     <div className="flex flex-col lg:flex-row gap-4 p-4 lg:p-6 lg:h-[calc(100svh-5rem)] lg:overflow-hidden">
 
-      {/* ── Left panel: cart & table ── */}
       <aside className="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col gap-4 lg:h-full lg:min-h-0">
 
-        {/* Order type, table selector & customer */}
         <div className="bg-white border border-foreground/10 rounded-xl p-4 flex flex-col gap-3">
           <p className="text-sm font-semibold">Tipe Pesanan</p>
           <div className="grid grid-cols-2 gap-2">
@@ -208,7 +206,6 @@ export default function CashierCreateOrderPage() {
           )}
         </div>
 
-        {/* Cart */}
         <div className="bg-white border border-foreground/10 rounded-xl p-4 flex flex-col gap-3 flex-1 min-h-0">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold">Pesanan</p>
@@ -284,13 +281,8 @@ export default function CashierCreateOrderPage() {
           )}
         </div>
 
-        {/* Submit */}
         <Button
           onClick={handleSubmit}
-          // Hanya dikunci saat pengiriman berlangsung. Syarat lain ditolak oleh
-          // handleSubmit dengan pesan yang terlihat — tombol mati tanpa alasan
-          // membuat kasir menebak-nebak, dan pada Take Away (tanpa meja) tombol
-          // itu tidak akan pernah bisa ditekan sama sekali.
           disabled={submitting}
           className="w-full bg-secondary text-primary font-semibold py-5 shrink-0"
         >
@@ -300,10 +292,8 @@ export default function CashierCreateOrderPage() {
 
       </aside>
 
-      {/* ── Right panel: menu browsing ── */}
       <div className="flex-1 flex flex-col gap-4 min-w-0 lg:h-full lg:min-h-0">
 
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
@@ -314,7 +304,6 @@ export default function CashierCreateOrderPage() {
           />
         </div>
 
-        {/* Category tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {CATEGORIES.map((cat) => (
             <button
@@ -331,7 +320,6 @@ export default function CashierCreateOrderPage() {
           ))}
         </div>
 
-        {/* Menu grid */}
         {filteredMenus.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
             <p className="text-sm">Tidak ada menu ditemukan</p>
@@ -345,7 +333,6 @@ export default function CashierCreateOrderPage() {
                   key={menu.id}
                   className="bg-white border border-foreground/10 rounded-xl flex flex-col self-start"
                 >
-                  {/* Image */}
                   <div className="relative w-full h-32 sm:h-36 bg-muted shrink-0 overflow-hidden rounded-t-xl">
                     <Image
                       src={menu.image_url ?? "/image/menu/nasi-goreng.jpg"}
@@ -355,7 +342,6 @@ export default function CashierCreateOrderPage() {
                     />
                   </div>
 
-                  {/* Info */}
                   <div className="p-3 flex flex-col gap-2 flex-1 shrink-0">
                     <div className="flex-1">
                       <p className="text-sm font-semibold leading-tight line-clamp-2">{menu.name}</p>
@@ -363,7 +349,6 @@ export default function CashierCreateOrderPage() {
                     </div>
                     <p className="text-sm font-bold text-primary">{formatCurrency(menu.price)}</p>
 
-                    {/* Add / qty control */}
                     {qty === 0 ? (
                       <button
                         onClick={() => addToCart(menu)}

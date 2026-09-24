@@ -18,7 +18,7 @@ import CardMenu from "./card-menu"
 type CategoryDef = {
   id: string
   label: string
-  typeValue?: number // maps to MenuType enum
+  typeValue?: number
   Icon: React.ComponentType<{ className?: string }>
 }
 
@@ -30,7 +30,6 @@ const CATEGORIES: CategoryDef[] = [
   { id: "snack", label: "Cemilan", typeValue: MenuType.SNACK, Icon: CookieIcon },
 ]
 
-/** Adapt API Menu to the shape expected by CardMenu (uses old `Menu` interface from lib/type) */
 const adaptMenu = (m: Menu) => ({
   id: m.id,
   name: m.name,
@@ -130,7 +129,6 @@ const CategoryTab = ({ search = "" }: { search?: string }) => {
     }
   }, [startRequest])
 
-  // Debounce search so we hit the endpoint's `q` param, not filter client-side
   useEffect(() => {
     const handler = setTimeout(() => fetchMenus(search), 400)
     return () => clearTimeout(handler)

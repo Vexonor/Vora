@@ -12,15 +12,14 @@ interface PaymentTypeSectionProps {
 const PaymentTypeSection = ({ value, onValueChange }: PaymentTypeSectionProps) => {
   const handleItemClick = (e: MouseEvent<HTMLButtonElement>, itemValue: string) => {
     if (value === itemValue) {
-      e.preventDefault() // Mencegah behavior native radio button
-      onValueChange("")  // Reset value ke kosong
+      e.preventDefault()
+      onValueChange("")
     }
   }
   return (
     <div className="">
       <h3 className="text-base text-foreground font-bold pb-2">Pilih Tipe Pembayaran</h3>
       <RadioGroup value={value} onValueChange={onValueChange}>
-        {/* Offline */}
         <div className="flex justify-between items-center gap-3 bg-white border border-foreground/20 rounded-lg px-4 py-6">
           <div className="flex items-center gap-3">
             <WalletIcon className="text-foreground size-5" />
@@ -28,7 +27,6 @@ const PaymentTypeSection = ({ value, onValueChange }: PaymentTypeSectionProps) =
           </div>
           <RadioGroupItem value="offline" id="offline" className="ring-1 ring-primary" onClick={(e) => handleItemClick(e, "offline")} />
         </div>
-        {/* Online */}
         <div className="flex justify-between items-center gap-3 bg-white border border-foreground/20 rounded-lg px-4 py-6">
           <div className="flex items-center gap-3">
             <CardPosIcon className="text-foreground size-5" />

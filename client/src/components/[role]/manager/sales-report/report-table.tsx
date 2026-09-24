@@ -44,7 +44,6 @@ export function ReportTable({ reports, currentPage, onPageChange, totalPages, on
     setIsDeleting(true)
     try {
       await sellingReportService.remove(deleteTarget.id)
-      // Jika baris terakhir di halaman (bukan halaman 1) dihapus, mundur 1 halaman
       if (paginated.length === 1 && currentPage > 1) {
         onPageChange(currentPage - 1)
       }
@@ -159,7 +158,6 @@ export function ReportTable({ reports, currentPage, onPageChange, totalPages, on
         </table>
       </div>
 
-      {/* Pagination */}
       {reports.length > 0 && <div className="flex items-center justify-end gap-1 pt-2">
         <button
           onClick={() => onPageChange(currentPage - 1)}

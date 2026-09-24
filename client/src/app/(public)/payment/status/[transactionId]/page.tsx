@@ -62,7 +62,6 @@ export default function PaymentStatusPage() {
   const isTerminal = status === OrderStatus.COMPLETED || isCanceled
   const canPrintInvoice = order ? canViewInvoice(order) : false
 
-  // Polling — berhenti otomatis saat status final (Selesai / Dibatalkan)
   useEffect(() => {
     if (!orderId || isTerminal) return
     const timer = setInterval(() => {
@@ -80,7 +79,6 @@ export default function PaymentStatusPage() {
     </Link>
   )
 
-  // ── Loading ───────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="w-full h-dvh bg-primary flex items-center justify-center">
@@ -89,7 +87,6 @@ export default function PaymentStatusPage() {
     )
   }
 
-  // ── Error / tidak ditemukan ───────────────────────────────
   if (error || !order) {
     return (
       <div className="w-full h-dvh bg-primary flex flex-col items-center justify-center gap-3 text-primary-foreground px-6 text-center">
@@ -104,7 +101,6 @@ export default function PaymentStatusPage() {
     <div className="w-full min-h-dvh bg-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-background rounded-2xl p-6 flex flex-col gap-6">
 
-        {/* Header */}
         {isCanceled ? (
           <div className="flex flex-col items-center gap-3 text-center">
             <div className="size-20 bg-destructive/10 border-2 border-destructive rounded-full flex items-center justify-center">
@@ -127,13 +123,11 @@ export default function PaymentStatusPage() {
           </div>
         )}
 
-        {/* Meja & nomor pesanan */}
         <div className="flex items-center justify-between bg-muted/40 rounded-lg px-4 py-3 text-sm">
           <span className="font-semibold">{getOrderPlace(order).name}</span>
           <span className="text-muted-foreground">Pesanan #{order.id}</span>
         </div>
 
-        {/* Body */}
         {isCanceled ? (
           <div className="flex flex-col gap-3">
             {order.cancel_reason && (
@@ -161,7 +155,6 @@ export default function PaymentStatusPage() {
               const isLast = i === STEPS.length - 1
               return (
                 <div key={step.status} className="flex gap-3">
-                  {/* Rail */}
                   <div className="flex flex-col items-center">
                     <div
                       className={`size-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
@@ -174,7 +167,6 @@ export default function PaymentStatusPage() {
                       <div className={`w-0.5 flex-1 min-h-8 ${done ? "bg-primary" : "bg-muted"}`} />
                     )}
                   </div>
-                  {/* Text */}
                   <div className={`pb-6 ${reached ? "" : "opacity-70"}`}>
                     <p className={`text-sm font-semibold ${current ? "text-primary" : "text-foreground"}`}>
                       {step.label}
@@ -193,7 +185,6 @@ export default function PaymentStatusPage() {
           </div>
         )}
 
-        {/* Footer */}
         {canPrintInvoice && InvoiceButton}
 
         {status === OrderStatus.PENDING && !canPrintInvoice && (

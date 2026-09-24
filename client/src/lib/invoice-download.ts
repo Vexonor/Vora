@@ -3,13 +3,12 @@ import { OrderStatus } from "@/types/order";
 import { getOrderPlace } from "./order-place";
 import jsPDF from "jspdf";
 
-// App color palette  ── #F49250 primary (orange), #F1F0F0 background, #0F172A foreground
 const C = {
-  primary:      [244, 146, 80 ] as const, // #F49250
-  primaryLight: [253, 239, 229] as const, // #F49250 @ 10% on white
-  pageBg:       [241, 240, 240] as const, // #F1F0F0
+  primary:      [244, 146, 80 ] as const,
+  primaryLight: [253, 239, 229] as const,
+  pageBg:       [241, 240, 240] as const,
   white:        [255, 255, 255] as const,
-  dark:         [15,  23,  42 ] as const, // #0F172A
+  dark:         [15,  23,  42 ] as const,
   muted:        [107, 114, 128] as const,
   faint:        [156, 163, 175] as const,
   border:       [229, 231, 235] as const,
@@ -79,31 +78,26 @@ export async function downloadInvoiceAsPDF(order: Order) {
 
   const doc = new jsPDF({ unit: "mm", format: [210, pageH] });
 
-  // Layout constants
   const cardX = 40;
   const cardW = 130;
   const cardY = 15;
-  const iX    = cardX + 12;          // inner left edge
-  const oX    = cardX + cardW - 12;  // inner right edge
-  const mX    = cardX + cardW / 2;   // center
-  const nr    = 5;                   // notch radius
+  const iX    = cardX + 12;
+  const oX    = cardX + cardW - 12;
+  const mX    = cardX + cardW / 2;
+  const nr    = 5;
 
-  // ── Page background ───────────────────────────────────────────
   doc.setFillColor(...C.pageBg);
   doc.rect(0, 0, 210, pageH, "F");
 
-  // ── White ticket card ─────────────────────────────────────────
   doc.setFillColor(...C.white);
   doc.roundedRect(cardX, cardY, cardW, cardH, 6, 6, "F");
 
   let y = cardY + 20;
 
-  // ── App logo ──────────────────────────────────────────────────
-  const logoSize = 20; // mm
+  const logoSize = 20;
   if (logoDataUrl) {
     doc.addImage(logoDataUrl, "PNG", mX - logoSize / 2, y - logoSize / 2, logoSize, logoSize);
   } else {
-    // Fallback: solid orange circle
     doc.setFillColor(...C.primary);
     doc.circle(mX, y, 10, "F");
     doc.setFontSize(12);
@@ -113,7 +107,6 @@ export async function downloadInvoiceAsPDF(order: Order) {
   }
   y += 16;
 
-  // ── Heading ───────────────────────────────────────────────────
   doc.setFontSize(15);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.dark);
@@ -128,11 +121,9 @@ export async function downloadInvoiceAsPDF(order: Order) {
   doc.text("Sistem Manajemen Restoran CAT-A LOG", mX, y, { align: "center" });
   y += 9;
 
-  // ── SEPARATOR 1 ───────────────────────────────────────────────
   drawNotchedSep(doc, cardX, y, cardW, nr);
   y += nr + 7;
 
-  // ── ORDER ID & TOTAL ──────────────────────────────────────────
   doc.setFontSize(7.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.muted);
@@ -148,7 +139,6 @@ export async function downloadInvoiceAsPDF(order: Order) {
   doc.text(formatCurrency(Number(total_price)), oX, y, { align: "right" });
   y += 9;
 
-  // ── TEMPAT & STATUS ─────────────────────────────────────────────
   doc.setFontSize(7.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.muted);
@@ -161,7 +151,6 @@ export async function downloadInvoiceAsPDF(order: Order) {
   doc.setTextColor(...C.dark);
   doc.text(`${place.code}  —  ${place.name}`, iX, y);
 
-  // Status badge
   doc.setFontSize(8.5);
   const sW  = doc.getTextWidth(statusLabel);
   const sP  = 3.5;
@@ -173,7 +162,6 @@ export async function downloadInvoiceAsPDF(order: Order) {
   doc.text(statusLabel, sBX + sP, y);
   y += 9;
 
-  // ── PEMESAN (opsional) ────────────────────────────────────────
   if (order.customer_name) {
     doc.setFontSize(7.5);
     doc.setFont("helvetica", "normal");
@@ -188,7 +176,6 @@ export async function downloadInvoiceAsPDF(order: Order) {
     y += 9;
   }
 
-  // ── DATE & TIME box ───────────────────────────────────────────
   doc.setFillColor(...C.primaryLight);
   doc.roundedRect(iX - 2, y - 2, cardW - 20, 14, 3, 3, "F");
   doc.setFontSize(7.5);
@@ -203,11 +190,9 @@ export async function downloadInvoiceAsPDF(order: Order) {
   doc.text(time, oX, y + 10, { align: "right" });
   y += 18;
 
-  // ── SEPARATOR 2 ───────────────────────────────────────────────
   drawNotchedSep(doc, cardX, y, cardW, nr);
   y += nr + 7;
 
-  // ── ITEMS ─────────────────────────────────────────────────────
   doc.setFontSize(8.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.muted);
@@ -264,7 +249,6 @@ export async function downloadInvoiceAsPDF(order: Order) {
   doc.line(iX, y, oX, y);
   y += 5;
 
-  // ── Total bar ─────────────────────────────────────────────────
   doc.setFillColor(...C.primary);
   doc.roundedRect(iX - 2, y - 1.5, cardW - 20, 12, 3, 3, "F");
   doc.setFontSize(11);
@@ -274,11 +258,9 @@ export async function downloadInvoiceAsPDF(order: Order) {
   doc.text(formatCurrency(Number(total_price)), oX - 2, y + 7, { align: "right" });
   y += 17;
 
-  // ── SEPARATOR 3 ───────────────────────────────────────────────
   drawNotchedSep(doc, cardX, y, cardW, nr);
   y += nr + 7;
 
-  // ── Footer ────────────────────────────────────────────────────
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.primary);
@@ -291,7 +273,6 @@ export async function downloadInvoiceAsPDF(order: Order) {
   y += 4;
   doc.text("Invoice ini diterbitkan secara otomatis oleh sistem CAT-A LOG.", mX, y, { align: "center" });
 
-  // ── Bottom scalloped edge ─────────────────────────────────────
   const botY = cardY + cardH;
   for (let bx = cardX + 6; bx <= cardX + cardW - 3; bx += 9) {
     doc.setFillColor(...C.pageBg);

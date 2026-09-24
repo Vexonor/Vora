@@ -1,16 +1,6 @@
 import type { Order } from "@/types/order";
 import { getOrderPlace } from "./order-place";
 
-/**
- * Builds the HTML body for the invoice email.
- *
- * This is a pure string builder (no DOM / browser APIs) so it is safe to run
- * inside the serverless API route. Email clients strip <style>/JS, so all
- * styling is inline and layout uses tables for maximum compatibility.
- *
- * @param order      The order to render.
- * @param invoiceUrl Absolute URL to the invoice page (for the "download PDF" button).
- */
 export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string {
   const rupiah = (v: number) =>
     `Rp ${Number(v).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
@@ -145,7 +135,6 @@ export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string 
 </div>`;
 }
 
-/** Minimal HTML-escaping to avoid breaking the markup with user-provided values. */
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")

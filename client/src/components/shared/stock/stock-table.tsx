@@ -45,7 +45,6 @@ export function StockTable({ stocks, currentPage, onPageChange, totalPages, page
     }
   }
 
-  // Data is already paginated by the server; render as-is.
   const offset = (currentPage - 1) * pageSize
 
   const getPages = () => {
@@ -111,7 +110,6 @@ export function StockTable({ stocks, currentPage, onPageChange, totalPages, page
         </table>
       </div>
 
-      {/* Pagination */}
       {stocks.length > 0 && (
         <div className="flex items-center justify-end gap-1 pt-2">
           <button

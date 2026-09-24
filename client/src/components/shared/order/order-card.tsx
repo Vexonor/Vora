@@ -103,7 +103,6 @@ export function TransactionCard({ order, onRefresh }: Props) {
     <>
       <div className="bg-white border border-foreground/20 rounded-xl p-4 flex flex-col gap-3">
 
-        {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-primary text-white text-sm font-bold rounded-lg px-2 py-3 min-w-[52px] text-center">
@@ -133,7 +132,6 @@ export function TransactionCard({ order, onRefresh }: Props) {
           </div>
         </div>
 
-        {/* Date & Time */}
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{formatDate(created_at)}</span>
           <span>{formatTime(created_at)}</span>
@@ -141,7 +139,6 @@ export function TransactionCard({ order, onRefresh }: Props) {
 
         <hr className="border-foreground/10" />
 
-        {/* Menu Table */}
         <div className="flex flex-1 flex-col gap-1 min-h-0">
           <div className="grid grid-cols-3 text-xs text-muted-foreground">
             <span>Menu</span>
@@ -161,13 +158,11 @@ export function TransactionCard({ order, onRefresh }: Props) {
 
         <hr className="border-foreground/10" />
 
-        {/* Summary */}
         <div className="flex justify-between font-bold text-base mt-1">
           <span>Total</span>
           <span>{formatCurrency(total_price)}</span>
         </div>
 
-        {/* Actions */}
         <div className="flex flex-col gap-2 mt-1">
           <div className="grid grid-cols-2 gap-2">
             <button

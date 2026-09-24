@@ -115,7 +115,6 @@ function InfoTab({ user }: { user: User }) {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Avatar */}
       <div className="flex flex-col items-center gap-2">
         <button
           type="button"
@@ -151,7 +150,6 @@ function InfoTab({ user }: { user: User }) {
         />
       </div>
 
-      {/* Fields */}
       <div className="flex flex-col gap-4">
         <FormField label="Username" error={errors.username}>
           <Input

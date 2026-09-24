@@ -10,7 +10,6 @@ interface HeaderProps {
 const Header = ({ search, onSearchChange }: HeaderProps) => {
   return (
     <div className="w-full flex items-center gap-4 p-4">
-      {/* Brand */}
       <div className="flex items-center gap-1">
         <Image
           src="/image/catalog-logo.svg"
@@ -19,9 +18,7 @@ const Header = ({ search, onSearchChange }: HeaderProps) => {
           height={100}
           className="size-12"
         />
-        {/* <h1 className="text-lg text-primary font-black">Cat-a <br /> Log</h1> */}
       </div>
-      {/* Search Input */}
       <div className="flex grow items-center gap-1 border-2 border-primary px-2 py-1 rounded-xl">
         <MagnifyingGlass className="size-6 text-foreground" />
         <Input

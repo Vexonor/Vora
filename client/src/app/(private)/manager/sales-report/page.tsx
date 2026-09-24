@@ -127,13 +127,10 @@ export default function SalesReportPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-hidden">
 
-      {/* AI Prediction */}
       <PredictionChart />
 
-      {/* Akurasi Prediksi (prediksi vs realisasi) */}
       <PredictionAccuracyChart />
 
-      {/* Banner: laporan belum diisi modal operasional */}
       {!bannerDismissed && unfilledReports.length > 0 && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-50 px-4 py-3">
           <p className="text-sm text-amber-700">
@@ -157,7 +154,6 @@ export default function SalesReportPage() {
         </div>
       )}
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Total transaksi", value: totalTransactions.toLocaleString("id-ID") },
@@ -172,7 +168,6 @@ export default function SalesReportPage() {
         ))}
       </div>
 
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           onClick={() => setShowAddModal(true)}
@@ -183,7 +178,6 @@ export default function SalesReportPage() {
         </button>
 
         <div className="flex items-center gap-2">
-          {/* Year filter */}
           <Select
             value={yearFilter || "all"}
             onValueChange={(v) => handleYearChange(v === "all" ? "" : v)}
@@ -199,7 +193,6 @@ export default function SalesReportPage() {
             </SelectContent>
           </Select>
 
-          {/* Month filter */}
           <Select
             value={monthFilter || "all"}
             onValueChange={(v) => handleMonthChange(v === "all" ? "" : v)}
@@ -215,7 +208,6 @@ export default function SalesReportPage() {
             </SelectContent>
           </Select>
 
-          {/* Search */}
           <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
             <SearchIcon className="size-4 text-muted-foreground shrink-0" />
             <input
@@ -229,7 +221,6 @@ export default function SalesReportPage() {
         </div>
       </div>
 
-      {/* Content */}
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center py-20">
           <Loader2Icon className="size-6 animate-spin text-muted-foreground" />

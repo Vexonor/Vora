@@ -9,8 +9,6 @@ interface PaymentMethodProps {
 }
 
 const PaymentMethodSection = ({ value, onValueChange }: PaymentMethodProps) => {
-  // Maps to Midtrans `enabled_payments` IDs. Hanya channel yang lazim aktif
-  // di akun Midtrans (sandbox) & punya logo yang benar.
   const paymentMethod = [
     { id: "qris", name: "QRIS", src: "/assets/brand-logo/qris.svg" },
     { id: "gopay", name: "GoPay", src: "/assets/brand-logo/gopay.svg" },

@@ -15,7 +15,6 @@ export interface UpdateUserRequest {
   role?: number;
 }
 
-/** Maps to server UserRoleEnum */
 export enum UserRole {
   CASHIER = 0,
   KITCHEN = 1,

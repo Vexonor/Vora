@@ -34,8 +34,6 @@ function Numpad({ total, onPay, loading }: { total: number; onPay: (amount: numb
   const [input, setInput] = useState("")
 
   const displayed = input === "" ? total : parseInt(input)
-  // Kembalian hanya pratinjau di layar. Server tetap menghitung dan
-  // memvalidasi ulang nilainya saat verifikasi.
   const difference = displayed - total
   const isShort = difference < 0
 
@@ -271,7 +269,6 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
     setVerifyError(null)
     try {
       const result = await paymentService.verifyOffline(orderId, amount)
-      // Modal tidak langsung ditutup — kasir perlu membaca nominal kembalian dulu.
       setCashResult(result)
     } catch (error) {
       const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -281,9 +278,6 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
     }
   }
 
-  // Refresh daftar pesanan ditunda sampai modal ditutup. Kalau dipanggil tepat
-  // setelah verifikasi, order lunas langsung hilang dari daftar pending dan
-  // modalnya ikut ter-unmount sebelum kasir sempat membaca kembaliannya.
   const handleClose = () => {
     if (cashResult) onVerified?.()
     onClose()
@@ -316,7 +310,6 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
               <p className="text-sm font-semibold text-muted-foreground">Detail Transaksi</p>
               <hr className="border-foreground/10 my-1" />
 
-              {/* Header dan seluruh baris berbagi satu grid agar kolomnya sejajar. */}
               <div className="grid grid-cols-[1fr_auto_auto_auto] items-start gap-x-3">
                 <span className="text-xs font-semibold text-muted-foreground pb-1">Menu</span>
                 <span className="text-xs font-semibold text-muted-foreground pb-1 text-center">Qty</span>
@@ -332,9 +325,6 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
                 ) : (
                   items.map((item) => (
                     <Fragment key={item.id}>
-                      {/* Nama panjang dibiarkan turun baris, bukan dipotong — kasir
-                          perlu membaca menunya utuh. min-w-0 menahan kolom 1fr agar
-                          tidak melebar dan mendorong kolom angka. */}
                       <span className="min-w-0 wrap-break-word text-sm py-1 leading-snug">
                         {item.menu?.name ?? `Menu #${item.menu_id}`}
                       </span>
@@ -397,7 +387,6 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
                 </Button>
               </div>
             ) : method === "tunai" ? (
-              // Numpad dan kembalian hanya milik alur tunai.
               cashResult ? (
                 <CashPaymentSuccess result={cashResult} onClose={handleClose} />
               ) : (

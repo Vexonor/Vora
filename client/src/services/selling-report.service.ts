@@ -16,9 +16,6 @@ export const sellingReportService = {
     return apiClient.get(`${REPORTS_PATH}/${id}`);
   },
 
-  /**
-   * Create a selling report manually with the given values.
-   */
   async create(data: CreateSellingReportRequest): Promise<SellingReport> {
     return apiClient.post(REPORTS_PATH, data);
   },
@@ -27,9 +24,6 @@ export const sellingReportService = {
     return apiClient.patch(`${REPORTS_PATH}/${id}/operational-cost`, { operational_cost });
   },
 
-  /**
-   * Generate a selling report for a given date (YYYY-MM-DD).
-   */
   async generate(date: string): Promise<SellingReport> {
     return apiClient.post(`${REPORTS_PATH}/generate`, { date });
   },
