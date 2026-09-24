@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from "react"
 
 type Props = {
   refreshKey?: number
-  onRefresh?: () => void
+  onPaymentVerified?: () => void
 }
 
 function PaymentItem({ order, onVerified }: { order: Order; onVerified: () => void }) {
@@ -56,7 +56,7 @@ function PaymentItem({ order, onVerified }: { order: Order; onVerified: () => vo
   )
 }
 
-export function PaymentList({ refreshKey, onRefresh }: Props) {
+export function PaymentList({ refreshKey, onPaymentVerified }: Props) {
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -77,8 +77,8 @@ export function PaymentList({ refreshKey, onRefresh }: Props) {
   }, [fetchOrders, refreshKey])
 
   const handleVerified = () => {
-    fetchOrders()
-    onRefresh?.()
+    if (onPaymentVerified) onPaymentVerified()
+    else fetchOrders()
   }
 
   return (

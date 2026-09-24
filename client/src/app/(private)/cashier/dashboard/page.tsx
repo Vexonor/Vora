@@ -7,6 +7,7 @@ import { ReceiptItemIcon } from "@icons/receipt-item"
 import TimerIcon from "@icons/timer"
 import { Loader2Icon } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner"
 import { OrderList } from "./components/order-list"
 import { PaymentList } from "./components/payment-list"
 import StatCard from "./components/stat-card"
@@ -21,12 +22,11 @@ export default function DashboardPage() {
   const [refreshKey, setRefreshKey] = useState(0)
 
   const fetchStats = useCallback(async () => {
-    setIsLoading(true)
     try {
       const data = await dashboardService.getCashierStats()
       setStatsData(data)
     } catch {
-      // Fallback to 0 if error
+      toast.error("Gagal memuat statistik dashboard.")
     } finally {
       setIsLoading(false)
     }
@@ -36,9 +36,9 @@ export default function DashboardPage() {
     fetchStats()
   }, [fetchStats])
 
-  const handleRefresh = useCallback(() => {
+  const handlePaymentVerified = useCallback(() => {
     fetchStats()
-    setRefreshKey((k) => k + 1)
+    setRefreshKey((key) => key + 1)
   }, [fetchStats])
 
   const { newOrders, processingOrders, totalOrders } = statsData
@@ -86,7 +86,7 @@ export default function DashboardPage() {
 
       <div className="min-h-dvh flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl md:min-h-min">
         <OrderList refreshKey={refreshKey} />
-        <PaymentList refreshKey={refreshKey} onRefresh={handleRefresh} />
+        <PaymentList refreshKey={refreshKey} onPaymentVerified={handlePaymentVerified} />
       </div>
     </div>
   )

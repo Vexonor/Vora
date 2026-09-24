@@ -236,8 +236,10 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
       {showDetail && (
         <OrderDetailModal
           order={order}
+          actionLabel={actionLabel}
+          canAdvanceStatus={canAct}
           onClose={() => setShowDetail(false)}
-          onComplete={() => {
+          onAdvanceStatus={() => {
             setShowDetail(false)
             handleActionClick()
           }}

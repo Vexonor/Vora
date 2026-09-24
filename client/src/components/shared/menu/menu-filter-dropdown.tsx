@@ -21,10 +21,6 @@ export function MenuFilterDropdown({ selected, onApply }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (open) setDraft(selected)
-  }, [open])
-
-  useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
@@ -32,6 +28,11 @@ export function MenuFilterDropdown({ selected, onApply }: Props) {
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [open])
+
+  const handleToggleOpen = () => {
+    if (!open) setDraft(selected)
+    setOpen(!open)
+  }
 
   const toggle = (val: number) =>
     setDraft((prev) => prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val])
@@ -50,7 +51,7 @@ export function MenuFilterDropdown({ selected, onApply }: Props) {
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggleOpen}
         className={`border rounded-lg p-2 transition-colors
           ${open || selected.length > 0
             ? "border-primary text-primary"

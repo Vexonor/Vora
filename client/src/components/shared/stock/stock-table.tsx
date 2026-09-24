@@ -4,6 +4,7 @@ import type { Stock } from "@/types/stock"
 import { StockStatus } from "@/types/stock"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { toast } from "sonner"
 import { DeleteStockModal } from "./delete-stock-modal"
 import { StockActionDropdown } from "./stock-action-dropdown"
 
@@ -35,6 +36,9 @@ export function StockTable({ stocks, currentPage, onPageChange, totalPages, page
     setIsDeleting(true)
     try {
       await onDelete(deleteTarget)
+      toast.success("Bahan berhasil dihapus.")
+    } catch {
+      toast.error("Gagal menghapus bahan. Coba lagi.")
     } finally {
       setIsDeleting(false)
       setDeleteTarget(null)

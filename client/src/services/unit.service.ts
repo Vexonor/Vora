@@ -5,8 +5,9 @@ const UNITS_PATH = "/units";
 
 export const unitService = {
   async getAll(query?: Record<string, string>): Promise<Unit[]> {
-    const res = await apiClient.get(UNITS_PATH, { params: query }) as any;
-    return res.units || res;
+    const data: Unit[] | { units?: Unit[] } = await apiClient.get(UNITS_PATH, { params: query });
+    if (Array.isArray(data)) return data;
+    return data.units ?? [];
   },
 
   async getById(id: number): Promise<Unit> {

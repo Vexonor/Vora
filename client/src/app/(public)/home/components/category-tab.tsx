@@ -2,6 +2,7 @@
 
 import { Tabs, TabsContent, TabsContents, TabsList, TabsTrigger } from "@/components/animate-ui/components/animate/tabs"
 import useCart from "@/hooks/use-cart"
+import { useLatestRequest } from "@/hooks/use-latest-request"
 import { menuService } from "@/services/menu.service"
 import type { Menu } from "@/types/menu"
 import { MenuType } from "@/types/menu"
@@ -114,18 +115,20 @@ const CategoryTab = ({ search = "" }: { search?: string }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [apiMenus, setApiMenus] = useState<Menu[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const startRequest = useLatestRequest()
 
   const fetchMenus = useCallback(async (q: string) => {
+    const isLatest = startRequest()
     setIsLoading(true)
     try {
       const data = await menuService.getAll({ q: q.trim() || undefined })
-      setApiMenus(Array.isArray(data) ? data : [])
+      if (isLatest()) setApiMenus(Array.isArray(data) ? data : [])
     } catch {
-      setApiMenus([])
+      if (isLatest()) setApiMenus([])
     } finally {
-      setIsLoading(false)
+      if (isLatest()) setIsLoading(false)
     }
-  }, [])
+  }, [startRequest])
 
   // Debounce search so we hit the endpoint's `q` param, not filter client-side
   useEffect(() => {

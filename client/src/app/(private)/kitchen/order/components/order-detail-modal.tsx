@@ -4,14 +4,15 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getOrderPlace } from "@/lib/order-place"
 import type { Order, OrderItem } from "@/types/order"
-import { OrderStatus } from "@/types/order"
 import { MessageSquareIcon } from "lucide-react"
 import Image from "next/image"
 
 type Props = {
   order: Order
+  actionLabel: string
+  canAdvanceStatus: boolean
   onClose: () => void
-  onComplete: () => void
+  onAdvanceStatus: () => void
 }
 
 function MenuItemCard({ item }: { item: OrderItem }) {
@@ -53,10 +54,7 @@ const formatTime = (dateStr?: string) => {
   })
 }
 
-export function OrderDetailModal({ order, onClose, onComplete }: Props) {
-  const status = Number(order.status)
-  const canAct = status === OrderStatus.PENDING || status === OrderStatus.PROCESSING
-  const actionLabel = status === OrderStatus.PENDING ? "Proses Pesanan" : "Selesaikan Pesanan"
+export function OrderDetailModal({ order, actionLabel, canAdvanceStatus, onClose, onAdvanceStatus }: Props) {
   const place = getOrderPlace(order)
   const itemCount = order.items?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0
   const items = order.items ?? []
@@ -105,9 +103,9 @@ export function OrderDetailModal({ order, onClose, onComplete }: Props) {
         </div>
 
         {/* Footer */}
-        {canAct && (
+        {canAdvanceStatus && (
           <div className="flex justify-end pt-2">
-            <Button onClick={onComplete} className="bg-secondary text-white hover:bg-secondary/90">
+            <Button onClick={onAdvanceStatus} className="bg-secondary text-white hover:bg-secondary/90">
               {actionLabel}
             </Button>
           </div>

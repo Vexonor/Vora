@@ -8,8 +8,10 @@ import { ReportTable } from "@/components/[role]/manager/sales-report/report-tab
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { sellingReportService } from "@/services/selling-report.service"
 import type { SellingReport } from "@/types/selling-report"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useLatestRequest } from "@/hooks/use-latest-request"
 import { Loader2Icon, PlusIcon, SearchIcon } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 const PAGE_SIZE = 20
 
@@ -47,9 +49,11 @@ export default function SalesReportPage() {
   const [error, setError] = useState<string | null>(null)
   const [bannerDismissed, setBannerDismissed] = useState(false)
   const [operationalTarget, setOperationalTarget] = useState<SellingReport | null>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedSearch = useDebouncedValue(search, 400)
+  const startRequest = useLatestRequest()
 
   const fetchReports = useCallback(async (q: string, month: string, year: string) => {
+    const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
@@ -58,39 +62,36 @@ export default function SalesReportPage() {
         month: month || undefined,
         year: year || undefined,
       })
-      setReports(Array.isArray(data) ? data : [])
+      if (isLatest()) setReports(Array.isArray(data) ? data : [])
     } catch {
-      setError("Gagal memuat laporan penjualan.")
+      if (isLatest()) setError("Gagal memuat laporan penjualan.")
     } finally {
-      setIsLoading(false)
+      if (isLatest()) setIsLoading(false)
     }
-  }, [])
+  }, [startRequest])
 
   useEffect(() => {
-    fetchReports("", "", "")
-  }, [fetchReports])
+    fetchReports(debouncedSearch, monthFilter, yearFilter)
+  }, [fetchReports, debouncedSearch, monthFilter, yearFilter])
+
+  const reloadReports = () => fetchReports(debouncedSearch, monthFilter, yearFilter)
 
   const totalPages = Math.max(1, Math.ceil(reports.length / PAGE_SIZE))
+  const visiblePage = Math.min(currentPage, totalPages)
 
-  const handleSearch = (val: string) => {
-    setSearch(val)
+  const handleSearch = (value: string) => {
+    setSearch(value)
     setCurrentPage(1)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      fetchReports(val, monthFilter, yearFilter)
-    }, 400)
   }
 
-  const handleMonthChange = (val: string) => {
-    setMonthFilter(val)
+  const handleMonthChange = (month: string) => {
+    setMonthFilter(month)
     setCurrentPage(1)
-    fetchReports(search, val, yearFilter)
   }
 
-  const handleYearChange = (val: string) => {
-    setYearFilter(val)
+  const handleYearChange = (year: string) => {
+    setYearFilter(year)
     setCurrentPage(1)
-    fetchReports(search, monthFilter, val)
   }
 
   const totalTransactions = reports.reduce((sum, r) => sum + Number(r.total_transaction), 0)
@@ -120,7 +121,7 @@ export default function SalesReportPage() {
       operational_cost: Number(form.operational),
       gross_revenue: Number(form.grossRevenue),
     })
-    await fetchReports(search, monthFilter, yearFilter)
+    await reloadReports()
   }
 
   return (
@@ -236,18 +237,18 @@ export default function SalesReportPage() {
       ) : error ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
           <p className="text-sm text-destructive">{error}</p>
-          <button onClick={() => fetchReports(search, monthFilter, yearFilter)} className="text-sm text-primary underline">
+          <button onClick={reloadReports} className="text-sm text-primary underline">
             Coba lagi
           </button>
         </div>
       ) : (
         <ReportTable
           reports={reports}
-          currentPage={currentPage}
+          currentPage={visiblePage}
           onPageChange={setCurrentPage}
           totalPages={totalPages}
-          onDeleted={() => fetchReports(search, monthFilter, yearFilter)}
-          onUpdated={() => fetchReports(search, monthFilter, yearFilter)}
+          onDeleted={reloadReports}
+          onUpdated={reloadReports}
         />
       )}
 
@@ -261,7 +262,7 @@ export default function SalesReportPage() {
       {operationalTarget && (
         <OperationalCostModal
           report={operationalTarget}
-          onSaved={() => fetchReports(search, monthFilter, yearFilter)}
+          onSaved={reloadReports}
           onClose={() => setOperationalTarget(null)}
         />
       )}

@@ -35,8 +35,8 @@ export default function ManagerUnitPage() {
     try {
       const data = await unitService.getAll({ order_by: "created_at", direction: "DESC" })
       setUnits(Array.isArray(data) ? data : [])
-    } catch (err) {
-      console.error("Failed to fetch units:", err)
+    } catch {
+      toast.error("Gagal memuat data satuan.")
     } finally {
       setIsLoading(false)
     }
@@ -78,9 +78,10 @@ export default function ManagerUnitPage() {
         await unitService.update(selectedUnit.id, { name: unitName, abbreviation: unitAbbreviation })
       }
       setIsModalOpen(false)
-      fetchUnits() // Refresh table
-    } catch (err) {
-      console.error("Failed to save unit:", err)
+      toast.success("Satuan berhasil disimpan.")
+      fetchUnits()
+    } catch {
+      toast.error("Gagal menyimpan satuan. Coba lagi.")
     } finally {
       setIsSubmitting(false)
     }
@@ -90,9 +91,8 @@ export default function ManagerUnitPage() {
     if (!confirm("Apakah Anda yakin ingin menghapus satuan ini?")) return
     try {
       await unitService.remove(id)
-      fetchUnits() // Refresh table
-    } catch (err) {
-      console.error("Failed to delete unit:", err)
+      fetchUnits()
+    } catch {
       toast.error("Gagal menghapus satuan. Pastikan tidak ada stok yang menggunakan satuan ini.")
     }
   }

@@ -3,6 +3,8 @@
 import { TransactionCard } from "@/components/shared/order/order-card"
 import { OrderFilterDropdown } from "@/components/shared/order/order-filter-dropdown"
 import { useSidebar } from "@/components/ui/sidebar"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useLatestRequest } from "@/hooks/use-latest-request"
 import { orderService } from "@/services/order.service"
 import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
@@ -39,18 +41,15 @@ export function OrderPage({ filterTabs = DEFAULT_FILTER_TABS }: Props) {
   const [activeFilter, setActiveFilter] = useState("semua")
   const [statusFilter, setStatusFilter] = useState<number[]>([])
   const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 300)
   const { open } = useSidebar()
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 300)
-    return () => clearTimeout(t)
-  }, [search])
+  const startRequest = useLatestRequest()
 
   const fetchOrders = useCallback(async (filter: string, searchTerm: string, statuses: number[]) => {
+    const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
@@ -63,28 +62,28 @@ export function OrderPage({ filterTabs = DEFAULT_FILTER_TABS }: Props) {
             : {}),
         ...(searchTerm && { search: searchTerm }),
       })
-      setOrders(Array.isArray(data) ? data : [])
+      if (isLatest()) setOrders(Array.isArray(data) ? data : [])
     } catch {
-      setError("Gagal memuat data pesanan.")
+      if (isLatest()) setError("Gagal memuat data pesanan.")
     } finally {
-      setIsLoading(false)
+      if (isLatest()) setIsLoading(false)
     }
-  }, [])
+  }, [startRequest])
 
   useEffect(() => {
     fetchOrders(activeFilter, debouncedSearch, statusFilter)
-  }, [activeFilter, debouncedSearch, fetchOrders])
+  }, [fetchOrders, activeFilter, debouncedSearch, statusFilter])
 
-  const handleTabChange = (val: string) => {
-    setActiveFilter(val)
+  const reloadOrders = () => fetchOrders(activeFilter, debouncedSearch, statusFilter)
+
+  const handleTabChange = (tabValue: string) => {
+    setActiveFilter(tabValue)
     setStatusFilter([])
-    fetchOrders(val, debouncedSearch, [])
   }
 
   const handleFilterApply = (statuses: number[]) => {
     setStatusFilter(statuses)
     if (statuses.length > 0) setActiveFilter("semua")
-    fetchOrders(statuses.length > 0 ? "semua" : activeFilter, debouncedSearch, statuses)
   }
 
   const gridCols = open
@@ -135,14 +134,14 @@ export function OrderPage({ filterTabs = DEFAULT_FILTER_TABS }: Props) {
       ) : error ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
           <p className="text-sm text-destructive">{error}</p>
-          <button onClick={() => fetchOrders(activeFilter, debouncedSearch, statusFilter)} className="text-sm text-primary underline">
+          <button onClick={reloadOrders} className="text-sm text-primary underline">
             Coba lagi
           </button>
         </div>
       ) : orders.length > 0 ? (
         <div className={`grid ${gridCols} gap-4 transition-all duration-200`}>
           {orders.map((order) => (
-            <TransactionCard key={order.id} order={order} onRefresh={() => fetchOrders(activeFilter, debouncedSearch, statusFilter)} />
+            <TransactionCard key={order.id} order={order} onRefresh={reloadOrders} />
           ))}
         </div>
       ) : (

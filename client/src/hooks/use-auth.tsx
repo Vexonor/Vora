@@ -18,7 +18,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
   updateUser: (user: User) => void;
 }
@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setToken(accessToken);
     setUser(loggedInUser);
+    return loggedInUser;
   }, []);
 
   const updateUser = useCallback((updatedUser: User) => {

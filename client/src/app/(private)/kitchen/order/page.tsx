@@ -2,11 +2,13 @@
 
 import { OrderFilterDropdown } from "@/components/shared/order/order-filter-dropdown"
 import { useSidebar } from "@/components/ui/sidebar"
+import { getOrderPlace } from "@/lib/order-place"
 import { orderService } from "@/services/order.service"
 import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
 import { Loader2Icon, SearchIcon } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner"
 import { KitchenOrderCard } from "./components/kitchen-order-card"
 
 const KITCHEN_FILTER_TABS = [
@@ -64,7 +66,7 @@ export default function KitchenOrderPage() {
       await orderService.updateStatus(orderId, { status: newStatus })
       fetchOrders(true)
     } catch {
-      // Silent fail
+      toast.error("Gagal memperbarui status pesanan. Coba lagi.")
     }
   }
 
@@ -83,14 +85,15 @@ export default function KitchenOrderPage() {
     if (statuses.length > 0) setActiveFilter("semua")
   }
 
+  const normalizedSearch = search.trim().toLowerCase()
   const filtered = orders.filter((o) => {
     const matchTab = activeFilter === "semua" || o.status === Number(activeFilter)
     const matchDropdown = statusFilter.length === 0 || statusFilter.includes(o.status)
-    const tableCode = `T-${String(o.table_id).padStart(2, "0")}`
-    const tableName = `Meja ${String(o.table_id).padStart(2, "0")}`
-    const matchSearch =
-      tableName.toLowerCase().includes(search.toLowerCase()) ||
-      tableCode.toLowerCase().includes(search.toLowerCase())
+    const place = getOrderPlace(o)
+    const searchableText = [place.code, place.name, o.customer_name ?? "", `#${o.id}`]
+      .join(" ")
+      .toLowerCase()
+    const matchSearch = searchableText.includes(normalizedSearch)
     return matchTab && matchDropdown && matchSearch
   })
 

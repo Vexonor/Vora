@@ -25,7 +25,7 @@ export class MenuController {
     FileInterceptor('image', {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
       fileFilter: (_req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|avif)$/)) {
           return callback(new Error('Only image files are allowed!'), false);
         }
         callback(null, true);
@@ -54,7 +54,7 @@ export class MenuController {
     FileInterceptor('image', {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
       fileFilter: (_req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|avif)$/)) {
           return callback(new Error('Only image files are allowed!'), false);
         }
         callback(null, true);

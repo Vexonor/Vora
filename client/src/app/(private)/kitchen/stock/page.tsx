@@ -6,8 +6,10 @@ import { stockService } from "@/services/stock.service"
 import type { Stock } from "@/types/stock"
 import { BoxIcon } from "@icons/box"
 import { Loader2Icon, SearchIcon } from "lucide-react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useLatestRequest } from "@/hooks/use-latest-request"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 const PAGE_SIZE = 20
 
@@ -20,9 +22,11 @@ export default function StockPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedSearch = useDebouncedValue(search, 400)
+  const startRequest = useLatestRequest()
 
   const fetchStocks = useCallback(async (q: string, page: number, statuses: number[]) => {
+    const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
@@ -36,40 +40,38 @@ export default function StockPage() {
       if (statuses.length === 1) params.status = String(statuses[0])
       else if (statuses.length > 1) params.status = JSON.stringify(statuses)
       const data = await stockService.getAll(params)
+      if (!isLatest()) return
       setStocks(data.stocks ?? [])
       setTotalPages(Math.max(1, Math.ceil((data.count ?? 0) / PAGE_SIZE)))
     } catch {
-      setError("Gagal memuat data bahan.")
+      if (isLatest()) setError("Gagal memuat data bahan.")
     } finally {
-      setIsLoading(false)
+      if (isLatest()) setIsLoading(false)
     }
-  }, [])
+  }, [startRequest])
+
+  useEffect(() => {
+    fetchStocks(debouncedSearch, currentPage, statusFilter)
+  }, [fetchStocks, debouncedSearch, currentPage, statusFilter])
 
   const handleDelete = async (stock: Stock) => {
     await stockService.remove(stock.id)
-    fetchStocks(search, currentPage, statusFilter)
+    const isLastItemOnPage = stocks.length === 1 && currentPage > 1
+    if (isLastItemOnPage) {
+      setCurrentPage(currentPage - 1)
+    } else {
+      fetchStocks(debouncedSearch, currentPage, statusFilter)
+    }
   }
 
-  useEffect(() => {
-    fetchStocks(search, currentPage, statusFilter)
-  }, [fetchStocks])
-
-  const handleSearch = (val: string) => {
-    setSearch(val)
+  const handleSearch = (value: string) => {
+    setSearch(value)
     setCurrentPage(1)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => fetchStocks(val, 1, statusFilter), 400)
-  }
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-    fetchStocks(search, page, statusFilter)
   }
 
   const handleFilterApply = (statuses: number[]) => {
     setStatusFilter(statuses)
     setCurrentPage(1)
-    fetchStocks(search, 1, statuses)
   }
 
   return (
@@ -108,7 +110,7 @@ export default function StockPage() {
       ) : error ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
           <p className="text-sm text-destructive">{error}</p>
-          <button onClick={() => fetchStocks(search, currentPage, statusFilter)} className="text-sm text-primary underline">
+          <button onClick={() => fetchStocks(debouncedSearch, currentPage, statusFilter)} className="text-sm text-primary underline">
             Coba lagi
           </button>
         </div>
@@ -116,7 +118,7 @@ export default function StockPage() {
         <StockTable
           stocks={stocks}
           currentPage={currentPage}
-          onPageChange={handlePageChange}
+          onPageChange={setCurrentPage}
           totalPages={totalPages}
           pageSize={PAGE_SIZE}
           basePath="/kitchen/stock"

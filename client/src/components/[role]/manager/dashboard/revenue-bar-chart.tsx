@@ -52,7 +52,7 @@ export function RevenueBarChart({ data, totalInPeriod, todayRevenue, periodLabel
       ) : (
         <ChartContainer config={chartConfig} className="h-80 w-full">
           <BarChart data={chartData} barCategoryGap="40%">
-            <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
+            <CartesianGrid vertical={false} stroke="var(--border)" />
             <XAxis
               dataKey="day"
               axisLine={false}

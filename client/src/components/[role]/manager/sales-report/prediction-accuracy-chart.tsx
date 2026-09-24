@@ -1,5 +1,6 @@
 "use client"
 
+import { useLatestRequest } from "@/hooks/use-latest-request"
 import { sellingTrendService } from "@/services/selling-trend.service"
 import type { AccuracyResponse, MetricKey } from "@/types/selling-trend"
 import { GaugeIcon, InfoIcon, Loader2Icon } from "lucide-react"
@@ -32,19 +33,21 @@ export function PredictionAccuracyChart() {
   const [data, setData] = useState<AccuracyResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const startRequest = useLatestRequest()
 
   const load = useCallback(async (m: MetricKey) => {
+    const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
       const result = await sellingTrendService.getAccuracy({ metric: m })
-      setData(result)
+      if (isLatest()) setData(result)
     } catch {
-      setError("Gagal memuat data akurasi.")
+      if (isLatest()) setError("Gagal memuat data akurasi.")
     } finally {
-      setIsLoading(false)
+      if (isLatest()) setIsLoading(false)
     }
-  }, [])
+  }, [startRequest])
 
   useEffect(() => { load(metric) }, [load, metric])
 

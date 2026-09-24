@@ -232,8 +232,9 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
   const [verifyError, setVerifyError] = useState<string | null>(null)
   const [methodLocked, setMethodLocked] = useState(false)
   const [cashResult, setCashResult] = useState<CashPaymentResult | null>(null)
+  const [paymentLoadFailed, setPaymentLoadFailed] = useState(false)
+  const [paymentReloadKey, setPaymentReloadKey] = useState(0)
 
-  // Sebagian endpoint mengembalikan order tanpa relasi items, jadi tetap dijaga.
   const items = transaction.items ?? []
   const itemCount = items.reduce((sum, item) => sum + Number(item.quantity), 0)
 
@@ -247,8 +248,9 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
       } catch (err: unknown) {
         const status = (err as { response?: { status?: number } })?.response?.status
         if (status === 404) {
-          // Tidak ada record payment → pesanan offline belum dibayar
           setMethod("tunai")
+        } else {
+          setPaymentLoadFailed(true)
         }
       } finally {
         setFetchLoading(false)
@@ -256,7 +258,13 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
     }
 
     fetchPayment()
-  }, [orderId])
+  }, [orderId, paymentReloadKey])
+
+  const handleRetryLoadPayment = () => {
+    setPaymentLoadFailed(false)
+    setFetchLoading(true)
+    setPaymentReloadKey((key) => key + 1)
+  }
 
   const handleTunaiPay = async (amount: number) => {
     setVerifyLoading(true)
@@ -358,7 +366,7 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
             <Select
               value={method}
               onValueChange={(val) => setMethod(val as PaymentMethod)}
-              disabled={methodLocked || fetchLoading || cashResult !== null}
+              disabled={methodLocked || fetchLoading || paymentLoadFailed || cashResult !== null}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -378,6 +386,15 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
             {fetchLoading ? (
               <div className="flex justify-center items-center py-12">
                 <Loader2 className="size-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : paymentLoadFailed ? (
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <p className="text-sm text-destructive">
+                  Gagal memuat status pembayaran. Pastikan pesanan belum dibayar online sebelum menerima uang tunai.
+                </p>
+                <Button variant="outline" onClick={handleRetryLoadPayment}>
+                  Coba lagi
+                </Button>
               </div>
             ) : method === "tunai" ? (
               // Numpad dan kembalian hanya milik alur tunai.

@@ -29,7 +29,7 @@ export function RevenueDonutChart({ completed, canceled, periodLabel, isLoading 
 
   const COLORS = hasData
     ? ["var(--primary)", "var(--destructive)"]
-    : ["hsl(var(--border))"]
+    : ["var(--border)"]
 
   return (
     <div className="bg-white rounded-xl border border-foreground/10 p-5 flex flex-col gap-4">

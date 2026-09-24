@@ -11,7 +11,7 @@ import { authService } from "@/services/auth.service"
 import type { User } from "@/types/user"
 import { USER_ROLE_LABELS } from "@/types/user"
 import { CameraIcon, CheckCircleIcon, EyeIcon, EyeOffIcon, KeyRoundIcon, Loader2Icon, UserIcon } from "lucide-react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 type Tab = "info" | "password"
@@ -40,8 +40,15 @@ function InfoTab({ user }: { user: User }) {
   const [preview, setPreview] = useState<string | null>(user.avatar_url ?? null)
   const [errors, setErrors] = useState<{ username?: string; email?: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const previewObjectUrlRef = useRef<string | null>(null)
 
   const initials = user.username.charAt(0).toUpperCase()
+
+  useEffect(() => {
+    return () => {
+      if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current)
+    }
+  }, [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -54,8 +61,11 @@ function InfoTab({ user }: { user: User }) {
       toast.error("Ukuran gambar maksimal 5MB.")
       return
     }
+    if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current)
+    const objectUrl = URL.createObjectURL(file)
+    previewObjectUrlRef.current = objectUrl
     setAvatarFile(file)
-    setPreview(URL.createObjectURL(file))
+    setPreview(objectUrl)
   }
 
   const validate = () => {

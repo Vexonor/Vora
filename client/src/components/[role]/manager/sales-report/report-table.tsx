@@ -9,6 +9,7 @@ import { sellingReportService } from "@/services/selling-report.service"
 import type { SellingReport } from "@/types/selling-report"
 import { DownloadIcon, FileSpreadsheetIcon, FileTextIcon, Trash2Icon, WalletIcon } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 import { DeleteReportModal } from "./delete-report-modal"
 import { OperationalCostModal } from "./operational-cost-modal"
 import { ReportDetailModal } from "./report-detail-modal"
@@ -48,7 +49,10 @@ export function ReportTable({ reports, currentPage, onPageChange, totalPages, on
         onPageChange(currentPage - 1)
       }
       setDeleteTarget(null)
+      toast.success("Laporan berhasil dihapus.")
       await onDeleted()
+    } catch {
+      toast.error("Gagal menghapus laporan. Coba lagi.")
     } finally {
       setIsDeleting(false)
     }

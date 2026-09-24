@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { FormField } from "@/components/ui/form-field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { getApiErrorMessage } from "@/lib/api-error"
 import { userService } from "@/services/user.service"
 import { UserRole, type User } from "@/types/user"
 import { Loader2Icon, SaveIcon } from "lucide-react"
@@ -63,7 +64,7 @@ export function EditStaffModal({ staff, onClose, onSaved }: Props) {
       await onSaved()
       onClose()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal memperbarui staff. Coba lagi.")
+      toast.error(getApiErrorMessage(err, "Gagal memperbarui staff. Coba lagi."))
     } finally {
       setIsSubmitting(false)
     }

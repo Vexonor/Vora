@@ -11,9 +11,9 @@ module.exports = {
 
     await queryInterface.bulkInsert('users', [{
       username: 'Super Admin',
-      email: process.env.SUPERADMIN_EMAIL || 'superadmin@example.com',
+      email: process.env.SUPERADMIN_EMAIL || ' ',
       password: hash,
-      role: 2, 
+      role: 2,
       created_at: now,
       updated_at: now,
     }], {});

@@ -34,7 +34,7 @@ export default function ManagerEditMenuPage({ params }: { params: Promise<{ id: 
       formData.append("price", String(form.price))
       formData.append("cost", String(form.cost ?? 0))
       formData.append("type", String(form.type))
-      if (form.status) formData.append("status", String(form.status))
+      if (form.status !== undefined && form.status !== "") formData.append("status", form.status)
       if (form.description) formData.append("description", form.description)
       if (form.image) formData.append("image", form.image)
 

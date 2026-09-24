@@ -13,7 +13,7 @@ import { Menu, MenuStatus, MenuType } from "@/types/menu"
 import { formatThousands, digitsOnly } from "@/lib/currency"
 import { CirclePlusIcon, ImagePlusIcon, Loader2Icon, PencilIcon } from "lucide-react"
 import Image from "next/image"
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 
 const MENU_TYPE_OPTIONS = [
   { value: String(MenuType.FOOD), label: "Makanan" },
@@ -46,27 +46,23 @@ type Props = {
   initialData?: Menu
 }
 
-export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
-  const [preview, setPreview] = useState<string | null>(null)
-  const fileRef = useRef<File | null>(null)
-  const [form, setForm] = useState<Omit<MenuFormData, "image">>({
-    name: "", price: "", cost: "", description: "", type: "", status: "",
-  })
-  const [errors, setErrors] = useState<MenuFormErrors>({})
+const toFormValues = (menu?: Menu): Omit<MenuFormData, "image"> => {
+  if (!menu) return { name: "", price: "", cost: "", description: "", type: "", status: "" }
+  return {
+    name: menu.name,
+    price: String(Number(menu.price)),
+    cost: menu.cost != null ? String(Number(menu.cost)) : "",
+    description: menu.description ?? "",
+    type: String(menu.type),
+    status: String(menu.status),
+  }
+}
 
-  useEffect(() => {
-    if (initialData) {
-      setForm({
-        name: initialData.name,
-        price: String(Number(initialData.price)),
-        cost: initialData.cost != null ? String(Number(initialData.cost)) : "",
-        description: initialData.description ?? "",
-        type: String(initialData.type),
-        status: String(initialData.status),
-      })
-      if (initialData.image_url) setPreview(initialData.image_url)
-    }
-  }, [initialData])
+export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
+  const [preview, setPreview] = useState<string | null>(initialData?.image_url ?? null)
+  const fileRef = useRef<File | null>(null)
+  const [form, setForm] = useState<Omit<MenuFormData, "image">>(() => toFormValues(initialData))
+  const [errors, setErrors] = useState<MenuFormErrors>({})
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

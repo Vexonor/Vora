@@ -31,4 +31,4 @@ export interface CreateStockRequest {
   maximum: number;
 }
 
-export interface UpdateStockRequest extends Partial<CreateStockRequest> {}
+export type UpdateStockRequest = Partial<CreateStockRequest>;

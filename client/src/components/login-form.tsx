@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
-import { UserRole } from "@/types/user";
+import { getPostLoginPath } from "@/lib/role-routes";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -32,26 +32,9 @@ export function LoginForm({
     setIsLoading(true);
 
     try {
-      await login(email, password);
-
-      // Redirect based on role stored after login
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        switch (user.role) {
-          case UserRole.MANAGER:
-            router.push("/manager/dashboard");
-            break;
-          case UserRole.CASHIER:
-            router.push("/cashier/dashboard");
-            break;
-          case UserRole.KITCHEN:
-            router.push("/kitchen/order");
-            break;
-          default:
-            router.push("/");
-        }
-      }
+      const loggedInUser = await login(email, password);
+      const requestedPath = new URLSearchParams(window.location.search).get("redirect");
+      router.push(getPostLoginPath(loggedInUser.role, requestedPath));
     } catch {
       setError("Email atau password salah. Silakan coba lagi.");
     } finally {

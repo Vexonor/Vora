@@ -42,4 +42,4 @@ export interface CreateMenuRequest {
   description?: string;
 }
 
-export interface UpdateMenuRequest extends Partial<CreateMenuRequest> {}
+export type UpdateMenuRequest = Partial<CreateMenuRequest>;

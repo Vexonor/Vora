@@ -8,6 +8,7 @@ import { tableService } from "@/services/table.service"
 import type { Table } from "@/types/table"
 import { CirclePlusIcon, Loader2Icon, SearchIcon } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function TableManagementPage() {
   const { open } = useSidebar()
@@ -59,8 +60,9 @@ export default function TableManagementPage() {
     try {
       await tableService.remove(deleteTarget.id)
       setTables((prev) => prev.filter((t) => t.id !== deleteTarget.id))
+      toast.success("Meja berhasil dihapus.")
     } catch {
-      // Silent fail for now
+      toast.error("Gagal menghapus meja. Coba lagi.")
     }
     setDeleteTarget(null)
   }

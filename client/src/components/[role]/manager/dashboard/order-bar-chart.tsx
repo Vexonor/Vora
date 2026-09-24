@@ -45,7 +45,7 @@ export function OrderBarChart({ data, totalInPeriod, todayCount, periodLabel, is
       ) : (
         <ChartContainer config={chartConfig} className="h-80 w-full">
           <BarChart data={chartData} barCategoryGap="35%">
-            <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
+            <CartesianGrid vertical={false} stroke="var(--border)" />
             <XAxis
               dataKey="day"
               axisLine={false}

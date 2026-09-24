@@ -6,8 +6,10 @@ import { StaffFilterDropdown } from "@/components/shared/staff/staff-filter-drop
 import { authService } from "@/services/auth.service"
 import { userService } from "@/services/user.service"
 import type { User } from "@/types/user"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useLatestRequest } from "@/hooks/use-latest-request"
 import { Loader2Icon, SearchIcon, UserPlusIcon } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 const PAGE_SIZE = 20
@@ -20,9 +22,11 @@ export default function StaffPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedSearch = useDebouncedValue(search, 400)
+  const startRequest = useLatestRequest()
 
   const fetchStaffs = useCallback(async (q: string, roles: number[]) => {
+    const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
@@ -30,34 +34,30 @@ export default function StaffPage() {
         q: q || undefined,
         roles: roles.length > 0 ? roles : undefined,
       })
-      setStaffs(Array.isArray(data) ? data : [])
+      if (isLatest()) setStaffs(Array.isArray(data) ? data : [])
     } catch {
-      setError("Gagal memuat data staf.")
+      if (isLatest()) setError("Gagal memuat data staf.")
     } finally {
-      setIsLoading(false)
+      if (isLatest()) setIsLoading(false)
     }
-  }, [])
+  }, [startRequest])
 
   useEffect(() => {
-    fetchStaffs("", [])
-  }, [fetchStaffs])
+    fetchStaffs(debouncedSearch, roleFilter)
+  }, [fetchStaffs, debouncedSearch, roleFilter])
 
-  const handleSearch = (val: string) => {
-    setSearch(val)
+  const handleSearch = (value: string) => {
+    setSearch(value)
     setCurrentPage(1)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      fetchStaffs(val, roleFilter)
-    }, 400)
   }
 
   const handleFilterApply = (roles: number[]) => {
     setRoleFilter(roles)
     setCurrentPage(1)
-    fetchStaffs(search, roles)
   }
 
   const totalPages = Math.max(1, Math.ceil(staffs.length / PAGE_SIZE))
+  const visiblePage = Math.min(currentPage, totalPages)
 
   const handleAdd = async (form: { username: string; email: string; role: string | "" }): Promise<{ error: string | null; defaultPassword?: string }> => {
     try {
@@ -66,7 +66,7 @@ export default function StaffPage() {
         email: form.email,
         role: Number(form.role),
       })
-      fetchStaffs(search, roleFilter)
+      fetchStaffs(debouncedSearch, roleFilter)
       return { error: null, defaultPassword: newUser.default_password }
     } catch {
       return { error: "Gagal menambahkan staf. Silakan coba lagi." }
@@ -120,18 +120,18 @@ export default function StaffPage() {
       ) : error ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
           <p className="text-sm text-destructive">{error}</p>
-          <button onClick={() => fetchStaffs(search, roleFilter)} className="text-sm text-primary underline">
+          <button onClick={() => fetchStaffs(debouncedSearch, roleFilter)} className="text-sm text-primary underline">
             Coba lagi
           </button>
         </div>
       ) : (
         <StaffTable
           staffs={staffs}
-          currentPage={currentPage}
+          currentPage={visiblePage}
           onPageChange={setCurrentPage}
           totalPages={totalPages}
           onDelete={handleDelete}
-          onUpdated={() => fetchStaffs(search, roleFilter)}
+          onUpdated={() => fetchStaffs(debouncedSearch, roleFilter)}
         />
       )}
 

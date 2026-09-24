@@ -1,6 +1,7 @@
 "use client"
 
 import { orderService } from "@/services/order.service"
+import { canViewInvoice } from "@/lib/invoice-access"
 import { downloadInvoiceAsPDF } from "@/lib/invoice-download"
 import { getOrderPlace } from "@/lib/order-place"
 import { OrderStatus, type Order } from "@/types/order"
@@ -31,11 +32,10 @@ const InvoiceContent = () => {
 
     setIsSending(true)
     try {
-      const invoiceUrl = `${window.location.origin}/payment/invoice?orderId=${currentOrder.id}`
       const res = await fetch("/api/send-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), order: currentOrder, invoiceUrl }),
+        body: JSON.stringify({ email: email.trim(), orderId: currentOrder.id }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => null)
@@ -85,18 +85,8 @@ const InvoiceContent = () => {
     )
   }
 
-  // Struk hanya tersedia setelah pesanan dikonfirmasi kasir / diproses dapur.
-  // Cegah akses langsung saat pesanan masih menunggu atau telah dibatalkan.
-  const status = Number(order.status)
-  const isPaid = order.payment?.payment_status === "settlement"
-  const invoiceAllowed =
-    isPaid ||
-    status === OrderStatus.PROCESSING ||
-    status === OrderStatus.READY ||
-    status === OrderStatus.COMPLETED
-
-  if (!invoiceAllowed) {
-    const isCanceled = status === OrderStatus.CANCELED
+  if (!canViewInvoice(order)) {
+    const isCanceled = Number(order.status) === OrderStatus.CANCELED
     return (
       <div className="w-full h-dvh bg-primary flex flex-col items-center justify-center text-primary-foreground gap-4 px-6 text-center">
         <ReceiptTextIcon className="size-16 opacity-50" />

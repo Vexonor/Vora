@@ -1,5 +1,6 @@
 "use client"
 
+import { useLatestRequest } from "@/hooks/use-latest-request"
 import { aiPredictionService } from "@/services/ai-prediction.service"
 import type { HistoryItem, ModelEvaluation, PredictionItem } from "@/types/ai-prediction"
 import { BotIcon, InfoIcon, Loader2Icon, RefreshCwIcon, TrendingUpIcon } from "lucide-react"
@@ -14,6 +15,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  type TooltipProps,
 } from "recharts"
 
 type Range = 7 | 14 | 30
@@ -85,15 +87,15 @@ function buildChartData(
   return [...histPoints, ...predPoints]
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-white border border-foreground/10 rounded-xl shadow-lg px-4 py-3 text-sm">
       <p className="font-semibold text-foreground mb-2">{label}</p>
-      {payload.map((p: any) => (
-        <p key={p.dataKey} style={{ color: p.color }} className="flex justify-between gap-6">
-          <span>{p.name}</span>
-          <span className="font-medium">{formatCurrency(p.value)}</span>
+      {payload.map((entry) => (
+        <p key={String(entry.dataKey)} style={{ color: entry.color }} className="flex justify-between gap-6">
+          <span>{entry.name}</span>
+          <span className="font-medium">{formatCurrency(Number(entry.value))}</span>
         </p>
       ))}
     </div>
@@ -169,23 +171,26 @@ export function PredictionChart() {
   const [range, setRange] = useState<Range>(30)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const startRequest = useLatestRequest()
 
   const load = useCallback(async (days: Range) => {
+    const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
       const result = await aiPredictionService.predict(days)
+      if (!isLatest()) return
       setData({
         history: result.history,
         predictions: result.predictions,
         evaluation: result.evaluation,
       })
-    } catch (err: any) {
-      setError(err?.message ?? "Gagal memuat prediksi")
+    } catch (err) {
+      if (isLatest()) setError(err instanceof Error ? err.message : "Gagal memuat prediksi")
     } finally {
-      setIsLoading(false)
+      if (isLatest()) setIsLoading(false)
     }
-  }, [])
+  }, [startRequest])
 
   useEffect(() => { load(range) }, [load, range])
 

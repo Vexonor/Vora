@@ -5,8 +5,10 @@ import { MenuFilterDropdown } from "@/components/shared/menu/menu-filter-dropdow
 import { menuService } from "@/services/menu.service"
 import type { Menu } from "@/types/menu"
 import { CirclePlusIcon, Loader2Icon, SearchIcon } from "lucide-react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useLatestRequest } from "@/hooks/use-latest-request"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 const PAGE_SIZE = 20
 
@@ -18,9 +20,11 @@ export default function ManagerMenuPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedSearch = useDebouncedValue(search, 400)
+  const startRequest = useLatestRequest()
 
   const fetchMenus = useCallback(async (q: string, statuses: number[]) => {
+    const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
@@ -28,34 +32,30 @@ export default function ManagerMenuPage() {
         q: q || undefined,
         statuses: statuses.length > 0 ? statuses : undefined,
       })
-      setMenus(data)
+      if (isLatest()) setMenus(data)
     } catch {
-      setError("Gagal memuat data menu.")
+      if (isLatest()) setError("Gagal memuat data menu.")
     } finally {
-      setIsLoading(false)
+      if (isLatest()) setIsLoading(false)
     }
-  }, [])
+  }, [startRequest])
 
   useEffect(() => {
-    fetchMenus("", [])
-  }, [fetchMenus])
+    fetchMenus(debouncedSearch, statusFilter)
+  }, [fetchMenus, debouncedSearch, statusFilter])
 
-  const handleSearch = (val: string) => {
-    setSearch(val)
+  const handleSearch = (value: string) => {
+    setSearch(value)
     setCurrentPage(1)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      fetchMenus(val, statusFilter)
-    }, 400)
   }
 
   const handleFilterApply = (statuses: number[]) => {
     setStatusFilter(statuses)
     setCurrentPage(1)
-    fetchMenus(search, statuses)
   }
 
   const totalPages = Math.max(1, Math.ceil(menus.length / PAGE_SIZE))
+  const visiblePage = Math.min(currentPage, totalPages)
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
@@ -93,17 +93,17 @@ export default function ManagerMenuPage() {
       ) : error ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
           <p className="text-sm text-destructive">{error}</p>
-          <button onClick={() => fetchMenus(search, statusFilter)} className="text-sm text-primary underline">
+          <button onClick={() => fetchMenus(debouncedSearch, statusFilter)} className="text-sm text-primary underline">
             Coba lagi
           </button>
         </div>
       ) : (
         <MenuTable
           menus={menus}
-          currentPage={currentPage}
+          currentPage={visiblePage}
           onPageChange={setCurrentPage}
           totalPages={totalPages}
-          onDeleted={() => fetchMenus(search, statusFilter)}
+          onDeleted={() => fetchMenus(debouncedSearch, statusFilter)}
         />
       )}
 

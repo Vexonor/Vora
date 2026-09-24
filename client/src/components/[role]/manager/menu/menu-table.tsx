@@ -10,6 +10,7 @@ import { MenuStatus } from "@/types/menu"
 import { EllipsisIcon, EyeIcon, PencilIcon, Trash2Icon } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { toast } from "sonner"
 import { DeleteMenuModal } from "./delete-menu-modal"
 
 export const MENU_STATUS_BADGE: Record<number, { label: string; badgeClass: string }> = {
@@ -45,7 +46,10 @@ export function MenuTable({ menus, currentPage, onPageChange, totalPages, onDele
         onPageChange(currentPage - 1)
       }
       setDeleteTarget(null)
+      toast.success("Menu berhasil dihapus.")
       await onDeleted()
+    } catch {
+      toast.error("Gagal menghapus menu. Coba lagi.")
     } finally {
       setIsDeleting(false)
     }

@@ -4,6 +4,7 @@ import { ManagerStatCard } from "../../../../components/[role]/manager/dashboard
 import { OrderBarChart } from "../../../../components/[role]/manager/dashboard/order-bar-chart"
 import { RevenueBarChart } from "../../../../components/[role]/manager/dashboard/revenue-bar-chart"
 import { RevenueDonutChart } from "../../../../components/[role]/manager/dashboard/revenue-donut-chart"
+import { useLatestRequest } from "@/hooks/use-latest-request"
 import { dashboardService } from "@/services/dashboard.service"
 import type { ChartPeriod, ManagerChartData } from "@/types/dashboard"
 import { TableIcon } from "@icons/table"
@@ -38,6 +39,7 @@ export default function ManagerDashboardPage() {
   const [chartData, setChartData] = useState<ManagerChartData>(EMPTY_CHART)
   const [isLoadingChart, setIsLoadingChart] = useState(true)
   const [period, setPeriod] = useState<ChartPeriod>("7d")
+  const startChartRequest = useLatestRequest()
 
   const fetchStats = useCallback(async () => {
     setIsLoadingStats(true)
@@ -78,16 +80,17 @@ export default function ManagerDashboardPage() {
   }, [])
 
   const fetchChartData = useCallback(async (p: ChartPeriod) => {
+    const isLatest = startChartRequest()
     setIsLoadingChart(true)
     try {
       const data = await dashboardService.getManagerChartData(p)
-      setChartData(data)
+      if (isLatest()) setChartData(data)
     } catch {
-      setChartData(EMPTY_CHART)
+      if (isLatest()) setChartData(EMPTY_CHART)
     } finally {
-      setIsLoadingChart(false)
+      if (isLatest()) setIsLoadingChart(false)
     }
-  }, [])
+  }, [startChartRequest])
 
   useEffect(() => {
     fetchStats()

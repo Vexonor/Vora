@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { orderService } from "@/services/order.service"
+import { canViewInvoice } from "@/lib/invoice-access"
 import { getOrderPlace } from "@/lib/order-place"
 import { OrderStatus, type Order } from "@/types/order"
 import {
@@ -59,13 +60,7 @@ export default function PaymentStatusPage() {
   const status = order ? Number(order.status) : null
   const isCanceled = status === OrderStatus.CANCELED
   const isTerminal = status === OrderStatus.COMPLETED || isCanceled
-  const isPaid = order?.payment?.payment_status === "settlement"
-  // Struk tersedia jika sudah lunas, atau pesanan sudah diproses dapur
-  const canPrintInvoice =
-    isPaid ||
-    status === OrderStatus.PROCESSING ||
-    status === OrderStatus.READY ||
-    status === OrderStatus.COMPLETED
+  const canPrintInvoice = order ? canViewInvoice(order) : false
 
   // Polling — berhenti otomatis saat status final (Selesai / Dibatalkan)
   useEffect(() => {

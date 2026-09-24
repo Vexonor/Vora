@@ -19,6 +19,7 @@ export function AddTableModal({ onGenerate, onClose }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
     const num = parseInt(tableNumber)
     if (!tableNumber || isNaN(num) || num <= 0) {
       setError("Masukkan nomor meja yang valid.")

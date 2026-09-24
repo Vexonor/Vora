@@ -120,7 +120,7 @@ export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string 
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
           <tr>
             <td align="center">
-              <a href="${invoiceUrl}"
+              <a href="${escapeHtml(invoiceUrl)}"
                  style="display:inline-block;background-color:#F49250;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 28px;border-radius:10px;">
                 Lihat &amp; Unduh Invoice (PDF)
               </a>
