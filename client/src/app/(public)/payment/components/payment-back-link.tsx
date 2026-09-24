@@ -1,4 +1,4 @@
-import { ChevronLeftIcon } from "@icons/chevron-left"
+import { ChevronLeftIcon } from "@/components/icons/chevron-left"
 import Link from "next/link"
 
 export function PaymentBackLink() {

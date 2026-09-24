@@ -6,9 +6,9 @@ import { useCart, type CartItem } from "@/hooks/use-cart"
 import { formatRupiah } from "@/lib/format"
 import { MENU_IMAGE_PLACEHOLDER } from "@/lib/menu-status"
 import { cn } from "@/lib/utils"
-import { MinusIcon } from "@icons/minus"
-import { NoteIcon } from "@icons/note"
-import { PlusIcon } from "@icons/plus"
+import { MinusIcon } from "@/components/icons/minus"
+import { NoteIcon } from "@/components/icons/note"
+import { PlusIcon } from "@/components/icons/plus"
 import Image from "next/image"
 
 export function CartItemRow({ item, className }: { item: CartItem; className?: string }) {

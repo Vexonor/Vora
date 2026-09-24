@@ -1,6 +1,6 @@
 import { RoleLayout, type NavItem } from "@/components/layout/role-layout"
-import { BoxIcon } from "@icons/box"
-import { CallBellIcon } from "@icons/call-bell"
+import { BoxIcon } from "@/components/icons/box"
+import { CallBellIcon } from "@/components/icons/call-bell"
 
 const KITCHEN_NAV_ITEMS: NavItem[] = [
   { title: "Pesanan", url: "/kitchen/order", icon: <CallBellIcon className="size-6" /> },

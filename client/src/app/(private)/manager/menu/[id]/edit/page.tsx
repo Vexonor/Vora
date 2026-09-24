@@ -1,6 +1,6 @@
 "use client"
 
-import { MenuForm } from "@/components/[role]/manager/menu/menu-form"
+import { MenuForm } from "@/components/manager/menu/menu-form"
 import { BackLink } from "@/components/shared/back-link"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { toMenuFormData, type MenuFormValues } from "@/lib/menu"

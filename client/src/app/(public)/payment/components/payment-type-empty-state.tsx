@@ -1,4 +1,4 @@
-import { HandTapIcon } from "@icons/hand-tap"
+import { HandTapIcon } from "@/components/icons/hand-tap"
 
 export function PaymentTypeEmptyState() {
   return (

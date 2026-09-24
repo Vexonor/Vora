@@ -9,7 +9,7 @@ import { useLatestRequest } from "@/hooks/use-latest-request"
 import { STOCK_STATUS_OPTIONS } from "@/lib/stock-status"
 import { stockService } from "@/services/stock.service"
 import type { Stock } from "@/types/stock"
-import { BoxIcon } from "@icons/box"
+import { BoxIcon } from "@/components/icons/box"
 import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
 

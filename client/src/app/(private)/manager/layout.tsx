@@ -1,11 +1,11 @@
 import { RoleLayout, type NavItem } from "@/components/layout/role-layout"
-import { BoxIcon } from "@icons/box"
-import { CallBellIcon } from "@icons/call-bell"
-import { DashboardIcon } from "@icons/dashboard"
-import { DocumentIcon } from "@icons/document"
-import { MenuIcon } from "@icons/menu"
-import { TableIcon } from "@icons/table"
-import { UsersIcon } from "@icons/users"
+import { BoxIcon } from "@/components/icons/box"
+import { CallBellIcon } from "@/components/icons/call-bell"
+import { DashboardIcon } from "@/components/icons/dashboard"
+import { DocumentIcon } from "@/components/icons/document"
+import { MenuIcon } from "@/components/icons/menu"
+import { TableIcon } from "@/components/icons/table"
+import { UsersIcon } from "@/components/icons/users"
 import { ScaleIcon } from "lucide-react"
 
 const MANAGER_NAV_ITEMS: NavItem[] = [

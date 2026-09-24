@@ -1,7 +1,7 @@
 "use client"
 
-import { AddStaffModal } from "@/components/[role]/manager/staff/add-staff-modal"
-import { StaffTable } from "@/components/[role]/manager/staff/staff-table"
+import { AddStaffModal } from "@/components/manager/staff/add-staff-modal"
+import { StaffTable } from "@/components/manager/staff/staff-table"
 import { FilterDropdown } from "@/components/shared/filter-dropdown"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { SearchField } from "@/components/shared/search-field"

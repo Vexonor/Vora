@@ -1,4 +1,4 @@
-import { CashRegisterIcon } from "@icons/cash-register"
+import { CashRegisterIcon } from "@/components/icons/cash-register"
 
 export function PayAtCashierNotice() {
   return (

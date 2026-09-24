@@ -1,7 +1,7 @@
 import { RadioGroup, RadioGroupItem } from "@/components/animate-ui/components/radix/radio-group"
 import { Label } from "@/components/ui/label"
-import { CardPosIcon } from "@icons/card-pos"
-import { WalletIcon } from "@icons/wallet"
+import { CardPosIcon } from "@/components/icons/card-pos"
+import { WalletIcon } from "@/components/icons/wallet"
 import type { MouseEvent } from "react"
 
 export type CustomerPaymentType = "online" | "offline"

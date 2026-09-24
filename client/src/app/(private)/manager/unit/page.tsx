@@ -1,6 +1,6 @@
 "use client"
 
-import { UnitFormDialog } from "@/components/[role]/manager/unit/unit-form-dialog"
+import { UnitFormDialog } from "@/components/manager/unit/unit-form-dialog"
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
 import { SearchField } from "@/components/shared/search-field"
 import { unitService } from "@/services/unit.service"

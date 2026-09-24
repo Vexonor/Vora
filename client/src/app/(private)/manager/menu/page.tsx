@@ -1,6 +1,6 @@
 "use client"
 
-import { MenuTable } from "@/components/[role]/manager/menu/menu-table"
+import { MenuTable } from "@/components/manager/menu/menu-table"
 import { FilterDropdown } from "@/components/shared/filter-dropdown"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { SearchField } from "@/components/shared/search-field"

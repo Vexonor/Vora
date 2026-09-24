@@ -1,7 +1,7 @@
 "use client"
 
-import { AddTableModal } from "@/components/[role]/manager/table-management/add-table-modal"
-import { TableCard } from "@/components/[role]/manager/table-management/table-card"
+import { AddTableModal } from "@/components/manager/table-management/add-table-modal"
+import { TableCard } from "@/components/manager/table-management/table-card"
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { SearchField } from "@/components/shared/search-field"

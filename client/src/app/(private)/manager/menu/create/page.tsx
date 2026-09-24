@@ -1,6 +1,6 @@
 "use client"
 
-import { MenuForm } from "@/components/[role]/manager/menu/menu-form"
+import { MenuForm } from "@/components/manager/menu/menu-form"
 import { toMenuFormData, type MenuFormValues } from "@/lib/menu"
 import { menuService } from "@/services/menu.service"
 import { useRouter } from "next/navigation"
