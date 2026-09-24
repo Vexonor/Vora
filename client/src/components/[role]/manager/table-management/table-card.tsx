@@ -1,5 +1,6 @@
 "use client"
 
+import { formatTableCode } from "@/lib/order-place"
 import type { Table } from "@/types/table"
 import { DownloadIcon, Trash2Icon } from "lucide-react"
 import { useRef } from "react"
@@ -10,33 +11,33 @@ type Props = {
   onDelete: (table: Table) => void
 }
 
+const QR_DOWNLOAD_SIZE_PX = 300
+
 export function TableCard({ table, onDelete }: Props) {
-  const qrRef = useRef<HTMLDivElement>(null)
-  const tableCode = `T-${String(table.number).padStart(2, "0")}`
-  const qrValue = `${typeof window !== "undefined" ? window.location.origin : ""}/?table=${table.id}`
+  const qrContainerRef = useRef<HTMLDivElement>(null)
+  const tableCode = formatTableCode(table.number)
+  const orderPageUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/?table=${table.id}`
 
-  const handleDownload = () => {
-    const svg = qrRef.current?.querySelector("svg")
-    if (!svg) return
+  const handleDownloadQrCode = () => {
+    const qrSvgElement = qrContainerRef.current?.querySelector("svg")
+    if (!qrSvgElement) return
 
-    const svgData = new XMLSerializer().serializeToString(svg)
+    const svgMarkup = new XMLSerializer().serializeToString(qrSvgElement)
+    const svgObjectUrl = URL.createObjectURL(new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" }))
     const canvas = document.createElement("canvas")
-    const ctx = canvas.getContext("2d")
-    const img = new Image()
-    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" })
-    const url = URL.createObjectURL(svgBlob)
+    const qrImage = new Image()
 
-    img.onload = () => {
-      canvas.width = 300
-      canvas.height = 300
-      ctx?.drawImage(img, 0, 0, 300, 300)
-      URL.revokeObjectURL(url)
-      const a = document.createElement("a")
-      a.download = `QR-${tableCode}.png`
-      a.href = canvas.toDataURL("image/png")
-      a.click()
+    qrImage.onload = () => {
+      canvas.width = QR_DOWNLOAD_SIZE_PX
+      canvas.height = QR_DOWNLOAD_SIZE_PX
+      canvas.getContext("2d")?.drawImage(qrImage, 0, 0, QR_DOWNLOAD_SIZE_PX, QR_DOWNLOAD_SIZE_PX)
+      URL.revokeObjectURL(svgObjectUrl)
+      const downloadLink = document.createElement("a")
+      downloadLink.download = `QR-${tableCode}.png`
+      downloadLink.href = canvas.toDataURL("image/png")
+      downloadLink.click()
     }
-    img.src = url
+    qrImage.src = svgObjectUrl
   }
 
   return (
@@ -50,11 +51,11 @@ export function TableCard({ table, onDelete }: Props) {
       </div>
 
       <div
-        ref={qrRef}
+        ref={qrContainerRef}
         className="bg-muted rounded-lg p-3 flex items-center justify-center"
       >
         <QRCode
-          value={qrValue}
+          value={orderPageUrl}
           size={80}
           bgColor="transparent"
           fgColor="#8A4A22"
@@ -62,12 +63,12 @@ export function TableCard({ table, onDelete }: Props) {
       </div>
 
       <p className="text-[10px] text-muted-foreground text-center truncate w-full px-1">
-        {qrValue}
+        {orderPageUrl}
       </p>
 
       <div className="flex gap-2 w-full">
         <button
-          onClick={handleDownload}
+          onClick={handleDownloadQrCode}
           className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-lg border border-foreground/20 hover:border-primary transition-colors"
         >
           <DownloadIcon className="size-3.5" />

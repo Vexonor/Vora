@@ -26,8 +26,8 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
     setError(null);
     setIsLoading(true);
 
@@ -70,7 +70,7 @@ export function LoginForm({
             placeholder="m@example.com"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(event) => setEmail(event.target.value)}
             disabled={isLoading}
             className="border border-primary rounded-lg py-2"
           />
@@ -85,7 +85,7 @@ export function LoginForm({
             placeholder="********"
             required
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(event) => setPassword(event.target.value)}
             disabled={isLoading}
             className="border border-primary rounded-lg py-2"
           />

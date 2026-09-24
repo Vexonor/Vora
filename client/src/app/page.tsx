@@ -1,33 +1,29 @@
 "use client"
 
-import { useEffect, useState } from "react";
-import CartDrawer from "./(public)/home/components/cart-drawer";
-import CategoryTab from "./(public)/home/components/category-tab";
-import Header from "./(public)/home/components/header";
+import { saveCustomerTableId } from "@/lib/customer-table"
+import { useEffect, useState } from "react"
+import { CartDrawer } from "./(public)/home/components/cart-drawer"
+import { HomeHeader } from "./(public)/home/components/home-header"
+import { MenuCatalog } from "./(public)/home/components/menu-catalog"
 
-export default function Home() {
-  const [search, setSearch] = useState("");
+export default function CustomerHomePage() {
+  const [search, setSearch] = useState("")
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const tableId = params.get("table");
-      if (tableId) {
-        localStorage.setItem("table_id", tableId);
-      }
-    }
-  }, []);
+    const scannedTableId = new URLSearchParams(window.location.search).get("table")
+    if (scannedTableId) saveCustomerTableId(scannedTableId)
+  }, [])
 
   return (
     <main className="w-full h-dvh bg-primary">
       <div className="max-w-3xl h-full mx-auto bg-background flex flex-col gap-2 relative">
-        <Header search={search} onSearchChange={setSearch} />
-        <CategoryTab search={search} />
+        <HomeHeader search={search} onSearchChange={setSearch} />
+        <MenuCatalog search={search} />
 
         <div className="absolute bottom-4 right-4 bg-secondary size-20 flex justify-center items-center rounded-full z-30">
           <CartDrawer />
         </div>
       </div>
     </main>
-  );
+  )
 }

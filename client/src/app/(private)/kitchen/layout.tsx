@@ -1,39 +1,12 @@
-"use client"
-
-import { RoleLayout } from "@/components/layout/role-layout"
-import { useAuth } from "@/hooks/use-auth"
+import { RoleLayout, type NavItem } from "@/components/layout/role-layout"
 import { BoxIcon } from "@icons/box"
 import { CallBellIcon } from "@icons/call-bell"
-import { usePathname } from "next/navigation"
+
+const KITCHEN_NAV_ITEMS: NavItem[] = [
+  { title: "Pesanan", url: "/kitchen/order", icon: <CallBellIcon className="size-6" /> },
+  { title: "Stok Bahan", url: "/kitchen/stock", icon: <BoxIcon className="size-6" /> },
+]
 
 export default function KitchenLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
-  const { user } = useAuth()
-
-  const kitchenNav = [
-    {
-      title: "Pesanan",
-      url: "/kitchen/order",
-      icon: <CallBellIcon className="size-6" />,
-      isActive: pathname === "/kitchen/order",
-    },
-    {
-      title: "Stok Bahan",
-      url: "/kitchen/stock",
-      icon: <BoxIcon className="size-6" />,
-      isActive: pathname.startsWith("/kitchen/stock"),
-    },
-  ]
-
-  const kitchenUser = {
-    name: user?.username ?? "Dapur Utama",
-    email: user?.email ?? "kitchen@vora.com",
-    avatar: user?.avatar_url ?? "",
-  }
-
-  return (
-    <RoleLayout user={kitchenUser} navItems={kitchenNav}>
-      {children}
-    </RoleLayout>
-  )
+  return <RoleLayout navItems={KITCHEN_NAV_ITEMS}>{children}</RoleLayout>
 }

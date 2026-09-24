@@ -1,5 +1,6 @@
 "use client"
 
+import { RupiahInput } from "@/components/shared/rupiah-input"
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/ui/form-field"
 import { Input } from "@/components/ui/input"
@@ -9,98 +10,58 @@ import {
   SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Menu, MenuStatus, MenuType } from "@/types/menu"
-import { formatThousands, digitsOnly } from "@/lib/currency"
+import { toMenuFormValues, type MenuFormValues } from "@/lib/menu"
+import { MENU_STATUS_OPTIONS, MENU_TYPE_OPTIONS } from "@/lib/menu-status"
+import type { Menu } from "@/types/menu"
 import { CirclePlusIcon, ImagePlusIcon, Loader2Icon, PencilIcon } from "lucide-react"
 import Image from "next/image"
-import { useRef, useState } from "react"
+import { useState } from "react"
 
-const MENU_TYPE_OPTIONS = [
-  { value: String(MenuType.FOOD), label: "Makanan" },
-  { value: String(MenuType.HOT_DRINK), label: "Minuman Panas" },
-  { value: String(MenuType.COLD_DRINK), label: "Minuman Dingin" },
-  { value: String(MenuType.SNACK), label: "Cemilan" },
-]
-
-const MENU_STATUS_OPTIONS = [
-  { value: String(MenuStatus.AVAILABLE), label: "Tersedia" },
-  { value: String(MenuStatus.SOLD_OUT), label: "Habis" },
-  { value: String(MenuStatus.INACTIVE), label: "Tidak Aktif" },
-]
-
-export type MenuFormData = {
-  name: string
-  price: string
-  cost?: string
-  description: string
-  type: string
-  status?: string
-  image: File | null
-}
-
-type MenuFormErrors = { name?: string; price?: string; type?: string }
+type MenuFormErrors = Partial<Record<"name" | "price" | "type", string>>
+type TextField = Exclude<keyof MenuFormValues, "image">
 
 type Props = {
-  onSubmit: (form: MenuFormData) => Promise<void>
+  initialMenu?: Menu
   isSubmitting?: boolean
-  initialData?: Menu
+  onSubmit: (values: MenuFormValues) => Promise<void>
 }
 
-const toFormValues = (menu?: Menu): Omit<MenuFormData, "image"> => {
-  if (!menu) return { name: "", price: "", cost: "", description: "", type: "", status: "" }
-  return {
-    name: menu.name,
-    price: String(Number(menu.price)),
-    cost: menu.cost != null ? String(Number(menu.cost)) : "",
-    description: menu.description ?? "",
-    type: String(menu.type),
-    status: String(menu.status),
-  }
-}
-
-export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
-  const [preview, setPreview] = useState<string | null>(initialData?.image_url ?? null)
-  const fileRef = useRef<File | null>(null)
-  const [form, setForm] = useState<Omit<MenuFormData, "image">>(() => toFormValues(initialData))
+export function MenuForm({ initialMenu, isSubmitting, onSubmit }: Props) {
+  const [values, setValues] = useState<MenuFormValues>(() => toMenuFormValues(initialMenu))
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(initialMenu?.image_url ?? null)
   const [errors, setErrors] = useState<MenuFormErrors>({})
+  const isEditMode = !!initialMenu
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const updateField = (field: TextField, value: string) => {
+    setValues((previous) => ({ ...previous, [field]: value }))
+    setErrors((previous) => ({ ...previous, [field]: undefined }))
+  }
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (!file) return
-    fileRef.current = file
+    setValues((previous) => ({ ...previous, image: file }))
     const reader = new FileReader()
-    reader.onload = () => setPreview(reader.result as string)
+    reader.onload = () => setImagePreviewUrl(reader.result as string)
     reader.readAsDataURL(file)
   }
 
-  const handleChange = (key: keyof Omit<MenuFormData, "image" | "type">) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setForm((prev) => ({ ...prev, [key]: e.target.value }))
-      setErrors((prev) => ({ ...prev, [key]: undefined }))
-    }
-
-  const handleNumericChange = (key: "price" | "cost") =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setForm((prev) => ({ ...prev, [key]: digitsOnly(e.target.value) }))
-      setErrors((prev) => ({ ...prev, [key]: undefined }))
-    }
-
   const validate = (): MenuFormErrors => {
-    const e: MenuFormErrors = {}
-    if (!form.name.trim()) e.name = "Nama menu tidak boleh kosong."
-    if (!form.price || isNaN(Number(form.price)) || Number(form.price) <= 0)
-      e.price = "Harga harus berupa angka lebih dari 0."
-    if (!form.type) e.type = "Pilih tipe menu terlebih dahulu."
-    return e
+    const validationErrors: MenuFormErrors = {}
+    if (!values.name.trim()) validationErrors.name = "Nama menu tidak boleh kosong."
+    if (!values.price || Number(values.price) <= 0) validationErrors.price = "Harga harus berupa angka lebih dari 0."
+    if (!values.type) validationErrors.type = "Pilih tipe menu terlebih dahulu."
+    return validationErrors
   }
 
   const handleSubmit = async () => {
-    const newErrors = validate()
-    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
-    await onSubmit({ ...form, image: fileRef.current })
+    const validationErrors = validate()
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
+      return
+    }
+    await onSubmit(values)
   }
-
-  const isEdit = !!initialData
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
@@ -109,18 +70,18 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
         <div className="flex flex-col gap-2">
           <Label className="font-semibold">
             Foto menu{" "}
-            {isEdit && <span className="text-muted-foreground font-normal">(biarkan kosong jika tidak ingin mengubah)</span>}
+            {isEditMode && <span className="text-muted-foreground font-normal">(biarkan kosong jika tidak ingin mengubah)</span>}
           </Label>
           <label className="flex flex-col items-center justify-center border-2 border-dashed border-input rounded-xl cursor-pointer hover:border-primary/70 transition-colors overflow-hidden min-h-60">
-            {preview ? (
-              <Image src={preview} alt="Foto menu" width={800} height={240} className="w-full object-cover max-h-80" unoptimized />
+            {imagePreviewUrl ? (
+              <Image src={imagePreviewUrl} alt="Foto menu" width={800} height={240} className="w-full object-cover max-h-80" unoptimized />
             ) : (
               <div className="flex flex-col items-center gap-2 text-muted-foreground p-8">
                 <ImagePlusIcon className="size-10" strokeWidth={1.5} />
                 <p className="text-sm">Masukkan gambar menu</p>
               </div>
             )}
-            <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
+            <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
           </label>
         </div>
 
@@ -128,23 +89,18 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
           <FormField label="Nama menu" error={errors.name} labelClassName="font-semibold">
             <Input
               placeholder="Masukkan nama menu"
-              value={form.name}
-              onChange={handleChange("name")}
+              value={values.name}
+              onChange={(event) => updateField("name", event.target.value)}
               aria-invalid={!!errors.name}
             />
           </FormField>
           <FormField label="Harga menu" error={errors.price} labelClassName="font-semibold">
-            <div className={`flex items-center border rounded-md overflow-hidden transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 ${errors.price ? "border-destructive" : "border-input"}`}>
-              <span className="px-3 text-sm text-muted-foreground border-r border-input bg-muted h-full flex items-center">Rp.</span>
-              <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="Masukkan harga"
-                value={formatThousands(form.price)}
-                onChange={handleNumericChange("price")}
-                className="border-0 rounded-none focus-visible:ring-0 shadow-none"
-              />
-            </div>
+            <RupiahInput
+              value={values.price}
+              onChange={(digits) => updateField("price", digits)}
+              placeholder="Masukkan harga"
+              hasError={!!errors.price}
+            />
           </FormField>
         </div>
 
@@ -152,62 +108,43 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
           <FormField label="Deskripsi menu" labelClassName="font-semibold">
             <Textarea
               placeholder="Masukkan deskripsi menu"
-              value={form.description}
-              onChange={handleChange("description")}
+              value={values.description}
+              onChange={(event) => updateField("description", event.target.value)}
               className="resize-none"
               rows={3}
             />
           </FormField>
           <FormField label="Tipe menu" error={errors.type} labelClassName="font-semibold">
-            <Select
-              value={form.type}
-              onValueChange={(val) => {
-                setForm((prev) => ({ ...prev, type: val }))
-                setErrors((prev) => ({ ...prev, type: undefined }))
-              }}
-            >
+            <Select value={values.type} onValueChange={(type) => updateField("type", type)}>
               <SelectTrigger aria-invalid={!!errors.type}>
                 <SelectValue placeholder="Pilih tipe menu" />
               </SelectTrigger>
               <SelectContent>
-                {MENU_TYPE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                {MENU_TYPE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={String(option.value)}>{option.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </FormField>
         </div>
 
-        <FormField
-          label="Harga modal"
-          labelClassName="font-semibold"
-          className="max-w-xs"
-        >
-          <div className="flex items-center border border-input rounded-md overflow-hidden transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
-            <span className="px-3 text-sm text-muted-foreground border-r border-input bg-muted h-full flex items-center">Rp.</span>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder="Masukkan harga modal (opsional)"
-              value={formatThousands(form.cost)}
-              onChange={handleNumericChange("cost")}
-              className="border-0 rounded-none focus-visible:ring-0 shadow-none"
-            />
-          </div>
+        <FormField label="Harga modal" labelClassName="font-semibold" className="max-w-xs">
+          <RupiahInput
+            value={values.cost}
+            onChange={(digits) => updateField("cost", digits)}
+            placeholder="Masukkan harga modal (opsional)"
+          />
         </FormField>
 
-        {isEdit && (
+        {isEditMode && (
           <FormField label="Status menu" labelClassName="font-semibold" className="max-w-xs">
-            <Select
-              value={form.status}
-              onValueChange={(val) => setForm((prev) => ({ ...prev, status: val }))}
-            >
+            <Select value={values.status} onValueChange={(status) => updateField("status", status)}>
               <SelectTrigger>
                 <SelectValue placeholder="Pilih status menu" />
               </SelectTrigger>
               <SelectContent>
-                {MENU_STATUS_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                {MENU_STATUS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={String(option.value)}>{option.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -220,8 +157,10 @@ export function MenuForm({ onSubmit, isSubmitting, initialData }: Props) {
             disabled={isSubmitting}
             className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
           >
-            {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : isEdit ? <PencilIcon className="size-4" /> : <CirclePlusIcon className="size-4" />}
-            {isSubmitting ? "Menyimpan..." : isEdit ? "Simpan Perubahan" : "Tambah Menu"}
+            {isSubmitting
+              ? <Loader2Icon className="size-4 animate-spin" />
+              : isEditMode ? <PencilIcon className="size-4" /> : <CirclePlusIcon className="size-4" />}
+            {isSubmitting ? "Menyimpan..." : isEditMode ? "Simpan Perubahan" : "Tambah Menu"}
           </Button>
         </div>
 

@@ -3,24 +3,29 @@
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { useState } from "react"
-import EmptyStateSection from "./components/empty-state-section"
-import Header from "./components/header"
-import PayAtCashierSection from "./components/pay-at-cashier-section"
-import BottomSheet from "./components/price-section"
-import OrderSection from "./order-section"
-import PaymentMethodSection from "./payment-method-section"
-import PaymentTypeSection from "./payment-type-section"
+import { CartReviewSection } from "./components/cart-review-section"
+import { CheckoutSummary } from "./components/checkout-summary"
+import { OnlinePaymentMethodSection } from "./components/online-payment-method-section"
+import { PayAtCashierNotice } from "./components/pay-at-cashier-notice"
+import { PaymentBackLink } from "./components/payment-back-link"
+import { PaymentTypeEmptyState } from "./components/payment-type-empty-state"
+import { PaymentTypeSection, type CustomerPaymentType } from "./components/payment-type-section"
 
-const Payment = () => {
-  const [paymentType, setPaymentType] = useState<string>("")
-  const [paymentMethod, setPaymentMethod] = useState<string>("")
-  const [customerName, setCustomerName] = useState<string>("")
+export default function CustomerPaymentPage() {
+  const [paymentType, setPaymentType] = useState<CustomerPaymentType | null>(null)
+  const [onlinePaymentMethod, setOnlinePaymentMethod] = useState("")
+  const [customerName, setCustomerName] = useState("")
+
+  const handlePaymentTypeChange = (selectedType: CustomerPaymentType | null) => {
+    setPaymentType(selectedType)
+    if (selectedType !== "online") setOnlinePaymentMethod("")
+  }
 
   return (
     <main className="w-full h-dvh bg-primary">
       <div className="max-w-3xl h-full mx-auto bg-background flex flex-col gap-4 relative p-4 overflow-y-auto">
-        <Header />
-        <OrderSection />
+        <PaymentBackLink />
+        <CartReviewSection />
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="customer-name" className="text-sm font-bold text-foreground">
@@ -29,38 +34,38 @@ const Payment = () => {
           <Input
             id="customer-name"
             value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
+            onChange={(event) => setCustomerName(event.target.value)}
             placeholder="Masukkan nama Anda"
             maxLength={100}
             className="bg-white"
           />
         </div>
         <Separator />
-        <PaymentTypeSection
-          value={paymentType}
-          onValueChange={(val) => {
-            setPaymentType(val)
-            if (val !== "online") setPaymentMethod("")
-          }}
-        />
+        <PaymentTypeSection selectedType={paymentType} onSelectedTypeChange={handlePaymentTypeChange} />
         <Separator />
         <div className="min-h-[200px]">
-          {paymentType === "online"
-            ? <div className="flex flex-col gap-6">
-              <PaymentMethodSection value={paymentMethod} onValueChange={setPaymentMethod} />
-              <BottomSheet paymentType="online" paymentMethod={paymentMethod} customerName={customerName} />
+          {paymentType === "online" && (
+            <div className="flex flex-col gap-6">
+              <OnlinePaymentMethodSection
+                selectedMethod={onlinePaymentMethod}
+                onSelectedMethodChange={setOnlinePaymentMethod}
+              />
+              <CheckoutSummary
+                paymentType="online"
+                onlinePaymentMethod={onlinePaymentMethod}
+                customerName={customerName}
+              />
             </div>
-            : paymentType === "offline"
-              ? <div className="flex flex-col gap-6">
-                <PayAtCashierSection />
-                <BottomSheet paymentType="offline" customerName={customerName} />
-              </div>
-              : <EmptyStateSection />
-          }
+          )}
+          {paymentType === "offline" && (
+            <div className="flex flex-col gap-6">
+              <PayAtCashierNotice />
+              <CheckoutSummary paymentType="offline" customerName={customerName} />
+            </div>
+          )}
+          {paymentType === null && <PaymentTypeEmptyState />}
         </div>
       </div>
     </main>
   )
 }
-
-export default Payment

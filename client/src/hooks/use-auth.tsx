@@ -1,7 +1,8 @@
 "use client";
 
-import type { User } from "@/types/user";
+import { clearSession, readStoredSession, saveSession, saveStoredUser } from "@/lib/auth-session";
 import { authService } from "@/services/auth.service";
+import type { User } from "@/types/user";
 import {
   createContext,
   ReactNode,
@@ -12,34 +13,32 @@ import {
   useState,
 } from "react";
 
-interface AuthContextType {
+type AuthContextValue = {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<User>;
   logout: () => void;
   updateUser: (user: User) => void;
-}
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     try {
-      const storedToken = localStorage.getItem("access_token");
-      const storedUser = localStorage.getItem("user");
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+      const storedSession = readStoredSession();
+      if (storedSession) {
+        setAccessToken(storedSession.accessToken);
+        setUser(storedSession.user);
       }
     } catch {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("user");
+      clearSession();
     } finally {
       setIsLoading(false);
     }
@@ -47,55 +46,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await authService.login({ email, password });
-    const accessToken = response.access_token;
-    const loggedInUser = response.user;
-
-    localStorage.setItem("access_token", accessToken);
-    localStorage.setItem("user", JSON.stringify(loggedInUser));
-
-    const cookieOpts = `path=/; max-age=${60 * 60 * 24 * 7}`;
-    document.cookie = `access_token=${accessToken}; ${cookieOpts}`;
-    document.cookie = `user_role=${loggedInUser.role}; ${cookieOpts}`;
-
-    setToken(accessToken);
-    setUser(loggedInUser);
-    return loggedInUser;
+    saveSession(response.access_token, response.user);
+    setAccessToken(response.access_token);
+    setUser(response.user);
+    return response.user;
   }, []);
 
   const updateUser = useCallback((updatedUser: User) => {
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+    saveStoredUser(updatedUser);
     setUser(updatedUser);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user");
-
-    document.cookie = "access_token=; path=/; max-age=0";
-    document.cookie = "user_role=; path=/; max-age=0";
-
-    setToken(null);
+    clearSession();
+    setAccessToken(null);
     setUser(null);
     window.location.href = "/login";
   }, []);
 
-  const value = useMemo<AuthContextType>(
+  const value = useMemo<AuthContextValue>(
     () => ({
       user,
-      token,
+      accessToken,
       isLoading,
-      isAuthenticated: !!token && !!user,
+      isAuthenticated: !!accessToken && !!user,
       login,
       logout,
       updateUser,
     }),
-    [user, token, isLoading, login, logout, updateUser],
+    [user, accessToken, isLoading, login, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth(): AuthContextType {
+export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");

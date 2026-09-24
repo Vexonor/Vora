@@ -1,76 +1,57 @@
 "use client"
 
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
+import { paginate, TablePagination } from "@/components/shared/table-pagination"
 import {
   DropdownMenu, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { downloadReportAsExcel, downloadReportAsPDF } from "@/lib/report-download"
-import { sellingReportService } from "@/services/selling-report.service"
+import { formatDate, formatRupiah } from "@/lib/format"
+import { downloadReportAsExcel, downloadReportAsPdf } from "@/lib/report-download"
 import type { SellingReport } from "@/types/selling-report"
 import { DownloadIcon, FileSpreadsheetIcon, FileTextIcon, Trash2Icon, WalletIcon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
-import { DeleteReportModal } from "./delete-report-modal"
-import { OperationalCostModal } from "./operational-cost-modal"
 import { ReportDetailModal } from "./report-detail-modal"
 
 type Props = {
   reports: SellingReport[]
   currentPage: number
-  onPageChange: (page: number) => void
   totalPages: number
-  onDeleted: () => void | Promise<void>
-  onUpdated: () => void | Promise<void>
+  pageSize: number
+  onPageChange: (page: number) => void
+  onDelete: (report: SellingReport) => Promise<void>
+  onEditOperationalCost: (report: SellingReport) => void
 }
 
-const PAGE_SIZE = 20
-const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`
-const formatDate = (dateStr: string) =>
-  new Date(dateStr).toLocaleDateString("id-ID", {
-    day: "numeric", month: "short", year: "numeric",
-  })
-
-export function ReportTable({ reports, currentPage, onPageChange, totalPages, onDeleted, onUpdated }: Props) {
-  const [detailTarget, setDetailTarget] = useState<SellingReport | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<SellingReport | null>(null)
+export function ReportTable({
+  reports,
+  currentPage,
+  totalPages,
+  pageSize,
+  onPageChange,
+  onDelete,
+  onEditOperationalCost,
+}: Props) {
+  const [reportToView, setReportToView] = useState<SellingReport | null>(null)
+  const [reportToDelete, setReportToDelete] = useState<SellingReport | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [operationalTarget, setOperationalTarget] = useState<SellingReport | null>(null)
 
-  const paginated = reports.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-  const offset = (currentPage - 1) * PAGE_SIZE
+  const visibleReports = paginate(reports, currentPage, pageSize)
+  const rowNumberOffset = (currentPage - 1) * pageSize
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return
+  const handleConfirmDelete = async () => {
+    if (!reportToDelete) return
     setIsDeleting(true)
     try {
-      await sellingReportService.remove(deleteTarget.id)
-      if (paginated.length === 1 && currentPage > 1) {
-        onPageChange(currentPage - 1)
-      }
-      setDeleteTarget(null)
+      await onDelete(reportToDelete)
       toast.success("Laporan berhasil dihapus.")
-      await onDeleted()
+      setReportToDelete(null)
     } catch {
       toast.error("Gagal menghapus laporan. Coba lagi.")
     } finally {
       setIsDeleting(false)
     }
-  }
-
-  const getPages = () => {
-    const pages: (number | "...")[] = []
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i)
-    } else {
-      pages.push(1)
-      if (currentPage > 3) pages.push("...")
-      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
-        pages.push(i)
-      }
-      if (currentPage < totalPages - 2) pages.push("...")
-      pages.push(totalPages)
-    }
-    return pages
   }
 
   return (
@@ -89,56 +70,57 @@ export function ReportTable({ reports, currentPage, onPageChange, totalPages, on
             </tr>
           </thead>
           <tbody>
-            {paginated.length > 0 ? paginated.map((report, i) => (
+            {visibleReports.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-6 py-16 text-center text-muted-foreground text-sm">
+                  Laporan tidak ditemukan.
+                </td>
+              </tr>
+            )}
+            {visibleReports.map((report, index) => (
               <tr key={report.id} className="border-b border-foreground/5 last:border-0 hover:bg-muted/30 transition-colors">
-                <td className="px-6 py-4 text-muted-foreground">{offset + i + 1}.</td>
+                <td className="px-6 py-4 text-muted-foreground">{rowNumberOffset + index + 1}.</td>
                 <td className="px-6 py-4 font-medium">{report.title}</td>
-                <td className="px-6 py-4 text-muted-foreground">{formatDate(report.date)}</td>
+                <td className="px-6 py-4 text-muted-foreground">{formatDate(report.date, "short")}</td>
                 <td className="px-6 py-4 text-center text-muted-foreground">{report.total_transaction}</td>
                 <td className="px-6 py-4 text-right text-muted-foreground">
-                  {report.operational_cost != null ? formatCurrency(Number(report.operational_cost)) : "—"}
+                  {report.operational_cost != null ? formatRupiah(report.operational_cost) : "—"}
                 </td>
-                <td className="px-6 py-4 text-right font-medium text-primary">{formatCurrency(Number(report.net_profit))}</td>
+                <td className="px-6 py-4 text-right font-medium text-primary">{formatRupiah(report.net_profit)}</td>
                 <td className="px-6 py-4 text-center">
                   <div className="flex items-center justify-center gap-2">
                     <button
-                      onClick={() => setOperationalTarget(report)}
+                      onClick={() => onEditOperationalCost(report)}
                       title="Isi/Edit modal operasional"
                       className="p-1.5 rounded-lg border border-foreground/20 hover:border-primary transition-colors"
                     >
                       <WalletIcon className="size-3.5 text-muted-foreground" />
                     </button>
                     <button
-                      onClick={() => setDetailTarget(report)}
+                      onClick={() => setReportToView(report)}
                       className="text-xs font-medium px-3 py-1.5 rounded-lg border border-foreground/20 hover:border-primary transition-colors"
                     >
                       Detail
                     </button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="p-1.5 rounded-lg border border-foreground/20 hover:border-primary transition-colors">
+                        <button className="p-1.5 rounded-lg border border-foreground/20 hover:border-primary transition-colors" aria-label="Download laporan">
                           <DownloadIcon className="size-3.5 text-muted-foreground" />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem
-                          onClick={() => downloadReportAsExcel(report)}
-                          className="gap-2 cursor-pointer"
-                        >
+                        <DropdownMenuItem onClick={() => downloadReportAsExcel(report)} className="gap-2 cursor-pointer">
                           <FileSpreadsheetIcon className="size-4 text-green-600" />
                           Download Excel
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => downloadReportAsPDF(report)}
-                          className="gap-2 cursor-pointer"
-                        >
+                        <DropdownMenuItem onClick={() => downloadReportAsPdf(report)} className="gap-2 cursor-pointer">
                           <FileTextIcon className="size-4 text-red-500" />
                           Download PDF
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                     <button
-                      onClick={() => setDeleteTarget(report)}
+                      onClick={() => setReportToDelete(report)}
                       title="Hapus laporan"
                       className="p-1.5 rounded-lg border border-foreground/20 hover:border-destructive hover:text-destructive transition-colors"
                     >
@@ -147,72 +129,31 @@ export function ReportTable({ reports, currentPage, onPageChange, totalPages, on
                   </div>
                 </td>
               </tr>
-            )) : (
-              <tr>
-                <td colSpan={7} className="px-6 py-16 text-center text-muted-foreground text-sm">
-                  Laporan tidak ditemukan.
-                </td>
-              </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>
 
-      {reports.length > 0 && <div className="flex items-center justify-end gap-1 pt-2">
-        <button
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          ‹ Sebelumnya
-        </button>
-        {getPages().map((page, i) =>
-          page === "..." ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">...</span>
-          ) : (
-            <button
-              key={page}
-              onClick={() => onPageChange(page as number)}
-              className={`size-8 rounded-lg text-sm font-medium transition-colors border
-                ${currentPage === page
-                  ? "bg-primary text-white border-primary"
-                  : "border-foreground/20 hover:border-primary"
-                }`}
-            >
-              {page}
-            </button>
-          )
-        )}
-        <button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          Setelahnya ›
-        </button>
-      </div>}
-
-      {detailTarget && (
-        <ReportDetailModal
-          report={detailTarget}
-          onClose={() => setDetailTarget(null)}
-        />
+      {reports.length > 0 && (
+        <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
       )}
 
-      {deleteTarget && (
-        <DeleteReportModal
-          title={deleteTarget.title}
+      {reportToView && (
+        <ReportDetailModal report={reportToView} onClose={() => setReportToView(null)} />
+      )}
+
+      {reportToDelete && (
+        <ConfirmDeleteDialog
+          title="Hapus laporan ini?"
+          description={
+            <>
+              Laporan <span className="font-semibold text-foreground">{reportToDelete.title}</span> akan dihapus.
+              Data yang dihapus tidak dapat dipulihkan.
+            </>
+          }
           isDeleting={isDeleting}
-          onConfirm={handleDelete}
-          onClose={() => !isDeleting && setDeleteTarget(null)}
-        />
-      )}
-
-      {operationalTarget && (
-        <OperationalCostModal
-          report={operationalTarget}
-          onSaved={onUpdated}
-          onClose={() => setOperationalTarget(null)}
+          onConfirm={handleConfirmDelete}
+          onClose={() => setReportToDelete(null)}
         />
       )}
     </>

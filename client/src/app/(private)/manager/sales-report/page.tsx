@@ -2,63 +2,72 @@
 
 import { AddReportModal } from "@/components/[role]/manager/sales-report/add-report-modal"
 import { OperationalCostModal } from "@/components/[role]/manager/sales-report/operational-cost-modal"
-import { PredictionChart } from "@/components/[role]/manager/sales-report/prediction-chart"
 import { PredictionAccuracyChart } from "@/components/[role]/manager/sales-report/prediction-accuracy-chart"
+import { PredictionChart } from "@/components/[role]/manager/sales-report/prediction-chart"
 import { ReportTable } from "@/components/[role]/manager/sales-report/report-table"
+import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
+import { SearchField } from "@/components/shared/search-field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { sellingReportService } from "@/services/selling-report.service"
-import type { SellingReport } from "@/types/selling-report"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useLatestRequest } from "@/hooks/use-latest-request"
-import { Loader2Icon, PlusIcon, SearchIcon } from "lucide-react"
+import { formatDate, formatNumber, formatRupiahInMillions } from "@/lib/format"
+import { sellingReportService } from "@/services/selling-report.service"
+import type { SellingReport } from "@/types/selling-report"
+import { PlusIcon } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 
 const PAGE_SIZE = 20
+const ALL_OPTION = "all"
+const MISSING_COST_LOOKBACK_DAYS = 30
 
-const MONTHS = [
-  { value: "1", label: "Januari" },
-  { value: "2", label: "Februari" },
-  { value: "3", label: "Maret" },
-  { value: "4", label: "April" },
-  { value: "5", label: "Mei" },
-  { value: "6", label: "Juni" },
-  { value: "7", label: "Juli" },
-  { value: "8", label: "Agustus" },
-  { value: "9", label: "September" },
-  { value: "10", label: "Oktober" },
-  { value: "11", label: "November" },
-  { value: "12", label: "Desember" },
-]
+const MONTH_OPTIONS = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+].map((label, index) => ({ value: String(index + 1), label }))
 
-const currentYear = new Date().getFullYear()
-const YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - i))
+const YEAR_OPTIONS = Array.from({ length: 5 }, (_, index) => String(new Date().getFullYear() - index))
 
-const formatCurrency = (value: number) => {
-  if (value >= 1000000) return `Rp ${(value / 1000000).toFixed(1)}jt`
-  return `Rp ${value.toLocaleString("id-ID")}`
+function summarizeReports(reports: SellingReport[]) {
+  return reports.reduce(
+    (summary, report) => ({
+      totalTransactions: summary.totalTransactions + Number(report.total_transaction),
+      totalItemsSold: summary.totalItemsSold + Number(report.total_items_sold),
+      totalNetProfit: summary.totalNetProfit + Number(report.net_profit),
+      totalCost: summary.totalCost + Number(report.unit_cost) + Number(report.operational_cost ?? 0),
+    }),
+    { totalTransactions: 0, totalItemsSold: 0, totalNetProfit: 0, totalCost: 0 },
+  )
 }
 
-export default function SalesReportPage() {
+function findReportsMissingOperationalCost(reports: SellingReport[]) {
+  const lookbackStart = new Date()
+  lookbackStart.setDate(lookbackStart.getDate() - MISSING_COST_LOOKBACK_DAYS)
+  return reports
+    .filter((report) => report.operational_cost == null && new Date(report.date) >= lookbackStart)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+}
+
+export default function ManagerSalesReportPage() {
   const [reports, setReports] = useState<SellingReport[]>([])
   const [search, setSearch] = useState("")
   const [monthFilter, setMonthFilter] = useState("")
   const [yearFilter, setYearFilter] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
-  const [showAddModal, setShowAddModal] = useState(false)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [bannerDismissed, setBannerDismissed] = useState(false)
-  const [operationalTarget, setOperationalTarget] = useState<SellingReport | null>(null)
+  const [isMissingCostBannerDismissed, setIsMissingCostBannerDismissed] = useState(false)
+  const [reportToEditCost, setReportToEditCost] = useState<SellingReport | null>(null)
   const debouncedSearch = useDebouncedValue(search, 400)
   const startRequest = useLatestRequest()
 
-  const fetchReports = useCallback(async (q: string, month: string, year: string) => {
+  const fetchReports = useCallback(async (searchTerm: string, month: string, year: string) => {
     const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
       const data = await sellingReportService.getAll({
-        q: q || undefined,
+        q: searchTerm || undefined,
         month: month || undefined,
         year: year || undefined,
       })
@@ -76,76 +85,59 @@ export default function SalesReportPage() {
 
   const reloadReports = () => fetchReports(debouncedSearch, monthFilter, yearFilter)
 
-  const totalPages = Math.max(1, Math.ceil(reports.length / PAGE_SIZE))
-  const visiblePage = Math.min(currentPage, totalPages)
+  const handleDelete = async (report: SellingReport) => {
+    await sellingReportService.remove(report.id)
+    reloadReports()
+  }
 
-  const handleSearch = (value: string) => {
+  const handleSearchChange = (value: string) => {
     setSearch(value)
     setCurrentPage(1)
   }
 
   const handleMonthChange = (month: string) => {
-    setMonthFilter(month)
+    setMonthFilter(month === ALL_OPTION ? "" : month)
     setCurrentPage(1)
   }
 
   const handleYearChange = (year: string) => {
-    setYearFilter(year)
+    setYearFilter(year === ALL_OPTION ? "" : year)
     setCurrentPage(1)
   }
 
-  const totalTransactions = reports.reduce((sum, r) => sum + Number(r.total_transaction), 0)
-  const totalProducts = reports.reduce((sum, r) => sum + Number(r.total_items_sold), 0)
-  const totalNetRevenue = reports.reduce((sum, r) => sum + Number(r.net_profit), 0)
-  const totalCapital = reports.reduce(
-    (sum, r) => sum + Number(r.unit_cost) + Number(r.operational_cost ?? 0),
-    0,
-  )
+  const totalPages = Math.max(1, Math.ceil(reports.length / PAGE_SIZE))
+  const visiblePage = Math.min(currentPage, totalPages)
+  const summary = summarizeReports(reports)
+  const reportsMissingCost = findReportsMissingOperationalCost(reports)
+  const latestReportMissingCost = reportsMissingCost[0]
 
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  const unfilledReports = reports
-    .filter((r) => r.operational_cost == null && new Date(r.date) >= thirtyDaysAgo)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
-  const handleAdd = async (form: {
-    title: string; date: string; totalTransactions: string
-    totalProducts: string; capital: string; operational: string; grossRevenue: string
-  }): Promise<void> => {
-    await sellingReportService.create({
-      title: form.title.trim(),
-      date: form.date,
-      total_transaction: Number(form.totalTransactions),
-      total_items_sold: Number(form.totalProducts),
-      unit_cost: Number(form.capital),
-      operational_cost: Number(form.operational),
-      gross_revenue: Number(form.grossRevenue),
-    })
-    await reloadReports()
-  }
+  const summaryCards = [
+    { label: "Total transaksi", value: formatNumber(summary.totalTransactions) },
+    { label: "Total produk terjual", value: formatNumber(summary.totalItemsSold) },
+    { label: "Pendapatan bersih", value: formatRupiahInMillions(summary.totalNetProfit) },
+    { label: "Modal", value: formatRupiahInMillions(summary.totalCost) },
+  ]
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-hidden">
-
       <PredictionChart />
-
       <PredictionAccuracyChart />
 
-      {!bannerDismissed && unfilledReports.length > 0 && (
+      {!isMissingCostBannerDismissed && latestReportMissingCost && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-50 px-4 py-3">
           <p className="text-sm text-amber-700">
-            {unfilledReports.length} laporan belum diisi modal operasional
-            <span className="text-amber-600"> (mis. {new Date(unfilledReports[0].date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })})</span>
+            {reportsMissingCost.length} laporan belum diisi modal operasional
+            <span className="text-amber-600"> (mis. {formatDate(latestReportMissingCost.date)})</span>
           </p>
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => setOperationalTarget(unfilledReports[0])}
+              onClick={() => setReportToEditCost(latestReportMissingCost)}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
             >
               Isi Modal
             </button>
             <button
-              onClick={() => setBannerDismissed(true)}
+              onClick={() => setIsMissingCostBannerDismissed(true)}
               className="text-xs text-amber-700/70 hover:text-amber-700"
             >
               Tutup
@@ -155,22 +147,17 @@ export default function SalesReportPage() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { label: "Total transaksi", value: totalTransactions.toLocaleString("id-ID") },
-          { label: "Total produk terjual", value: totalProducts.toLocaleString("id-ID") },
-          { label: "Pendapatan bersih", value: formatCurrency(totalNetRevenue) },
-          { label: "Modal", value: formatCurrency(totalCapital) },
-        ].map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl border border-foreground/10 p-4">
-            <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
-            <p className="font-bold text-2xl">{stat.value}</p>
+        {summaryCards.map((card) => (
+          <div key={card.label} className="bg-white rounded-xl border border-foreground/10 p-4">
+            <p className="text-xs text-muted-foreground mb-1">{card.label}</p>
+            <p className="font-bold text-2xl">{card.value}</p>
           </div>
         ))}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => setIsAddModalOpen(true)}
           className="flex items-center gap-2 bg-secondary text-primary text-sm font-semibold px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors"
         >
           <PlusIcon className="size-4" />
@@ -178,86 +165,61 @@ export default function SalesReportPage() {
         </button>
 
         <div className="flex items-center gap-2">
-          <Select
-            value={yearFilter || "all"}
-            onValueChange={(v) => handleYearChange(v === "all" ? "" : v)}
-          >
+          <Select value={yearFilter || ALL_OPTION} onValueChange={handleYearChange}>
             <SelectTrigger className="w-36">
               <SelectValue placeholder="Semua Tahun" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Tahun</SelectItem>
-              {YEARS.map((y) => (
-                <SelectItem key={y} value={y}>{y}</SelectItem>
+              <SelectItem value={ALL_OPTION}>Semua Tahun</SelectItem>
+              {YEAR_OPTIONS.map((year) => (
+                <SelectItem key={year} value={year}>{year}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select
-            value={monthFilter || "all"}
-            onValueChange={(v) => handleMonthChange(v === "all" ? "" : v)}
-          >
+          <Select value={monthFilter || ALL_OPTION} onValueChange={handleMonthChange}>
             <SelectTrigger className="w-36">
               <SelectValue placeholder="Semua Bulan" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Bulan</SelectItem>
-              {MONTHS.map((m) => (
-                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              <SelectItem value={ALL_OPTION}>Semua Bulan</SelectItem>
+              {MONTH_OPTIONS.map((month) => (
+                <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
-            <SearchIcon className="size-4 text-muted-foreground shrink-0" />
-            <input
-              type="text"
-              placeholder="Cari laporan ..."
-              value={search}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full text-sm outline-none placeholder:text-muted-foreground"
-            />
-          </div>
+          <SearchField value={search} onChange={handleSearchChange} placeholder="Cari laporan ..." />
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center py-20">
-          <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
-        </div>
+        <PageLoader />
       ) : error ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
-          <p className="text-sm text-destructive">{error}</p>
-          <button onClick={reloadReports} className="text-sm text-primary underline">
-            Coba lagi
-          </button>
-        </div>
+        <LoadErrorState message={error} onRetry={reloadReports} />
       ) : (
         <ReportTable
           reports={reports}
           currentPage={visiblePage}
-          onPageChange={setCurrentPage}
           totalPages={totalPages}
-          onDeleted={reloadReports}
-          onUpdated={reloadReports}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
+          onDelete={handleDelete}
+          onEditOperationalCost={setReportToEditCost}
         />
       )}
 
-      {showAddModal && (
-        <AddReportModal
-          onSubmit={handleAdd}
-          onClose={() => setShowAddModal(false)}
-        />
+      {isAddModalOpen && (
+        <AddReportModal onCreated={reloadReports} onClose={() => setIsAddModalOpen(false)} />
       )}
 
-      {operationalTarget && (
+      {reportToEditCost && (
         <OperationalCostModal
-          report={operationalTarget}
+          report={reportToEditCost}
           onSaved={reloadReports}
-          onClose={() => setOperationalTarget(null)}
+          onClose={() => setReportToEditCost(null)}
         />
       )}
-
     </div>
   )
 }

@@ -18,6 +18,11 @@ export type Payment = {
   created_at?: string
 }
 
+export type SnapTransaction = {
+  token: string
+  redirect_url: string
+}
+
 export type CashPaymentResult = {
   total: number
   paid: number

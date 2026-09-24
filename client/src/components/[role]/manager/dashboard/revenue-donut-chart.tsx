@@ -1,33 +1,33 @@
 "use client"
 
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { formatRupiah } from "@/lib/format"
 import { Loader2Icon } from "lucide-react"
 import { Cell, Pie, PieChart } from "recharts"
 
-const chartConfig = {
+const CHART_CONFIG = {
   completed: { label: "Pendapatan", color: "var(--primary)" },
   canceled: { label: "Dibatalkan", color: "var(--destructive)" },
 }
 
-const formatCurrency = (value: number) => `Rp ${Number(value).toLocaleString("id-ID")}`
 
 type Props = {
-  completed: number
-  canceled: number
-  periodLabel: string
+  completedRevenue: number
+  canceledRevenue: number
+  periodDescription: string
   isLoading?: boolean
 }
 
-export function RevenueDonutChart({ completed, canceled, periodLabel, isLoading }: Props) {
-  const hasData = completed > 0 || canceled > 0
+export function RevenueDonutChart({ completedRevenue, canceledRevenue, periodDescription, isLoading }: Props) {
+  const hasData = completedRevenue > 0 || canceledRevenue > 0
   const chartData = hasData
     ? [
-        { name: "completed", value: completed },
-        { name: "canceled", value: canceled },
+        { name: "completed", value: completedRevenue },
+        { name: "canceled", value: canceledRevenue },
       ]
     : [{ name: "completed", value: 1 }]
 
-  const COLORS = hasData
+  const sliceColors = hasData
     ? ["var(--primary)", "var(--destructive)"]
     : ["var(--border)"]
 
@@ -37,12 +37,12 @@ export function RevenueDonutChart({ completed, canceled, periodLabel, isLoading 
 
       <div className="flex gap-8">
         <div>
-          <p className="font-bold text-2xl">{isLoading ? "—" : formatCurrency(completed)}</p>
-          <p className="text-sm text-muted-foreground">Total pendapatan {periodLabel}</p>
+          <p className="font-bold text-2xl">{isLoading ? "—" : formatRupiah(completedRevenue)}</p>
+          <p className="text-sm text-muted-foreground">Total pendapatan {periodDescription}</p>
         </div>
         <div>
-          <p className="font-bold text-2xl text-destructive">{isLoading ? "—" : formatCurrency(canceled)}</p>
-          <p className="text-sm text-muted-foreground">Pesanan dibatalkan {periodLabel}</p>
+          <p className="font-bold text-2xl text-destructive">{isLoading ? "—" : formatRupiah(canceledRevenue)}</p>
+          <p className="text-sm text-muted-foreground">Pesanan dibatalkan {periodDescription}</p>
         </div>
       </div>
 
@@ -51,12 +51,12 @@ export function RevenueDonutChart({ completed, canceled, periodLabel, isLoading 
           <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <ChartContainer config={chartConfig} className="mx-auto h-80 w-full">
+        <ChartContainer config={CHART_CONFIG} className="mx-auto h-80 w-full">
           <PieChart>
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value) => formatCurrency(value as number)}
+                  formatter={(value) => formatRupiah(value as number)}
                 />
               }
             />
@@ -70,7 +70,7 @@ export function RevenueDonutChart({ completed, canceled, periodLabel, isLoading 
               endAngle={-270}
             >
               {chartData.map((entry, index) => (
-                <Cell key={entry.name} fill={COLORS[index]} />
+                <Cell key={entry.name} fill={sliceColors[index]} />
               ))}
             </Pie>
             {hasData && <ChartLegend content={<ChartLegendContent nameKey="name" />} />}

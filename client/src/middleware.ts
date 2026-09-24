@@ -1,36 +1,25 @@
+import { AUTH_COOKIE_NAME } from "@/lib/auth-session";
+import { ROLE_ROUTE_PREFIX, isPathAllowedForRole } from "@/lib/role-routes";
+import { UserRole } from "@/types/user";
 import { NextRequest, NextResponse } from "next/server";
 
-const ROLE_CASHIER = 0;
-const ROLE_KITCHEN = 1;
-const ROLE_MANAGER = 2;
-
-const ROUTE_ROLES: { prefix: string; role: number }[] = [
-  { prefix: "/cashier", role: ROLE_CASHIER },
-  { prefix: "/kitchen", role: ROLE_KITCHEN },
-  { prefix: "/manager", role: ROLE_MANAGER },
-];
+const PROTECTED_ROLES = Object.keys(ROLE_ROUTE_PREFIX).map(Number) as UserRole[];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const routeConfig = ROUTE_ROLES.find((r) => pathname.startsWith(r.prefix));
+  const requiredRole = PROTECTED_ROLES.find((role) => isPathAllowedForRole(pathname, role));
+  if (requiredRole === undefined) return NextResponse.next();
 
-  if (!routeConfig) {
-    return NextResponse.next();
-  }
-
-  const token = request.cookies.get("access_token")?.value;
-
-  if (!token) {
+  const accessToken = request.cookies.get(AUTH_COOKIE_NAME.accessToken)?.value;
+  if (!accessToken) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  const roleRaw = request.cookies.get("user_role")?.value;
-  const userRole = roleRaw !== undefined ? Number(roleRaw) : null;
-
-  if (userRole === null || userRole !== routeConfig.role) {
+  const userRoleCookie = request.cookies.get(AUTH_COOKIE_NAME.userRole)?.value;
+  if (userRoleCookie === undefined || Number(userRoleCookie) !== requiredRole) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 

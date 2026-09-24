@@ -1,99 +1,99 @@
 "use client"
 
-import { Fragment, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { getApiErrorMessage } from "@/lib/api-error"
+import { formatRupiah } from "@/lib/format"
+import { countOrderItems, getOrderItemName } from "@/lib/order"
+import { getOrderPlace } from "@/lib/order-place"
 import { paymentService } from "@/services/payment.service"
-import type { OrderItem } from "@/types/order"
+import type { Order } from "@/types/order"
 import type { CashPaymentResult, Payment } from "@/types/payment"
 import { PaymentType } from "@/types/payment"
 import { CheckCircle, Clock, CreditCard, Delete, Loader2, Wallet } from "lucide-react"
 import Image from "next/image"
+import { Fragment, useEffect, useState } from "react"
+import { OrderPlaceTile } from "./order-summary"
 
-type PaymentMethod = "tunai" | "online"
+type PaymentMethod = "cash" | "online"
 
-type TransactionSummary = {
-  id: string
-  placeCode: string
-  placeName: string
-  total: number
-  items: OrderItem[]
+const PAYMENT_METHOD_OPTIONS: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
+  { value: "cash", label: "Tunai", icon: <Wallet className="size-4" /> },
+  { value: "online", label: "Online", icon: <CreditCard className="size-4" /> },
+]
+
+const BACKSPACE_KEY = "⌫"
+const NUMPAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "000", "0", BACKSPACE_KEY]
+
+type CashAmountNumpadProps = {
+  totalAmount: number
+  isSubmitting: boolean
+  onPay: (receivedAmount: number) => void
 }
 
-type Props = {
-  transaction: TransactionSummary
-  orderId: number
-  onClose: () => void
-  onVerified?: () => void
-}
+function CashAmountNumpad({ totalAmount, isSubmitting, onPay }: CashAmountNumpadProps) {
+  const [typedAmount, setTypedAmount] = useState("")
 
-const rupiah = (value: number) => `Rp. ${value.toLocaleString("id-ID")}`
+  const receivedAmount = typedAmount === "" ? totalAmount : parseInt(typedAmount, 10)
+  const changeAmount = receivedAmount - totalAmount
+  const isUnderpaid = changeAmount < 0
 
-function Numpad({ total, onPay, loading }: { total: number; onPay: (amount: number) => void; loading: boolean }) {
-  const [input, setInput] = useState("")
-
-  const displayed = input === "" ? total : parseInt(input)
-  const difference = displayed - total
-  const isShort = difference < 0
-
-  const press = (val: string) => {
-    if (val === "⌫") return setInput((p) => p.slice(0, -1))
-    if (val === "000") return setInput((p) => (p === "" ? "" : p + "000"))
-    if (val === "0" && input === "") return
-    setInput((p) => p + val)
+  const handleKeyPress = (key: string) => {
+    if (key === BACKSPACE_KEY) return setTypedAmount((previous) => previous.slice(0, -1))
+    if (key === "000") return setTypedAmount((previous) => (previous === "" ? "" : previous + "000"))
+    if (key === "0" && typedAmount === "") return
+    setTypedAmount((previous) => previous + key)
   }
-
-  const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "000", "0", "⌫"]
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <p className="text-center text-xs text-muted-foreground">Uang Diterima</p>
-        <p className={`text-center text-2xl font-bold ${isShort ? "text-destructive" : "text-foreground"}`}>
-          {rupiah(displayed)}
+        <p className={`text-center text-2xl font-bold ${isUnderpaid ? "text-destructive" : "text-foreground"}`}>
+          {formatRupiah(receivedAmount)}
         </p>
       </div>
 
       <div className="flex flex-col gap-1 rounded-lg bg-muted/50 p-3 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Total Tagihan</span>
-          <span className="font-medium">{rupiah(total)}</span>
+          <span className="font-medium">{formatRupiah(totalAmount)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">{isShort ? "Kurang" : "Kembalian"}</span>
-          <span className={`font-bold ${isShort ? "text-destructive" : difference > 0 ? "text-green-600" : "text-foreground"}`}>
-            {rupiah(Math.abs(difference))}
+          <span className="text-muted-foreground">{isUnderpaid ? "Kurang" : "Kembalian"}</span>
+          <span className={`font-bold ${isUnderpaid ? "text-destructive" : changeAmount > 0 ? "text-green-600" : "text-foreground"}`}>
+            {formatRupiah(Math.abs(changeAmount))}
           </span>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        {KEYS.map((key) => (
+        {NUMPAD_KEYS.map((key) => (
           <Button
             key={key}
             variant="ghost"
-            onClick={() => press(key)}
+            onClick={() => handleKeyPress(key)}
             className="py-3 font-semibold"
-            disabled={loading}
+            disabled={isSubmitting}
           >
-            {key === "⌫" ? <Delete className="size-4" /> : key}
+            {key === BACKSPACE_KEY ? <Delete className="size-4" /> : key}
           </Button>
         ))}
       </div>
 
-      {isShort && (
+      {isUnderpaid && (
         <p className="text-xs text-destructive text-center">
-          Uang yang diterima kurang {rupiah(Math.abs(difference))} dari total tagihan.
+          Uang yang diterima kurang {formatRupiah(Math.abs(changeAmount))} dari total tagihan.
         </p>
       )}
 
       <Button
-        onClick={() => onPay(displayed)}
-        disabled={loading || isShort}
+        onClick={() => onPay(receivedAmount)}
+        disabled={isSubmitting || isUnderpaid}
         className="w-full bg-secondary text-primary font-semibold rounded-lg py-2"
       >
-        {loading ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
+        {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
         Bayar Sekarang
       </Button>
     </div>
@@ -115,17 +115,17 @@ function CashPaymentSuccess({ result, onClose }: { result: CashPaymentResult; on
 
       <div className="flex flex-col items-center gap-1 rounded-lg border border-foreground/10 py-6">
         <p className="text-sm text-muted-foreground">Kembalian</p>
-        <p className="text-4xl font-bold text-green-600">{rupiah(result.change_amount)}</p>
+        <p className="text-4xl font-bold text-green-600">{formatRupiah(result.change_amount)}</p>
       </div>
 
       <div className="flex flex-col gap-2 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Total Tagihan</span>
-          <span className="font-medium">{rupiah(result.total)}</span>
+          <span className="font-medium">{formatRupiah(result.total)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Uang Diterima</span>
-          <span className="font-medium">{rupiah(result.paid)}</span>
+          <span className="font-medium">{formatRupiah(result.paid)}</span>
         </div>
       </div>
 
@@ -196,7 +196,7 @@ function OnlinePaymentInfo({ payment, onClose }: { payment: Payment; onClose: ()
   )
 }
 
-function NoOnlinePaymentInfo({ onClose }: { onClose: () => void }) {
+function MissingOnlinePaymentInfo({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-50">
@@ -217,70 +217,103 @@ function NoOnlinePaymentInfo({ onClose }: { onClose: () => void }) {
   )
 }
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
-  { value: "tunai", label: "Tunai", icon: <Wallet className="size-4" /> },
-  { value: "online", label: "Online", icon: <CreditCard className="size-4" /> },
-]
+type Props = {
+  order: Order
+  onClose: () => void
+  onVerified?: () => void
+}
 
-export function PaymentVerificationModal({ transaction, orderId, onClose, onVerified }: Props) {
-  const [method, setMethod] = useState<PaymentMethod>("tunai")
+export function PaymentVerificationModal({ order, onClose, onVerified }: Props) {
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("cash")
   const [payment, setPayment] = useState<Payment | null>(null)
-  const [fetchLoading, setFetchLoading] = useState(true)
-  const [verifyLoading, setVerifyLoading] = useState(false)
-  const [verifyError, setVerifyError] = useState<string | null>(null)
-  const [methodLocked, setMethodLocked] = useState(false)
-  const [cashResult, setCashResult] = useState<CashPaymentResult | null>(null)
-  const [paymentLoadFailed, setPaymentLoadFailed] = useState(false)
+  const [isLoadingPayment, setIsLoadingPayment] = useState(true)
+  const [hasPaymentLoadError, setHasPaymentLoadError] = useState(false)
   const [paymentReloadKey, setPaymentReloadKey] = useState(0)
+  const [isMethodLocked, setIsMethodLocked] = useState(false)
+  const [isVerifyingCash, setIsVerifyingCash] = useState(false)
+  const [cashVerificationError, setCashVerificationError] = useState<string | null>(null)
+  const [cashPaymentResult, setCashPaymentResult] = useState<CashPaymentResult | null>(null)
 
-  const items = transaction.items ?? []
-  const itemCount = items.reduce((sum, item) => sum + Number(item.quantity), 0)
+  const place = getOrderPlace(order)
+  const items = order.items ?? []
+  const totalAmount = Number(order.total_price)
 
   useEffect(() => {
     const fetchPayment = async () => {
       try {
-        const data = await paymentService.getByOrderId(orderId)
-        setPayment(data)
-        setMethod(data.type === PaymentType.ONLINE ? "online" : "tunai")
-        setMethodLocked(true)
-      } catch (err: unknown) {
-        const status = (err as { response?: { status?: number } })?.response?.status
-        if (status === 404) {
-          setMethod("tunai")
-        } else {
-          setPaymentLoadFailed(true)
-        }
+        const existingPayment = await paymentService.getByOrderId(order.id)
+        setPayment(existingPayment)
+        setSelectedMethod(existingPayment.type === PaymentType.ONLINE ? "online" : "cash")
+        setIsMethodLocked(true)
+      } catch (error: unknown) {
+        const status = (error as { response?: { status?: number } })?.response?.status
+        if (status === 404) setSelectedMethod("cash")
+        else setHasPaymentLoadError(true)
       } finally {
-        setFetchLoading(false)
+        setIsLoadingPayment(false)
       }
     }
 
     fetchPayment()
-  }, [orderId, paymentReloadKey])
+  }, [order.id, paymentReloadKey])
 
   const handleRetryLoadPayment = () => {
-    setPaymentLoadFailed(false)
-    setFetchLoading(true)
+    setHasPaymentLoadError(false)
+    setIsLoadingPayment(true)
     setPaymentReloadKey((key) => key + 1)
   }
 
-  const handleTunaiPay = async (amount: number) => {
-    setVerifyLoading(true)
-    setVerifyError(null)
+  const handleCashPayment = async (receivedAmount: number) => {
+    setIsVerifyingCash(true)
+    setCashVerificationError(null)
     try {
-      const result = await paymentService.verifyOffline(orderId, amount)
-      setCashResult(result)
+      setCashPaymentResult(await paymentService.verifyCashPayment(order.id, receivedAmount))
     } catch (error) {
-      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
-      setVerifyError(msg ?? "Gagal verifikasi pembayaran. Coba lagi.")
+      setCashVerificationError(getApiErrorMessage(error, "Gagal verifikasi pembayaran. Coba lagi."))
     } finally {
-      setVerifyLoading(false)
+      setIsVerifyingCash(false)
     }
   }
 
   const handleClose = () => {
-    if (cashResult) onVerified?.()
+    if (cashPaymentResult) onVerified?.()
     onClose()
+  }
+
+  const renderPaymentPanel = () => {
+    if (isLoadingPayment) {
+      return (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      )
+    }
+    if (hasPaymentLoadError) {
+      return (
+        <div className="flex flex-col items-center gap-3 py-8 text-center">
+          <p className="text-sm text-destructive">
+            Gagal memuat status pembayaran. Pastikan pesanan belum dibayar online sebelum menerima uang tunai.
+          </p>
+          <Button variant="outline" onClick={handleRetryLoadPayment}>
+            Coba lagi
+          </Button>
+        </div>
+      )
+    }
+    if (selectedMethod === "online") {
+      return payment
+        ? <OnlinePaymentInfo payment={payment} onClose={handleClose} />
+        : <MissingOnlinePaymentInfo onClose={handleClose} />
+    }
+    if (cashPaymentResult) return <CashPaymentSuccess result={cashPaymentResult} onClose={handleClose} />
+    return (
+      <>
+        <CashAmountNumpad totalAmount={totalAmount} isSubmitting={isVerifyingCash} onPay={handleCashPayment} />
+        {cashVerificationError && (
+          <p className="text-xs text-destructive text-center -mt-2">{cashVerificationError}</p>
+        )}
+      </>
+    )
   }
 
   return (
@@ -291,17 +324,14 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
           <div className="flex flex-col gap-4">
             <p className="text-sm font-semibold text-muted-foreground">Informasi Pemesanan</p>
             <div className="flex items-center gap-3">
-              <div className="bg-primary text-white text-sm font-bold rounded-lg px-2 py-3 min-w-[52px] text-center">
-                {transaction.placeCode}
-              </div>
+              <OrderPlaceTile code={place.code} />
               <div>
-                <p className="font-semibold text-sm">{transaction.placeName}</p>
+                <p className="font-semibold text-sm">{place.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  Order #{transaction.id} · {itemCount} item
+                  Order #{order.id} · {countOrderItems(order)} item
                 </p>
               </div>
             </div>
@@ -326,16 +356,16 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
                   items.map((item) => (
                     <Fragment key={item.id}>
                       <span className="min-w-0 wrap-break-word text-sm py-1 leading-snug">
-                        {item.menu?.name ?? `Menu #${item.menu_id}`}
+                        {getOrderItemName(item)}
                       </span>
                       <span className="text-sm py-1 leading-snug text-center tabular-nums whitespace-nowrap">
                         {item.quantity}
                       </span>
                       <span className="text-sm py-1 leading-snug text-right tabular-nums whitespace-nowrap text-muted-foreground">
-                        {rupiah(Number(item.price))}
+                        {formatRupiah(item.price)}
                       </span>
                       <span className="text-sm py-1 leading-snug text-right tabular-nums whitespace-nowrap font-medium">
-                        {rupiah(Number(item.total_price))}
+                        {formatRupiah(item.total_price)}
                       </span>
                     </Fragment>
                   ))
@@ -345,7 +375,7 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
               <hr className="border-foreground/10 my-1" />
               <div className="flex justify-between font-bold text-base">
                 <span>Total</span>
-                <span>{rupiah(transaction.total)}</span>
+                <span>{formatRupiah(totalAmount)}</span>
               </div>
             </div>
           </div>
@@ -354,56 +384,27 @@ export function PaymentVerificationModal({ transaction, orderId, onClose, onVeri
             <p className="text-sm font-semibold text-muted-foreground">Metode Pembayaran</p>
 
             <Select
-              value={method}
-              onValueChange={(val) => setMethod(val as PaymentMethod)}
-              disabled={methodLocked || fetchLoading || paymentLoadFailed || cashResult !== null}
+              value={selectedMethod}
+              onValueChange={(method) => setSelectedMethod(method as PaymentMethod)}
+              disabled={isMethodLocked || isLoadingPayment || hasPaymentLoadError || cashPaymentResult !== null}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {PAYMENT_METHODS.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>
+                {PAYMENT_METHOD_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
                     <div className="flex items-center gap-2">
-                      {m.icon}
-                      {m.label}
+                      {option.icon}
+                      {option.label}
                     </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            {fetchLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="size-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : paymentLoadFailed ? (
-              <div className="flex flex-col items-center gap-3 py-8 text-center">
-                <p className="text-sm text-destructive">
-                  Gagal memuat status pembayaran. Pastikan pesanan belum dibayar online sebelum menerima uang tunai.
-                </p>
-                <Button variant="outline" onClick={handleRetryLoadPayment}>
-                  Coba lagi
-                </Button>
-              </div>
-            ) : method === "tunai" ? (
-              cashResult ? (
-                <CashPaymentSuccess result={cashResult} onClose={handleClose} />
-              ) : (
-                <>
-                  <Numpad total={transaction.total} onPay={handleTunaiPay} loading={verifyLoading} />
-                  {verifyError && (
-                    <p className="text-xs text-destructive text-center -mt-2">{verifyError}</p>
-                  )}
-                </>
-              )
-            ) : payment ? (
-              <OnlinePaymentInfo payment={payment} onClose={handleClose} />
-            ) : (
-              <NoOnlinePaymentInfo onClose={handleClose} />
-            )}
+            {renderPaymentPanel()}
           </div>
-
         </div>
       </DialogContent>
     </Dialog>

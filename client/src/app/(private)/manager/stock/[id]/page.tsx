@@ -5,12 +5,5 @@ import { use } from "react"
 
 export default function ManagerStockDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-
-  return (
-    <StockDetailView
-      id={Number(id)}
-      backPath="/manager/stock"
-      editPath={`/manager/stock/${id}/edit`}
-    />
-  )
+  return <StockDetailView stockId={Number(id)} basePath="/manager/stock" />
 }

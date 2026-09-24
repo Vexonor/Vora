@@ -1,64 +1,57 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client"
 
-import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink,
   BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { formatDate } from "@/lib/format"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
+import { AppSidebar } from "./app-sidebar"
 
-type NavItem = {
+export type NavItem = {
   title: string
   url: string
   icon: React.ReactNode
-  isActive?: boolean
 }
 
-type User = {
-  name: string
-  email: string
-  avatar: string
+const SUB_PAGE_TITLES: Record<string, string> = {
+  create: "Tambah",
+  edit: "Edit",
+}
+
+export function isNavItemActive(pathname: string, navItemUrl: string) {
+  return pathname === navItemUrl || pathname.startsWith(`${navItemUrl}/`)
+}
+
+function getSubPageTitle(pathname: string) {
+  const lastSegment = pathname.split("/").pop() ?? ""
+  return SUB_PAGE_TITLES[lastSegment] ?? lastSegment
 }
 
 type Props = {
-  user: User
   navItems: NavItem[]
   children: React.ReactNode
 }
 
-export function RoleLayout({ user, navItems, children }: Props) {
+export function RoleLayout({ navItems, children }: Props) {
   const pathname = usePathname()
-  const [date, setDate] = useState("")
+  const [todayLabel, setTodayLabel] = useState("")
 
   useEffect(() => {
-    setDate(new Date().toLocaleDateString('id-ID', {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-    }))
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTodayLabel(formatDate(new Date(), "weekdayLong"))
   }, [])
 
-  const activeNav = navItems.find((nav) => pathname.startsWith(nav.url))
-  const pageTitle = activeNav?.title ?? navItems[0]?.title ?? ""
-
-  const isSubPage = activeNav ? pathname !== activeNav.url : false
-
-  const getSubPageTitle = () => {
-    const segments = pathname.split("/")
-    const last = segments[segments.length - 1]
-    const subPageTitles: Record<string, string> = {
-      create: "Tambah",
-      edit: "Edit",
-      detail: "Detail",
-    }
-    return subPageTitles[last] ?? last
-  }
+  const activeNavItem = navItems.find((navItem) => isNavItemActive(pathname, navItem.url))
+  const pageTitle = activeNavItem?.title ?? navItems[0]?.title ?? ""
+  const isSubPage = activeNavItem ? pathname !== activeNavItem.url : false
 
   return (
     <SidebarProvider>
-      <AppSidebar avatar={user.avatar} navItems={navItems} />
+      <AppSidebar navItems={navItems} />
       <SidebarInset className="flex flex-col min-w-0">
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">
@@ -67,10 +60,8 @@ export function RoleLayout({ user, navItems, children }: Props) {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  {isSubPage ? (
-                    <BreadcrumbLink href={activeNav?.url ?? "#"}>
-                      {pageTitle}
-                    </BreadcrumbLink>
+                  {isSubPage && activeNavItem ? (
+                    <BreadcrumbLink href={activeNavItem.url}>{pageTitle}</BreadcrumbLink>
                   ) : (
                     <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
                   )}
@@ -79,14 +70,14 @@ export function RoleLayout({ user, navItems, children }: Props) {
                   <>
                     <BreadcrumbSeparator className="hidden md:block" />
                     <BreadcrumbItem>
-                      <BreadcrumbPage>{getSubPageTitle()}</BreadcrumbPage>
+                      <BreadcrumbPage>{getSubPageTitle(pathname)}</BreadcrumbPage>
                     </BreadcrumbItem>
                   </>
                 )}
               </BreadcrumbList>
             </Breadcrumb>
           </div>
-          <div className="ml-auto px-4 text-sm text-muted-foreground">{date}</div>
+          <div className="ml-auto px-4 text-sm text-muted-foreground">{todayLabel}</div>
         </header>
         <main className="flex flex-1 flex-col min-w-0">
           {children}

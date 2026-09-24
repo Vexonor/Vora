@@ -1,62 +1,48 @@
 "use client"
 
-import {
-  DropdownMenu, DropdownMenuContent,
-  DropdownMenuItem, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
+import { RowActionsMenu } from "@/components/shared/row-actions-menu"
+import { StatusBadge } from "@/components/shared/status-badge"
+import { paginate, TablePagination } from "@/components/shared/table-pagination"
 import { useAuth } from "@/hooks/use-auth"
+import { getApiErrorMessage } from "@/lib/api-error"
+import { getUserRoleDisplay } from "@/lib/user-role"
 import type { User } from "@/types/user"
-import { UserRole } from "@/types/user"
-import { EllipsisIcon, PencilIcon, Trash2Icon } from "lucide-react"
 import { useState } from "react"
-import { DeleteStaffModal } from "./delete-staff-modal"
+import { toast } from "sonner"
 import { EditStaffModal } from "./edit-staff-modal"
 
-const ROLE_BADGE: Record<number, { label: string; badgeClass: string }> = {
-  [UserRole.MANAGER]: { label: "Manager", badgeClass: "border-primary/40 bg-primary/10 text-primary" },
-  [UserRole.CASHIER]: { label: "Kasir", badgeClass: "border-secondary/40 bg-secondary/10 text-secondary" },
-  [UserRole.KITCHEN]: { label: "Kitchen", badgeClass: "border-amber-500/40 bg-amber-50 text-amber-600" },
-}
-
 type Props = {
-  staffs: User[]
+  staffMembers: User[]
   currentPage: number
-  onPageChange: (page: number) => void
   totalPages: number
-  onDelete: (staff: User) => void
+  pageSize: number
+  onPageChange: (page: number) => void
+  onDelete: (staff: User) => Promise<void>
   onUpdated: () => void | Promise<void>
 }
 
-const PAGE_SIZE = 20
-
-export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDelete, onUpdated }: Props) {
+export function StaffTable({ staffMembers, currentPage, totalPages, pageSize, onPageChange, onDelete, onUpdated }: Props) {
   const { user: currentUser } = useAuth()
-  const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
-  const [editTarget, setEditTarget] = useState<User | null>(null)
+  const [staffToDelete, setStaffToDelete] = useState<User | null>(null)
+  const [staffToEdit, setStaffToEdit] = useState<User | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  const paginated = staffs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-  const offset = (currentPage - 1) * PAGE_SIZE
+  const visibleStaff = paginate(staffMembers, currentPage, pageSize)
+  const rowNumberOffset = (currentPage - 1) * pageSize
 
-  const getPages = () => {
-    const pages: (number | "...")[] = []
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i)
-    } else {
-      pages.push(1)
-      if (currentPage > 3) pages.push("...")
-      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
-        pages.push(i)
-      }
-      if (currentPage < totalPages - 2) pages.push("...")
-      pages.push(totalPages)
+  const handleConfirmDelete = async () => {
+    if (!staffToDelete) return
+    setIsDeleting(true)
+    try {
+      await onDelete(staffToDelete)
+      toast.success("Staf berhasil dihapus.")
+      setStaffToDelete(null)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Gagal menghapus staf. Coba lagi."))
+    } finally {
+      setIsDeleting(false)
     }
-    return pages
-  }
-
-  const handleConfirmDelete = () => {
-    if (!deleteTarget) return
-    onDelete(deleteTarget)
-    setDeleteTarget(null)
   }
 
   return (
@@ -73,50 +59,31 @@ export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDe
             </tr>
           </thead>
           <tbody>
-            {paginated.length === 0 && (
+            {visibleStaff.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-6 py-16 text-center text-sm text-muted-foreground">
                   Staf tidak ditemukan.
                 </td>
               </tr>
             )}
-            {paginated.map((staff, i) => {
-              const config = ROLE_BADGE[staff.role] ?? { label: staff.role_name ?? "Unknown", badgeClass: "border-foreground/30 bg-foreground/5 text-foreground" }
+            {visibleStaff.map((staff, index) => {
+              const roleDisplay = getUserRoleDisplay(staff.role, staff.role_name)
               return (
                 <tr key={staff.id} className="border-b border-foreground/5 last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-6 py-4 text-muted-foreground">{offset + i + 1}.</td>
+                  <td className="px-6 py-4 text-muted-foreground">{rowNumberOffset + index + 1}.</td>
                   <td className="px-6 py-4 font-medium">{staff.username}</td>
                   <td className="px-6 py-4 text-muted-foreground">{staff.email}</td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`text-xs font-medium px-3 py-1 rounded-full border ${config.badgeClass}`}>
-                      {config.label}
-                    </span>
+                    <StatusBadge label={roleDisplay.label} tone={roleDisplay.tone} />
                   </td>
                   <td className="px-6 py-4 text-center">
                     {staff.id === currentUser?.id ? (
                       <span className="text-xs text-muted-foreground italic">Akun Anda</span>
                     ) : (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="p-1 hover:bg-muted rounded-md transition-colors">
-                            <EllipsisIcon className="size-4 text-muted-foreground" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-36">
-                          <DropdownMenuItem
-                            onClick={() => setEditTarget(staff)}
-                            className="gap-2 cursor-pointer"
-                          >
-                            <PencilIcon className="size-4" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDeleteTarget(staff)}
-                            className="gap-2 cursor-pointer text-destructive focus:text-destructive"
-                          >
-                            <Trash2Icon className="size-4" /> Hapus
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <RowActionsMenu
+                        onEdit={() => setStaffToEdit(staff)}
+                        onDelete={() => setStaffToDelete(staff)}
+                      />
                     )}
                   </td>
                 </tr>
@@ -126,55 +93,30 @@ export function StaffTable({ staffs, currentPage, onPageChange, totalPages, onDe
         </table>
       </div>
 
-      {staffs.length > 0 && (
-        <div className="flex items-center justify-end gap-1 pt-2">
-          <button
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            ‹ Sebelumnya
-          </button>
-          {getPages().map((page, i) =>
-            page === "..." ? (
-              <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">...</span>
-            ) : (
-              <button
-                key={page}
-                onClick={() => onPageChange(page as number)}
-                className={`size-8 rounded-lg text-sm font-medium transition-colors border
-                  ${currentPage === page
-                    ? "bg-primary text-white border-primary"
-                    : "border-foreground/20 hover:border-primary"
-                  }`}
-              >
-                {page}
-              </button>
-            )
-          )}
-          <button
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="text-sm px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Setelahnya ›
-          </button>
-        </div>
+      {staffMembers.length > 0 && (
+        <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
       )}
 
-      {deleteTarget && (
-        <DeleteStaffModal
-          username={deleteTarget.username}
+      {staffToDelete && (
+        <ConfirmDeleteDialog
+          title="Hapus staf ini?"
+          description={
+            <>
+              Staff <span className="font-semibold text-foreground">{staffToDelete.username}</span> akan dihapus
+              secara permanen. Data yang dihapus tidak dapat dipulihkan.
+            </>
+          }
+          isDeleting={isDeleting}
           onConfirm={handleConfirmDelete}
-          onClose={() => setDeleteTarget(null)}
+          onClose={() => setStaffToDelete(null)}
         />
       )}
 
-      {editTarget && (
+      {staffToEdit && (
         <EditStaffModal
-          staff={editTarget}
-          onClose={() => setEditTarget(null)}
+          staff={staffToEdit}
           onSaved={onUpdated}
+          onClose={() => setStaffToEdit(null)}
         />
       )}
     </>

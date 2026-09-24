@@ -6,7 +6,7 @@ export const ROLE_ROUTE_PREFIX: Record<UserRole, string> = {
   [UserRole.MANAGER]: "/manager",
 }
 
-export const ROLE_HOME_PATH: Record<UserRole, string> = {
+const ROLE_HOME_PATH: Record<UserRole, string> = {
   [UserRole.CASHIER]: "/cashier/dashboard",
   [UserRole.KITCHEN]: "/kitchen/order",
   [UserRole.MANAGER]: "/manager/dashboard",

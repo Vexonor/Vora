@@ -1,64 +1,56 @@
 "use client"
 
-import { TransactionCard } from "@/components/shared/order/order-card"
-import { OrderFilterDropdown } from "@/components/shared/order/order-filter-dropdown"
+import { FilterDropdown } from "@/components/shared/filter-dropdown"
+import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
+import { SearchField } from "@/components/shared/search-field"
 import { useSidebar } from "@/components/ui/sidebar"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useLatestRequest } from "@/hooks/use-latest-request"
+import { ORDER_STATUS_FILTER_OPTIONS } from "@/lib/order-status"
 import { orderService } from "@/services/order.service"
 import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
-import { Loader2Icon, SearchIcon } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
+import { OrderCard } from "./order-card"
 
-const DEFAULT_FILTER_TABS = [
-  { label: "Semua", value: "semua" },
-  { label: "Menunggu", value: "menunggu" },
-  { label: "Diproses", value: "diproses" },
-  { label: "Siap", value: "siap" },
-  { label: "Selesai", value: "selesai" },
-] as const
-
-const FILTER_STATUS: Record<string, number | undefined> = {
-  semua: undefined,
-  menunggu: OrderStatus.PENDING,
-  diproses: OrderStatus.PROCESSING,
-  siap: OrderStatus.READY,
-  selesai: OrderStatus.COMPLETED,
-  dibatalkan: OrderStatus.CANCELED,
-}
-
-type FilterTab = {
+export type OrderStatusTab = {
   label: string
-  value: string
+  status: OrderStatus | null
 }
+
+const DEFAULT_STATUS_TABS: OrderStatusTab[] = [
+  { label: "Semua", status: null },
+  { label: "Menunggu", status: OrderStatus.PENDING },
+  { label: "Diproses", status: OrderStatus.PROCESSING },
+  { label: "Siap", status: OrderStatus.READY },
+  { label: "Selesai", status: OrderStatus.COMPLETED },
+]
 
 type Props = {
-  filterTabs?: readonly FilterTab[]
+  statusTabs?: OrderStatusTab[]
 }
 
-export function OrderPage({ filterTabs = DEFAULT_FILTER_TABS }: Props) {
-  const [activeFilter, setActiveFilter] = useState("semua")
+export function OrderPage({ statusTabs = DEFAULT_STATUS_TABS }: Props) {
+  const [activeTabStatus, setActiveTabStatus] = useState<OrderStatus | null>(null)
   const [statusFilter, setStatusFilter] = useState<number[]>([])
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search, 300)
-  const { open } = useSidebar()
+  const { open: isSidebarOpen } = useSidebar()
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const startRequest = useLatestRequest()
 
-  const fetchOrders = useCallback(async (filter: string, searchTerm: string, statuses: number[]) => {
+  const fetchOrders = useCallback(async (tabStatus: OrderStatus | null, searchTerm: string, statuses: number[]) => {
     const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
-      const status = FILTER_STATUS[filter]
       const data = await orderService.getAll({
         ...(statuses.length > 0
           ? { statuses }
-          : status !== undefined
-            ? { status }
+          : tabStatus !== null
+            ? { status: tabStatus }
             : {}),
         ...(searchTerm && { search: searchTerm }),
       })
@@ -71,36 +63,35 @@ export function OrderPage({ filterTabs = DEFAULT_FILTER_TABS }: Props) {
   }, [startRequest])
 
   useEffect(() => {
-    fetchOrders(activeFilter, debouncedSearch, statusFilter)
-  }, [fetchOrders, activeFilter, debouncedSearch, statusFilter])
+    fetchOrders(activeTabStatus, debouncedSearch, statusFilter)
+  }, [fetchOrders, activeTabStatus, debouncedSearch, statusFilter])
 
-  const reloadOrders = () => fetchOrders(activeFilter, debouncedSearch, statusFilter)
+  const reloadOrders = () => fetchOrders(activeTabStatus, debouncedSearch, statusFilter)
 
-  const handleTabChange = (tabValue: string) => {
-    setActiveFilter(tabValue)
+  const handleTabChange = (tabStatus: OrderStatus | null) => {
+    setActiveTabStatus(tabStatus)
     setStatusFilter([])
   }
 
-  const handleFilterApply = (statuses: number[]) => {
+  const handleStatusFilterApply = (statuses: number[]) => {
     setStatusFilter(statuses)
-    if (statuses.length > 0) setActiveFilter("semua")
+    if (statuses.length > 0) setActiveTabStatus(null)
   }
 
-  const gridCols = open
+  const gridColumnsClass = isSidebarOpen
     ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
     : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-1 lg:flex-2 order-2 lg:order-1 items-center gap-2">
-          {filterTabs.map((tab) => (
+          {statusTabs.map((tab) => (
             <button
-              key={tab.value}
-              onClick={() => handleTabChange(tab.value)}
+              key={tab.label}
+              onClick={() => handleTabChange(tab.status)}
               className={`text-sm px-4 py-1.5 rounded-full border transition-colors
-                ${activeFilter === tab.value && statusFilter.length === 0
+                ${activeTabStatus === tab.status && statusFilter.length === 0
                   ? "bg-primary text-white border-primary"
                   : "bg-white text-foreground border-foreground/30 hover:border-primary"
                 }`}
@@ -111,35 +102,24 @@ export function OrderPage({ filterTabs = DEFAULT_FILTER_TABS }: Props) {
         </div>
 
         <div className="flex flex-1 lg:order-2 order-1 items-center gap-2">
-          <OrderFilterDropdown selected={statusFilter} onApply={handleFilterApply} />
-          <div className="flex flex-1 items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
-            <SearchIcon className="size-4 text-muted-foreground shrink-0" />
-            <input
-              type="text"
-              placeholder="Cari pesanan ..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full text-sm outline-none placeholder:text-muted-foreground"
-            />
-          </div>
+          <FilterDropdown
+            title="Status Pesanan"
+            options={ORDER_STATUS_FILTER_OPTIONS}
+            selectedValues={statusFilter}
+            onApply={handleStatusFilterApply}
+          />
+          <SearchField value={search} onChange={setSearch} placeholder="Cari pesanan ..." className="flex-1" />
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center py-20">
-          <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
-        </div>
+        <PageLoader />
       ) : error ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
-          <p className="text-sm text-destructive">{error}</p>
-          <button onClick={reloadOrders} className="text-sm text-primary underline">
-            Coba lagi
-          </button>
-        </div>
+        <LoadErrorState message={error} onRetry={reloadOrders} />
       ) : orders.length > 0 ? (
-        <div className={`grid ${gridCols} gap-4 transition-all duration-200`}>
+        <div className={`grid ${gridColumnsClass} gap-4 transition-all duration-200`}>
           {orders.map((order) => (
-            <TransactionCard key={order.id} order={order} onRefresh={reloadOrders} />
+            <OrderCard key={order.id} order={order} onPaymentVerified={reloadOrders} />
           ))}
         </div>
       ) : (
@@ -147,7 +127,6 @@ export function OrderPage({ filterTabs = DEFAULT_FILTER_TABS }: Props) {
           Tidak ada pesanan ditemukan.
         </div>
       )}
-
     </div>
   )
 }

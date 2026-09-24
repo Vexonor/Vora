@@ -1,117 +1,134 @@
 "use client"
 
-import { OrderFilterDropdown } from "@/components/shared/order/order-filter-dropdown"
+import { FilterDropdown } from "@/components/shared/filter-dropdown"
+import type { OrderStatusTab } from "@/components/shared/order/order-page"
+import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
+import { SearchField } from "@/components/shared/search-field"
 import { useSidebar } from "@/components/ui/sidebar"
+import { useLatestRequest } from "@/hooks/use-latest-request"
+import { getApiErrorMessage } from "@/lib/api-error"
 import { getOrderPlace } from "@/lib/order-place"
+import { ORDER_STATUS_FILTER_OPTIONS } from "@/lib/order-status"
 import { orderService } from "@/services/order.service"
 import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
-import { Loader2Icon, SearchIcon } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { KitchenOrderCard } from "./components/kitchen-order-card"
 
-const KITCHEN_FILTER_TABS = [
-  { label: "Semua", value: "semua" },
-  { label: "Menunggu", value: String(OrderStatus.PENDING) },
-  { label: "Diproses", value: String(OrderStatus.PROCESSING) },
-  { label: "Siap", value: String(OrderStatus.READY) },
-  { label: "Selesai", value: String(OrderStatus.COMPLETED) },
-] as const
+const POLL_INTERVAL_MS = 10_000
+
+const KITCHEN_STATUS_TABS: OrderStatusTab[] = [
+  { label: "Semua", status: null },
+  { label: "Menunggu", status: OrderStatus.PENDING },
+  { label: "Diproses", status: OrderStatus.PROCESSING },
+  { label: "Siap", status: OrderStatus.READY },
+  { label: "Selesai", status: OrderStatus.COMPLETED },
+]
+
+function matchesSearch(order: Order, normalizedSearch: string) {
+  if (!normalizedSearch) return true
+  const place = getOrderPlace(order)
+  return [place.code, place.name, order.customer_name ?? "", `#${order.id}`]
+    .join(" ")
+    .toLowerCase()
+    .includes(normalizedSearch)
+}
 
 export default function KitchenOrderPage() {
-  const [activeFilter, setActiveFilter] = useState("semua")
+  const [activeTabStatus, setActiveTabStatus] = useState<OrderStatus | null>(null)
   const [statusFilter, setStatusFilter] = useState<number[]>([])
   const [search, setSearch] = useState("")
-  const { open } = useSidebar()
+  const { open: isSidebarOpen } = useSidebar()
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const startRequest = useLatestRequest()
 
-  const POLL_INTERVAL = 10_000
-
-  const fetchOrders = useCallback(async (silent = false) => {
-    if (!silent) {
+  const fetchOrders = useCallback(async ({ isBackgroundRefresh = false } = {}) => {
+    const isLatest = startRequest()
+    if (!isBackgroundRefresh) {
       setIsLoading(true)
       setError(null)
     }
     try {
       const data = await orderService.getAll()
-      setOrders(Array.isArray(data) ? data : [])
+      if (isLatest()) setOrders(Array.isArray(data) ? data : [])
     } catch {
-      if (!silent) setError("Gagal memuat data pesanan.")
+      if (isLatest() && !isBackgroundRefresh) setError("Gagal memuat data pesanan.")
     } finally {
-      if (!silent) setIsLoading(false)
+      if (isLatest() && !isBackgroundRefresh) setIsLoading(false)
     }
-  }, [])
+  }, [startRequest])
 
   useEffect(() => {
     fetchOrders()
   }, [fetchOrders])
 
   useEffect(() => {
-    const tick = () => {
-      if (document.visibilityState === "visible") fetchOrders(true)
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") fetchOrders({ isBackgroundRefresh: true })
     }
-    const timer = setInterval(tick, POLL_INTERVAL)
-    document.addEventListener("visibilitychange", tick)
+    const pollTimer = setInterval(refreshWhenVisible, POLL_INTERVAL_MS)
+    document.addEventListener("visibilitychange", refreshWhenVisible)
     return () => {
-      clearInterval(timer)
-      document.removeEventListener("visibilitychange", tick)
+      clearInterval(pollTimer)
+      document.removeEventListener("visibilitychange", refreshWhenVisible)
     }
   }, [fetchOrders])
 
-  const handleUpdateStatus = async (orderId: number, newStatus: number) => {
+  const handleUpdateStatus = async (orderId: number, nextStatus: number) => {
     try {
-      await orderService.updateStatus(orderId, { status: newStatus })
-      fetchOrders(true)
+      await orderService.updateStatus(orderId, { status: nextStatus })
+      fetchOrders({ isBackgroundRefresh: true })
     } catch {
       toast.error("Gagal memperbarui status pesanan. Coba lagi.")
     }
   }
 
-  const handleCancel = async (orderId: number, reason: string) => {
-    await orderService.cancel(orderId, { reason })
-    fetchOrders(true)
+  const handleCancelOrder = async (orderId: number, reason: string) => {
+    try {
+      await orderService.cancel(orderId, { reason })
+      toast.success("Pesanan berhasil dibatalkan.")
+      fetchOrders({ isBackgroundRefresh: true })
+      return true
+    } catch (cancelError) {
+      toast.error(getApiErrorMessage(cancelError, "Gagal membatalkan pesanan. Coba lagi."))
+      return false
+    }
   }
 
-  const handleTabChange = (val: string) => {
-    setActiveFilter(val)
+  const handleTabChange = (tabStatus: OrderStatus | null) => {
+    setActiveTabStatus(tabStatus)
     setStatusFilter([])
   }
 
-  const handleFilterApply = (statuses: number[]) => {
+  const handleStatusFilterApply = (statuses: number[]) => {
     setStatusFilter(statuses)
-    if (statuses.length > 0) setActiveFilter("semua")
+    if (statuses.length > 0) setActiveTabStatus(null)
   }
 
   const normalizedSearch = search.trim().toLowerCase()
-  const filtered = orders.filter((o) => {
-    const matchTab = activeFilter === "semua" || o.status === Number(activeFilter)
-    const matchDropdown = statusFilter.length === 0 || statusFilter.includes(o.status)
-    const place = getOrderPlace(o)
-    const searchableText = [place.code, place.name, o.customer_name ?? "", `#${o.id}`]
-      .join(" ")
-      .toLowerCase()
-    const matchSearch = searchableText.includes(normalizedSearch)
-    return matchTab && matchDropdown && matchSearch
+  const visibleOrders = orders.filter((order) => {
+    const matchesTab = activeTabStatus === null || order.status === activeTabStatus
+    const matchesStatusFilter = statusFilter.length === 0 || statusFilter.includes(order.status)
+    return matchesTab && matchesStatusFilter && matchesSearch(order, normalizedSearch)
   })
 
-  const gridCols = open
+  const gridColumnsClass = isSidebarOpen
     ? "grid-cols-1 md:grid-cols-1 xl:grid-cols-3"
     : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          {KITCHEN_FILTER_TABS.map((tab) => (
+          {KITCHEN_STATUS_TABS.map((tab) => (
             <button
-              key={tab.value}
-              onClick={() => handleTabChange(tab.value)}
+              key={tab.label}
+              onClick={() => handleTabChange(tab.status)}
               className={`text-sm px-4 py-1.5 rounded-full border transition-colors
-                ${activeFilter === tab.value && statusFilter.length === 0
+                ${activeTabStatus === tab.status && statusFilter.length === 0
                   ? "bg-primary text-white border-primary"
                   : "bg-white text-foreground border-foreground/30 hover:border-primary"
                 }`}
@@ -122,39 +139,28 @@ export default function KitchenOrderPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <OrderFilterDropdown selected={statusFilter} onApply={handleFilterApply} />
-          <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
-            <SearchIcon className="size-4 text-muted-foreground shrink-0" />
-            <input
-              type="text"
-              placeholder="Cari pesanan ..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full text-sm outline-none placeholder:text-muted-foreground"
-            />
-          </div>
+          <FilterDropdown
+            title="Status Pesanan"
+            options={ORDER_STATUS_FILTER_OPTIONS}
+            selectedValues={statusFilter}
+            onApply={handleStatusFilterApply}
+          />
+          <SearchField value={search} onChange={setSearch} placeholder="Cari pesanan ..." />
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center py-20">
-          <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
-        </div>
+        <PageLoader />
       ) : error ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
-          <p className="text-sm text-destructive">{error}</p>
-          <button onClick={() => fetchOrders()} className="text-sm text-primary underline">
-            Coba lagi
-          </button>
-        </div>
-      ) : filtered.length > 0 ? (
-        <div className={`grid ${gridCols} gap-4 transition-all duration-200`}>
-          {filtered.map((order) => (
+        <LoadErrorState message={error} onRetry={() => fetchOrders()} />
+      ) : visibleOrders.length > 0 ? (
+        <div className={`grid ${gridColumnsClass} gap-4 transition-all duration-200`}>
+          {visibleOrders.map((order) => (
             <KitchenOrderCard
               key={order.id}
               order={order}
               onUpdateStatus={handleUpdateStatus}
-              onCancel={handleCancel}
+              onCancel={handleCancelOrder}
             />
           ))}
         </div>
@@ -163,7 +169,6 @@ export default function KitchenOrderPage() {
           Tidak ada pesanan ditemukan.
         </div>
       )}
-
     </div>
   )
 }

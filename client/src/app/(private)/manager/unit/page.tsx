@@ -1,35 +1,25 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { UnitFormDialog } from "@/components/[role]/manager/unit/unit-form-dialog"
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
+import { SearchField } from "@/components/shared/search-field"
 import { unitService } from "@/services/unit.service"
 import type { Unit } from "@/types/unit"
-import { PencilIcon, PlusIcon, Trash2Icon, Loader2Icon, SearchIcon } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Loader2Icon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
+
+type UnitDialogState = { isOpen: false } | { isOpen: true; unitToEdit: Unit | null }
 
 export default function ManagerUnitPage() {
   const [units, setUnits] = useState<Unit[]>([])
   const [search, setSearch] = useState("")
   const [isLoading, setIsLoading] = useState(true)
-  
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [modalMode, setModalMode] = useState<"add" | "edit">("add")
-  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null)
-  
-  const [unitName, setUnitName] = useState("")
-  const [unitAbbreviation, setUnitAbbreviation] = useState("")
+  const [unitDialog, setUnitDialog] = useState<UnitDialogState>({ isOpen: false })
+  const [unitToDelete, setUnitToDelete] = useState<Unit | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  const fetchUnits = async () => {
-    setIsLoading(true)
+  const fetchUnits = useCallback(async () => {
     try {
       const data = await unitService.getAll({ order_by: "created_at", direction: "DESC" })
       setUnits(Array.isArray(data) ? data : [])
@@ -38,87 +28,44 @@ export default function ManagerUnitPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchUnits()
-  }, [])
+  }, [fetchUnits])
 
-  const filtered = units.filter((u) => 
-    (u.name || "").toLowerCase().includes(search.toLowerCase()) ||
-    (u.abbreviation || "").toLowerCase().includes(search.toLowerCase())
+  const normalizedSearch = search.trim().toLowerCase()
+  const visibleUnits = units.filter((unit) =>
+    (unit.name ?? "").toLowerCase().includes(normalizedSearch) ||
+    (unit.abbreviation ?? "").toLowerCase().includes(normalizedSearch)
   )
 
-  const openAddModal = () => {
-    setModalMode("add")
-    setSelectedUnit(null)
-    setUnitName("")
-    setUnitAbbreviation("")
-    setIsModalOpen(true)
-  }
-
-  const openEditModal = (unit: Unit) => {
-    setModalMode("edit")
-    setSelectedUnit(unit)
-    setUnitName(unit.name || "")
-    setUnitAbbreviation(unit.abbreviation || "")
-    setIsModalOpen(true)
-  }
-
-  const handleSubmit = async () => {
-    if (!unitName.trim() || !unitAbbreviation.trim()) return
-
-    setIsSubmitting(true)
+  const handleConfirmDelete = async () => {
+    if (!unitToDelete) return
+    setIsDeleting(true)
     try {
-      if (modalMode === "add") {
-        await unitService.create({ name: unitName, abbreviation: unitAbbreviation })
-      } else if (modalMode === "edit" && selectedUnit) {
-        await unitService.update(selectedUnit.id, { name: unitName, abbreviation: unitAbbreviation })
-      }
-      setIsModalOpen(false)
-      toast.success("Satuan berhasil disimpan.")
-      fetchUnits()
-    } catch {
-      toast.error("Gagal menyimpan satuan. Coba lagi.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus satuan ini?")) return
-    try {
-      await unitService.remove(id)
+      await unitService.remove(unitToDelete.id)
+      toast.success("Satuan berhasil dihapus.")
+      setUnitToDelete(null)
       fetchUnits()
     } catch {
       toast.error("Gagal menghapus satuan. Pastikan tidak ada stok yang menggunakan satuan ini.")
+    } finally {
+      setIsDeleting(false)
     }
   }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-hidden">
-      
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
-          onClick={openAddModal}
+          onClick={() => setUnitDialog({ isOpen: true, unitToEdit: null })}
           className="flex items-center gap-2 bg-secondary text-primary text-sm font-semibold px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors"
         >
           <PlusIcon className="size-4" />
           Tambah Satuan
         </button>
-
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
-            <SearchIcon className="size-4 text-muted-foreground shrink-0" />
-            <input
-              type="text"
-              placeholder="Cari satuan ..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full text-sm outline-none placeholder:text-muted-foreground"
-            />
-          </div>
-        </div>
+        <SearchField value={search} onChange={setSearch} placeholder="Cari satuan ..." />
       </div>
 
       <div className="bg-white rounded-xl border border-foreground/10 overflow-x-auto flex-1">
@@ -138,29 +85,29 @@ export default function ManagerUnitPage() {
                   <Loader2Icon className="size-6 animate-spin mx-auto text-muted-foreground" />
                 </td>
               </tr>
-            ) : filtered.length === 0 ? (
+            ) : visibleUnits.length === 0 ? (
               <tr>
                 <td colSpan={4} className="text-center py-20 text-muted-foreground">
                   Belum ada satuan yang ditambahkan atau ditemukan.
                 </td>
               </tr>
             ) : (
-              filtered.map((unit, i) => (
+              visibleUnits.map((unit, index) => (
                 <tr key={unit.id} className="border-b border-foreground/5 last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-6 py-4 text-muted-foreground">{i + 1}.</td>
+                  <td className="px-6 py-4 text-muted-foreground">{index + 1}.</td>
                   <td className="px-6 py-4 font-medium">{unit.name}</td>
                   <td className="px-6 py-4 text-muted-foreground">{unit.abbreviation}</td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <button
-                        onClick={() => openEditModal(unit)}
+                        onClick={() => setUnitDialog({ isOpen: true, unitToEdit: unit })}
                         className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
                         title="Edit Satuan"
                       >
                         <PencilIcon className="size-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(unit.id)}
+                        onClick={() => setUnitToDelete(unit)}
                         className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
                         title="Hapus Satuan"
                       >
@@ -175,47 +122,28 @@ export default function ManagerUnitPage() {
         </table>
       </div>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{modalMode === "add" ? "Tambah Satuan Baru" : "Edit Satuan"}</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="name">Nama Satuan</Label>
-              <Input
-                id="name"
-                placeholder="Misal: Kilogram, Liter, Pieces..."
-                value={unitName}
-                onChange={(e) => setUnitName(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="abbreviation">Singkatan (Abbreviation)</Label>
-              <Input
-                id="abbreviation"
-                placeholder="Misal: Kg, L, Pcs..."
-                value={unitAbbreviation}
-                onChange={(e) => setUnitAbbreviation(e.target.value)}
-              />
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                Batal
-              </Button>
-              <Button
-                type="button"
-                onClick={handleSubmit}
-                disabled={!unitName.trim() || !unitAbbreviation.trim() || isSubmitting}
-                className="bg-secondary text-primary hover:bg-secondary/90"
-              >
-                {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : "Simpan"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {unitDialog.isOpen && (
+        <UnitFormDialog
+          unitToEdit={unitDialog.unitToEdit}
+          onSaved={fetchUnits}
+          onClose={() => setUnitDialog({ isOpen: false })}
+        />
+      )}
+
+      {unitToDelete && (
+        <ConfirmDeleteDialog
+          title="Hapus satuan ini?"
+          description={
+            <>
+              Satuan <span className="font-semibold text-foreground">{unitToDelete.name}</span> akan dihapus.
+              Satuan yang masih dipakai stok tidak dapat dihapus.
+            </>
+          }
+          isDeleting={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onClose={() => setUnitToDelete(null)}
+        />
+      )}
     </div>
   )
 }

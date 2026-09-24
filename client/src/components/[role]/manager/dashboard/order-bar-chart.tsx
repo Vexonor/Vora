@@ -4,24 +4,24 @@ import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartToo
 import { Loader2Icon } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
-const chartConfig = {
+const CHART_CONFIG = {
   count: { label: "Pesanan", color: "var(--primary)" },
 }
 
-const formatCount = (value: number) => (value === 0 ? "0" : String(value))
+const formatOrderCountTick = (value: number) => (value === 0 ? "0" : String(value))
 
 type Props = {
   data: Array<{ label: string; count: number }>
   totalInPeriod: number
   todayCount: number
-  periodLabel: string
+  periodDescription: string
   isLoading?: boolean
 }
 
-export function OrderBarChart({ data, totalInPeriod, todayCount, periodLabel, isLoading }: Props) {
-  const chartData = data.map((d) => ({ day: d.label, count: d.count }))
-  const maxCount = Math.max(...data.map((d) => d.count), 1)
-  const yMax = Math.ceil(maxCount * 1.3) || 10
+export function OrderBarChart({ data, totalInPeriod, todayCount, periodDescription, isLoading }: Props) {
+  const chartData = data.map((point) => ({ day: point.label, count: point.count }))
+  const highestCount = Math.max(...data.map((point) => point.count), 1)
+  const yAxisMax = Math.ceil(highestCount * 1.3) || 10
 
   return (
     <div className="bg-white rounded-xl border border-foreground/10 p-5 flex flex-col gap-4">
@@ -30,7 +30,7 @@ export function OrderBarChart({ data, totalInPeriod, todayCount, periodLabel, is
       <div className="flex gap-8">
         <div>
           <p className="font-bold text-2xl">{isLoading ? "—" : totalInPeriod}</p>
-          <p className="text-sm text-muted-foreground">Total pesanan {periodLabel}</p>
+          <p className="text-sm text-muted-foreground">Total pesanan {periodDescription}</p>
         </div>
         <div>
           <p className="font-bold text-2xl">{isLoading ? "—" : todayCount}</p>
@@ -43,7 +43,7 @@ export function OrderBarChart({ data, totalInPeriod, todayCount, periodLabel, is
           <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <ChartContainer config={chartConfig} className="h-80 w-full">
+        <ChartContainer config={CHART_CONFIG} className="h-80 w-full">
           <BarChart data={chartData} barCategoryGap="35%">
             <CartesianGrid vertical={false} stroke="var(--border)" />
             <XAxis
@@ -56,8 +56,8 @@ export function OrderBarChart({ data, totalInPeriod, todayCount, periodLabel, is
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12 }}
-              tickFormatter={formatCount}
-              domain={[0, yMax]}
+              tickFormatter={formatOrderCountTick}
+              domain={[0, yAxisMax]}
               allowDecimals={false}
             />
             <ChartTooltip content={<ChartTooltipContent />} />

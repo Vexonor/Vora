@@ -1,36 +1,25 @@
+import { formatDate, formatRupiah } from "@/lib/format";
+import { getOrderItemName } from "@/lib/order";
+import { getOrderPlace } from "@/lib/order-place";
+import { splitTaxFromTotal, TAX_RATE } from "@/lib/pricing";
 import type { Order } from "@/types/order";
-import { getOrderPlace } from "./order-place";
 
 export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string {
-  const rupiah = (v: number) =>
-    `Rp ${Number(v).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
-
   const place = getOrderPlace(order);
-
-  const subtotal = order.total_price / 1.1;
-  const tax = order.total_price - subtotal;
-
-  const createdAt = order.created_at
-    ? new Date(order.created_at).toLocaleString("id-ID", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "-";
+  const { subtotal, tax } = splitTaxFromTotal(Number(order.total_price));
+  const orderedAt = formatDate(order.created_at, "dateTime");
 
   const itemRows = (order.items ?? [])
     .map((item) => {
-      const name = item.menu?.name ?? `Menu #${item.menu_id}`;
+      const itemName = getOrderItemName(item);
       return `
         <tr>
           <td style="padding:8px 0;color:#0f172a;font-size:14px;">
-            ${escapeHtml(name)}
-            <div style="color:#6b7280;font-size:12px;">${item.quantity} x ${rupiah(item.price)}</div>
+            ${escapeHtml(itemName)}
+            <div style="color:#6b7280;font-size:12px;">${item.quantity} x ${formatRupiah(item.price)}</div>
           </td>
           <td style="padding:8px 0;text-align:right;color:#0f172a;font-size:14px;font-weight:600;white-space:nowrap;">
-            ${rupiah(item.total_price)}
+            ${formatRupiah(item.total_price)}
           </td>
         </tr>`;
     })
@@ -70,7 +59,7 @@ export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string 
           ${customerRow}
           <tr>
             <td style="padding:2px 0;color:#6b7280;font-size:13px;">Tanggal</td>
-            <td style="padding:2px 0;text-align:right;color:#0f172a;font-size:13px;font-weight:500;">${createdAt}</td>
+            <td style="padding:2px 0;text-align:right;color:#0f172a;font-size:13px;font-weight:500;">${orderedAt}</td>
           </tr>
           <tr>
             <td style="padding:2px 0;color:#6b7280;font-size:13px;">Status</td>
@@ -91,18 +80,18 @@ export function buildInvoiceEmailHtml(order: Order, invoiceUrl: string): string 
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td style="padding:2px 0;color:#6b7280;font-size:13px;">Subtotal</td>
-            <td style="padding:2px 0;text-align:right;color:#0f172a;font-size:13px;">${rupiah(subtotal)}</td>
+            <td style="padding:2px 0;text-align:right;color:#0f172a;font-size:13px;">${formatRupiah(subtotal)}</td>
           </tr>
           <tr>
-            <td style="padding:2px 0;color:#6b7280;font-size:13px;">PPN (10%)</td>
-            <td style="padding:2px 0;text-align:right;color:#0f172a;font-size:13px;">${rupiah(tax)}</td>
+            <td style="padding:2px 0;color:#6b7280;font-size:13px;">PPN (${TAX_RATE * 100}%)</td>
+            <td style="padding:2px 0;text-align:right;color:#0f172a;font-size:13px;">${formatRupiah(tax)}</td>
           </tr>
         </table>
 
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;background-color:#F49250;border-radius:8px;">
           <tr>
             <td style="padding:12px 16px;color:#ffffff;font-size:15px;font-weight:bold;">TOTAL</td>
-            <td style="padding:12px 16px;text-align:right;color:#ffffff;font-size:15px;font-weight:bold;">${rupiah(order.total_price)}</td>
+            <td style="padding:12px 16px;text-align:right;color:#ffffff;font-size:15px;font-weight:bold;">${formatRupiah(order.total_price)}</td>
           </tr>
         </table>
 

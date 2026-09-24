@@ -1,19 +1,21 @@
 "use client"
 
 import { MenuTable } from "@/components/[role]/manager/menu/menu-table"
-import { MenuFilterDropdown } from "@/components/shared/menu/menu-filter-dropdown"
-import { menuService } from "@/services/menu.service"
-import type { Menu } from "@/types/menu"
-import { CirclePlusIcon, Loader2Icon, SearchIcon } from "lucide-react"
+import { FilterDropdown } from "@/components/shared/filter-dropdown"
+import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
+import { SearchField } from "@/components/shared/search-field"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useLatestRequest } from "@/hooks/use-latest-request"
-import { useRouter } from "next/navigation"
+import { MENU_STATUS_OPTIONS } from "@/lib/menu-status"
+import { menuService } from "@/services/menu.service"
+import type { Menu } from "@/types/menu"
+import { CirclePlusIcon } from "lucide-react"
+import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
 
 const PAGE_SIZE = 20
 
-export default function ManagerMenuPage() {
-  const router = useRouter()
+export default function ManagerMenuListPage() {
   const [menus, setMenus] = useState<Menu[]>([])
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<number[]>([])
@@ -23,13 +25,13 @@ export default function ManagerMenuPage() {
   const debouncedSearch = useDebouncedValue(search, 400)
   const startRequest = useLatestRequest()
 
-  const fetchMenus = useCallback(async (q: string, statuses: number[]) => {
+  const fetchMenus = useCallback(async (searchTerm: string, statuses: number[]) => {
     const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
       const data = await menuService.getAll({
-        q: q || undefined,
+        q: searchTerm || undefined,
         statuses: statuses.length > 0 ? statuses : undefined,
       })
       if (isLatest()) setMenus(data)
@@ -44,12 +46,19 @@ export default function ManagerMenuPage() {
     fetchMenus(debouncedSearch, statusFilter)
   }, [fetchMenus, debouncedSearch, statusFilter])
 
-  const handleSearch = (value: string) => {
+  const reloadMenus = () => fetchMenus(debouncedSearch, statusFilter)
+
+  const handleDelete = async (menu: Menu) => {
+    await menuService.remove(menu.id)
+    reloadMenus()
+  }
+
+  const handleSearchChange = (value: string) => {
     setSearch(value)
     setCurrentPage(1)
   }
 
-  const handleFilterApply = (statuses: number[]) => {
+  const handleStatusFilterApply = (statuses: number[]) => {
     setStatusFilter(statuses)
     setCurrentPage(1)
   }
@@ -59,52 +68,40 @@ export default function ManagerMenuPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
-          onClick={() => router.push("/manager/menu/create")}
+        <Link
+          href="/manager/menu/create"
           className="flex items-center gap-2 bg-secondary text-primary text-sm font-semibold px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors"
         >
           <CirclePlusIcon className="size-4" />
           Tambah Menu
-        </button>
+        </Link>
 
         <div className="flex items-center gap-2">
-          <MenuFilterDropdown selected={statusFilter} onApply={handleFilterApply} />
-          <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
-            <SearchIcon className="size-4 text-muted-foreground shrink-0" />
-            <input
-              type="text"
-              placeholder="Cari menu ..."
-              value={search}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full text-sm outline-none placeholder:text-muted-foreground"
-            />
-          </div>
+          <FilterDropdown
+            title="Status"
+            options={MENU_STATUS_OPTIONS}
+            selectedValues={statusFilter}
+            onApply={handleStatusFilterApply}
+          />
+          <SearchField value={search} onChange={handleSearchChange} placeholder="Cari menu ..." />
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center py-20">
-          <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
-        </div>
+        <PageLoader />
       ) : error ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
-          <p className="text-sm text-destructive">{error}</p>
-          <button onClick={() => fetchMenus(debouncedSearch, statusFilter)} className="text-sm text-primary underline">
-            Coba lagi
-          </button>
-        </div>
+        <LoadErrorState message={error} onRetry={reloadMenus} />
       ) : (
         <MenuTable
           menus={menus}
           currentPage={visiblePage}
-          onPageChange={setCurrentPage}
           totalPages={totalPages}
-          onDeleted={() => fetchMenus(debouncedSearch, statusFilter)}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
+          onDelete={handleDelete}
         />
       )}
-
     </div>
   )
 }

@@ -1,28 +1,19 @@
 "use client"
 
+import { BackLink } from "@/components/shared/back-link"
+import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
+import { StatusBadge } from "@/components/shared/status-badge"
+import { formatDate } from "@/lib/format"
+import { getStockName } from "@/lib/stock"
+import { getStockStatusDisplay } from "@/lib/stock-status"
 import { stockService } from "@/services/stock.service"
 import { unitService } from "@/services/unit.service"
 import type { Stock } from "@/types/stock"
-import { StockStatus } from "@/types/stock"
 import type { Unit } from "@/types/unit"
-import { ArrowLeftIcon, PencilIcon } from "lucide-react"
-import { Loader2Icon } from "lucide-react"
+import { PencilIcon } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
-
-const STOCK_STATUS_BADGE: Record<number, { label: string; badgeClass: string }> = {
-  [StockStatus.IN_STOCK]: { label: "Tersedia", badgeClass: "border-primary/40 bg-primary/10 text-primary" },
-  [StockStatus.LOW_STOCK]: { label: "Menipis", badgeClass: "border-amber-500/40 bg-amber-50 text-amber-600" },
-  [StockStatus.OUT_OF_STOCK]: { label: "Habis", badgeClass: "border-destructive/40 bg-destructive/10 text-destructive" },
-  [StockStatus.DISCONTINUED]: { label: "Tidak Aktif", badgeClass: "border-foreground/30 bg-foreground/5 text-foreground/60" },
-  [StockStatus.ON_ORDER]: { label: "Menunggu Supplier", badgeClass: "border-blue-500/40 bg-blue-50 text-blue-600" },
-}
-
-type Props = {
-  id: number
-  backPath: string
-  editPath: string
-}
 
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -35,98 +26,74 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
   )
 }
 
-export function StockDetailView({ id, backPath, editPath }: Props) {
+type Props = {
+  stockId: number
+  basePath: string
+}
+
+export function StockDetailView({ stockId, basePath }: Props) {
   const router = useRouter()
   const [stock, setStock] = useState<Stock | null>(null)
   const [units, setUnits] = useState<Unit[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchData = useCallback(async () => {
+  const fetchStockDetail = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
-      const [stockData, unitsData] = await Promise.all([
-        stockService.getById(id),
+      const [stockData, unitList] = await Promise.all([
+        stockService.getById(stockId),
         unitService.getAll(),
       ])
       setStock(stockData)
-      setUnits(unitsData)
+      setUnits(unitList)
     } catch {
       setError("Gagal memuat data bahan.")
     } finally {
       setIsLoading(false)
     }
-  }, [id])
+  }, [stockId])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    fetchStockDetail()
+  }, [fetchStockDetail])
 
-  const unitName = stock
-    ? (units.find((u) => u.id === stock.unit_id)?.name ?? `Unit #${stock.unit_id}`)
-    : ""
-
-  const statusConfig = stock
-    ? (STOCK_STATUS_BADGE[stock.status] ?? { label: stock.status_name ?? "Unknown", badgeClass: "border-foreground/30 bg-foreground/5 text-foreground" })
-    : null
-
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "-"
-    return new Date(dateStr).toLocaleDateString("id-ID", {
-      weekday: "long", day: "numeric", month: "long", year: "numeric",
-    })
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center py-20">
-        <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
+  if (isLoading) return <PageLoader />
 
   if (error || !stock) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
-        <p className="text-sm text-destructive">{error ?? "Data tidak ditemukan."}</p>
-        <button onClick={() => router.push(backPath)} className="text-sm text-primary underline">
-          Kembali
-        </button>
-      </div>
+      <LoadErrorState
+        message={error ?? "Data tidak ditemukan."}
+        retryLabel="Kembali"
+        onRetry={() => router.push(basePath)}
+      />
     )
   }
+
+  const unitName = units.find((unit) => unit.id === stock.unit_id)?.name ?? `Unit #${stock.unit_id}`
+  const statusDisplay = getStockStatusDisplay(stock.status, stock.status_name)
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 pt-0 max-w-2xl">
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => router.push(backPath)}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeftIcon className="size-4" />
-          Kembali
-        </button>
-        <button
-          onClick={() => router.push(editPath)}
+        <BackLink href={basePath} />
+        <Link
+          href={`${basePath}/${stock.id}/edit`}
           className="flex items-center gap-2 bg-secondary text-primary text-sm font-semibold px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors"
         >
           <PencilIcon className="size-4" />
           Edit Bahan
-        </button>
+        </Link>
       </div>
 
       <div className="bg-white border border-foreground/10 rounded-xl p-6 flex flex-col gap-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold">{stock.name ?? `Bahan #${stock.id}`}</h2>
+            <h2 className="text-xl font-bold">{getStockName(stock)}</h2>
             <p className="text-sm text-muted-foreground mt-0.5">ID #{stock.id}</p>
           </div>
-          {statusConfig && (
-            <span className={`text-xs font-medium px-3 py-1.5 rounded-full border shrink-0 ${statusConfig.badgeClass}`}>
-              {statusConfig.label}
-            </span>
-          )}
+          <StatusBadge label={statusDisplay.label} tone={statusDisplay.tone} className="py-1.5 shrink-0" />
         </div>
 
         <hr className="border-foreground/10" />
@@ -150,8 +117,8 @@ export function StockDetailView({ id, backPath, editPath }: Props) {
         <hr className="border-foreground/10" />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <InfoRow label="Dibuat">{formatDate(stock.created_at)}</InfoRow>
-          <InfoRow label="Diperbarui">{formatDate(stock.updated_at)}</InfoRow>
+          <InfoRow label="Dibuat">{formatDate(stock.created_at, "weekdayLong")}</InfoRow>
+          <InfoRow label="Diperbarui">{formatDate(stock.updated_at, "weekdayLong")}</InfoRow>
         </div>
       </div>
     </div>

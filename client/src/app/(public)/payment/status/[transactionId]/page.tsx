@@ -1,9 +1,9 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { orderService } from "@/services/order.service"
 import { canViewInvoice } from "@/lib/invoice-access"
 import { getOrderPlace } from "@/lib/order-place"
+import { orderService } from "@/services/order.service"
 import { OrderStatus, type Order } from "@/types/order"
 import {
   BellIcon,
@@ -19,16 +19,16 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 
-const POLL_INTERVAL = 8000
+const POLL_INTERVAL_MS = 8000
 
-const STEPS = [
-  { status: OrderStatus.PENDING, label: "Menunggu", desc: "Pesanan diterima", icon: ClockIcon },
-  { status: OrderStatus.PROCESSING, label: "Diproses", desc: "Dapur sedang menyiapkan", icon: ChefHatIcon },
-  { status: OrderStatus.READY, label: "Siap", desc: "Pesanan siap disajikan", icon: BellIcon },
-  { status: OrderStatus.COMPLETED, label: "Selesai", desc: "Selamat menikmati", icon: CheckCircle2Icon },
+const ORDER_PROGRESS_STEPS = [
+  { status: OrderStatus.PENDING, label: "Menunggu", description: "Pesanan diterima", Icon: ClockIcon },
+  { status: OrderStatus.PROCESSING, label: "Diproses", description: "Dapur sedang menyiapkan", Icon: ChefHatIcon },
+  { status: OrderStatus.READY, label: "Siap", description: "Pesanan siap disajikan", Icon: BellIcon },
+  { status: OrderStatus.COMPLETED, label: "Selesai", description: "Selamat menikmati", Icon: CheckCircle2Icon },
 ]
 
-export default function PaymentStatusPage() {
+export default function OrderStatusPage() {
   const params = useParams<{ transactionId: string }>()
   const orderId = Number(params?.transactionId)
 
@@ -36,13 +36,13 @@ export default function PaymentStatusPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchOrder = useCallback(async () => {
+  const fetchOrder = useCallback(async ({ isPolling = false } = {}) => {
     try {
-      const data = await orderService.getById(orderId)
-      setOrder(data)
+      setOrder(await orderService.getById(orderId))
       setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal memuat status pesanan")
+    } catch (fetchError) {
+      if (isPolling) return
+      setError(fetchError instanceof Error ? fetchError.message : "Gagal memuat status pesanan")
     } finally {
       setIsLoading(false)
     }
@@ -59,18 +59,19 @@ export default function PaymentStatusPage() {
 
   const status = order ? Number(order.status) : null
   const isCanceled = status === OrderStatus.CANCELED
-  const isTerminal = status === OrderStatus.COMPLETED || isCanceled
+  const isFinalStatus = status === OrderStatus.COMPLETED || isCanceled
   const canPrintInvoice = order ? canViewInvoice(order) : false
+  const currentStepIndex = ORDER_PROGRESS_STEPS.findIndex((step) => step.status === status)
 
   useEffect(() => {
-    if (!orderId || isTerminal) return
-    const timer = setInterval(() => {
-      if (document.visibilityState === "visible") fetchOrder()
-    }, POLL_INTERVAL)
-    return () => clearInterval(timer)
-  }, [orderId, isTerminal, fetchOrder])
+    if (!orderId || isFinalStatus) return
+    const pollTimer = setInterval(() => {
+      if (document.visibilityState === "visible") fetchOrder({ isPolling: true })
+    }, POLL_INTERVAL_MS)
+    return () => clearInterval(pollTimer)
+  }, [orderId, isFinalStatus, fetchOrder])
 
-  const InvoiceButton = (
+  const invoiceLink = (
     <Link href={`/payment/invoice?orderId=${orderId}`} className="w-full">
       <Button className="w-full bg-secondary text-primary font-semibold py-3 rounded-lg gap-2">
         <ReceiptTextIcon className="size-5" />
@@ -146,38 +147,36 @@ export default function PaymentStatusPage() {
           </div>
         ) : (
           <div className="flex flex-col">
-            {STEPS.map((step, i) => {
-              const stepIndex = STEPS.findIndex((s) => s.status === status)
-              const reached = i <= stepIndex
-              const done = i < stepIndex
-              const current = i === stepIndex && !isTerminal
-              const Icon = step.icon
-              const isLast = i === STEPS.length - 1
+            {ORDER_PROGRESS_STEPS.map((step, stepIndex) => {
+              const isReached = stepIndex <= currentStepIndex
+              const isCompleted = stepIndex < currentStepIndex
+              const isCurrent = stepIndex === currentStepIndex && !isFinalStatus
+              const isLastStep = stepIndex === ORDER_PROGRESS_STEPS.length - 1
               return (
                 <div key={step.status} className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
                       className={`size-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                        reached ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-                      } ${current ? "ring-4 ring-primary/20" : ""}`}
+                        isReached ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                      } ${isCurrent ? "ring-4 ring-primary/20" : ""}`}
                     >
-                      <Icon className="size-4" />
+                      <step.Icon className="size-4" />
                     </div>
-                    {!isLast && (
-                      <div className={`w-0.5 flex-1 min-h-8 ${done ? "bg-primary" : "bg-muted"}`} />
+                    {!isLastStep && (
+                      <div className={`w-0.5 flex-1 min-h-8 ${isCompleted ? "bg-primary" : "bg-muted"}`} />
                     )}
                   </div>
-                  <div className={`pb-6 ${reached ? "" : "opacity-70"}`}>
-                    <p className={`text-sm font-semibold ${current ? "text-primary" : "text-foreground"}`}>
+                  <div className={`pb-6 ${isReached ? "" : "opacity-70"}`}>
+                    <p className={`text-sm font-semibold ${isCurrent ? "text-primary" : "text-foreground"}`}>
                       {step.label}
-                      {current && (
+                      {isCurrent && (
                         <span className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-primary">
                           <Loader2Icon className="size-3 animate-spin" />
                           memperbarui…
                         </span>
                       )}
                     </p>
-                    <p className="text-xs text-muted-foreground">{step.desc}</p>
+                    <p className="text-xs text-muted-foreground">{step.description}</p>
                   </div>
                 </div>
               )
@@ -185,7 +184,7 @@ export default function PaymentStatusPage() {
           </div>
         )}
 
-        {canPrintInvoice && InvoiceButton}
+        {canPrintInvoice && invoiceLink}
 
         {status === OrderStatus.PENDING && !canPrintInvoice && (
           <p className="text-center text-xs text-muted-foreground">

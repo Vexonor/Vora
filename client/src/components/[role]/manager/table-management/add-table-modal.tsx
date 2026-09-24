@@ -9,26 +9,29 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 type Props = {
-  onGenerate: (tableNumber: number) => Promise<string | null>
+  onCreateTable: (tableNumber: number) => Promise<string | null>
   onClose: () => void
 }
 
-export function AddTableModal({ onGenerate, onClose }: Props) {
+export function AddTableModal({ onCreateTable, onClose }: Props) {
   const [tableNumber, setTableNumber] = useState("")
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
     if (isSubmitting) return
-    const num = parseInt(tableNumber)
-    if (!tableNumber || isNaN(num) || num <= 0) {
+    const parsedTableNumber = parseInt(tableNumber, 10)
+    if (!tableNumber || isNaN(parsedTableNumber) || parsedTableNumber <= 0) {
       setError("Masukkan nomor meja yang valid.")
       return
     }
     setIsSubmitting(true)
-    const errorMsg = await onGenerate(num)
+    const errorMessage = await onCreateTable(parsedTableNumber)
     setIsSubmitting(false)
-    if (errorMsg) { toast.error(errorMsg); return }
+    if (errorMessage) {
+      toast.error(errorMessage)
+      return
+    }
     toast.success("Meja berhasil ditambahkan.")
     onClose()
   }
@@ -47,8 +50,8 @@ export function AddTableModal({ onGenerate, onClose }: Props) {
               min={1}
               placeholder="contoh: 8"
               value={tableNumber}
-              onChange={(e) => { setTableNumber(e.target.value); setError("") }}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+              onChange={(event) => { setTableNumber(event.target.value); setError("") }}
+              onKeyDown={(event) => event.key === "Enter" && handleSubmit()}
               aria-invalid={!!error}
             />
           </FormField>

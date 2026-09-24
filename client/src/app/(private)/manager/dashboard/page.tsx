@@ -1,92 +1,56 @@
 "use client"
 
-import { ManagerStatCard } from "../../../../components/[role]/manager/dashboard/manager-stat-card"
-import { OrderBarChart } from "../../../../components/[role]/manager/dashboard/order-bar-chart"
-import { RevenueBarChart } from "../../../../components/[role]/manager/dashboard/revenue-bar-chart"
-import { RevenueDonutChart } from "../../../../components/[role]/manager/dashboard/revenue-donut-chart"
+import { ManagerStatCard } from "@/components/[role]/manager/dashboard/manager-stat-card"
+import { OrderBarChart } from "@/components/[role]/manager/dashboard/order-bar-chart"
+import { RevenueBarChart } from "@/components/[role]/manager/dashboard/revenue-bar-chart"
+import { RevenueDonutChart } from "@/components/[role]/manager/dashboard/revenue-donut-chart"
+import { PageLoader } from "@/components/shared/page-state"
 import { useLatestRequest } from "@/hooks/use-latest-request"
 import { dashboardService } from "@/services/dashboard.service"
-import type { ChartPeriod, ManagerChartData } from "@/types/dashboard"
-import { TableIcon } from "@icons/table"
+import type { ChartPeriod, ManagerChartData, ManagerDashboardStats } from "@/types/dashboard"
 import { MenuIcon } from "@icons/menu"
 import { ReceiptItemIcon } from "@icons/receipt-item"
-import { Loader2Icon } from "lucide-react"
+import { TableIcon } from "@icons/table"
 import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner"
 
-type ManagerStat = {
-  title: string
-  value: number | string
-  icon: React.ReactNode
-  trend: "up" | "down" | "neutral"
-  trendIcon: React.ReactNode
-  trendLabel: string
-}
-
-const PERIODS: { value: ChartPeriod; label: string; description: string }[] = [
+const CHART_PERIOD_OPTIONS: { value: ChartPeriod; label: string; description: string }[] = [
   { value: "7d", label: "7 Hari", description: "7 hari terakhir" },
   { value: "30d", label: "30 Hari", description: "30 hari terakhir" },
   { value: "6m", label: "6 Bulan", description: "6 bulan terakhir" },
 ]
 
-const EMPTY_CHART: ManagerChartData = {
+const EMPTY_CHART_DATA: ManagerChartData = {
   orders: { chart: [], totalInPeriod: 0, todayCount: 0 },
   revenue: { chart: [], totalInPeriod: 0, todayRevenue: 0, completed: 0, canceled: 0 },
 }
 
 export default function ManagerDashboardPage() {
-  const [stats, setStats] = useState<ManagerStat[]>([])
+  const [stats, setStats] = useState<ManagerDashboardStats | null>(null)
   const [isLoadingStats, setIsLoadingStats] = useState(true)
-  const [chartData, setChartData] = useState<ManagerChartData>(EMPTY_CHART)
+  const [chartData, setChartData] = useState<ManagerChartData>(EMPTY_CHART_DATA)
   const [isLoadingChart, setIsLoadingChart] = useState(true)
-  const [period, setPeriod] = useState<ChartPeriod>("7d")
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("7d")
   const startChartRequest = useLatestRequest()
 
   const fetchStats = useCallback(async () => {
-    setIsLoadingStats(true)
     try {
-      const data = await dashboardService.getManagerStats()
-      const { menuCount, orderCount, tableCount } = data
-      setStats([
-        {
-          title: "Manajemen Meja",
-          value: tableCount,
-          icon: <TableIcon className="size-full text-primary" />,
-          trend: "neutral",
-          trendIcon: <></>,
-          trendLabel: `${tableCount} meja terdaftar`,
-        },
-        {
-          title: "Menu",
-          value: menuCount,
-          icon: <MenuIcon className="size-full text-primary" />,
-          trend: "neutral",
-          trendIcon: <></>,
-          trendLabel: `${menuCount} menu tersedia`,
-        },
-        {
-          title: "Pesanan",
-          value: orderCount,
-          icon: <ReceiptItemIcon className="size-full text-primary" />,
-          trend: "neutral",
-          trendIcon: <></>,
-          trendLabel: `${orderCount} total pesanan`,
-        },
-      ])
+      setStats(await dashboardService.getManagerStats())
     } catch {
-      setStats([])
+      toast.error("Gagal memuat statistik dashboard.")
     } finally {
       setIsLoadingStats(false)
     }
   }, [])
 
-  const fetchChartData = useCallback(async (p: ChartPeriod) => {
+  const fetchChartData = useCallback(async (period: ChartPeriod) => {
     const isLatest = startChartRequest()
     setIsLoadingChart(true)
     try {
-      const data = await dashboardService.getManagerChartData(p)
+      const data = await dashboardService.getManagerChartData(period)
       if (isLatest()) setChartData(data)
     } catch {
-      if (isLatest()) setChartData(EMPTY_CHART)
+      if (isLatest()) setChartData(EMPTY_CHART_DATA)
     } finally {
       if (isLatest()) setIsLoadingChart(false)
     }
@@ -97,62 +61,73 @@ export default function ManagerDashboardPage() {
   }, [fetchStats])
 
   useEffect(() => {
-    fetchChartData(period)
-  }, [period, fetchChartData])
+    fetchChartData(chartPeriod)
+  }, [chartPeriod, fetchChartData])
 
-  const periodLabel = PERIODS.find((p) => p.value === period)?.description ?? ""
+  const periodDescription = CHART_PERIOD_OPTIONS.find((option) => option.value === chartPeriod)?.description ?? ""
 
-  if (isLoadingStats) {
-    return (
-      <div className="flex flex-1 items-center justify-center py-20">
-        <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
+  if (isLoadingStats) return <PageLoader />
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="grid auto-rows-min gap-4 sm:grid-cols-1 lg:grid-cols-3">
-        {stats.map((stat) => (
-          <ManagerStatCard key={stat.title} {...stat} />
-        ))}
-      </div>
+      {stats && (
+        <div className="grid auto-rows-min gap-4 sm:grid-cols-1 lg:grid-cols-3">
+          <ManagerStatCard
+            title="Manajemen Meja"
+            value={stats.tableCount}
+            icon={<TableIcon className="size-full text-primary" />}
+            caption={`${stats.tableCount} meja terdaftar`}
+          />
+          <ManagerStatCard
+            title="Menu"
+            value={stats.menuCount}
+            icon={<MenuIcon className="size-full text-primary" />}
+            caption={`${stats.menuCount} menu tersedia`}
+          />
+          <ManagerStatCard
+            title="Pesanan"
+            value={stats.orderCount}
+            icon={<ReceiptItemIcon className="size-full text-primary" />}
+            caption={`${stats.orderCount} total pesanan`}
+          />
+        </div>
+      )}
 
       <div className="flex items-center gap-1 bg-muted rounded-lg p-1 w-fit">
-        {PERIODS.map((p) => (
+        {CHART_PERIOD_OPTIONS.map((option) => (
           <button
-            key={p.value}
-            onClick={() => setPeriod(p.value)}
+            key={option.value}
+            onClick={() => setChartPeriod(option.value)}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              period === p.value
+              chartPeriod === option.value
                 ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {p.label}
+            {option.label}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-1 gap-4">
         <RevenueDonutChart
-          completed={chartData.revenue.completed}
-          canceled={chartData.revenue.canceled}
-          periodLabel={periodLabel}
+          completedRevenue={chartData.revenue.completed}
+          canceledRevenue={chartData.revenue.canceled}
+          periodDescription={periodDescription}
           isLoading={isLoadingChart}
         />
         <OrderBarChart
           data={chartData.orders.chart}
           totalInPeriod={chartData.orders.totalInPeriod}
           todayCount={chartData.orders.todayCount}
-          periodLabel={periodLabel}
+          periodDescription={periodDescription}
           isLoading={isLoadingChart}
         />
         <RevenueBarChart
           data={chartData.revenue.chart}
           totalInPeriod={chartData.revenue.totalInPeriod}
           todayRevenue={chartData.revenue.todayRevenue}
-          periodLabel={periodLabel}
+          periodDescription={periodDescription}
           isLoading={isLoadingChart}
         />
       </div>

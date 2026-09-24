@@ -1,21 +1,25 @@
 "use client"
 
 import { AddTableModal } from "@/components/[role]/manager/table-management/add-table-modal"
-import { DeleteTableModal } from "@/components/[role]/manager/table-management/delete-table-modal"
 import { TableCard } from "@/components/[role]/manager/table-management/table-card"
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
+import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
+import { SearchField } from "@/components/shared/search-field"
 import { useSidebar } from "@/components/ui/sidebar"
+import { formatTableCode } from "@/lib/order-place"
 import { tableService } from "@/services/table.service"
 import type { Table } from "@/types/table"
-import { CirclePlusIcon, Loader2Icon, SearchIcon } from "lucide-react"
+import { CirclePlusIcon } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
-export default function TableManagementPage() {
-  const { open } = useSidebar()
+export default function ManagerTableManagementPage() {
+  const { open: isSidebarOpen } = useSidebar()
   const [tables, setTables] = useState<Table[]>([])
   const [search, setSearch] = useState("")
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<Table | null>(null)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [tableToDelete, setTableToDelete] = useState<Table | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,106 +40,85 @@ export default function TableManagementPage() {
     fetchTables()
   }, [fetchTables])
 
-  const filtered = tables.filter((t) =>
-    t.number.toString().includes(search)
-  )
+  const visibleTables = tables.filter((table) => table.number.toString().includes(search.trim()))
 
-  const handleGenerate = async (num: number): Promise<string | null> => {
-    const exists = tables.some((t) => t.number === num)
-    if (exists) return `Meja nomor ${num} sudah ada.`
+  const handleCreateTable = async (tableNumber: number): Promise<string | null> => {
+    if (tables.some((table) => table.number === tableNumber)) return `Meja nomor ${tableNumber} sudah ada.`
 
     try {
-      const newTable = await tableService.create({ number: num })
-      setTables((prev) =>
-        [...prev, newTable].sort((a, b) => a.number - b.number)
-      )
+      const createdTable = await tableService.create({ number: tableNumber })
+      setTables((previous) => [...previous, createdTable].sort((a, b) => a.number - b.number))
       return null
     } catch {
       return "Gagal menambahkan meja. Silakan coba lagi."
     }
   }
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return
+  const handleConfirmDelete = async () => {
+    if (!tableToDelete) return
+    setIsDeleting(true)
     try {
-      await tableService.remove(deleteTarget.id)
-      setTables((prev) => prev.filter((t) => t.id !== deleteTarget.id))
+      await tableService.remove(tableToDelete.id)
+      setTables((previous) => previous.filter((table) => table.id !== tableToDelete.id))
       toast.success("Meja berhasil dihapus.")
+      setTableToDelete(null)
     } catch {
       toast.error("Gagal menghapus meja. Coba lagi.")
+    } finally {
+      setIsDeleting(false)
     }
-    setDeleteTarget(null)
   }
 
-  const gridCols = open
+  const gridColumnsClass = isSidebarOpen
     ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
     : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-
       <div className="flex items-center justify-end gap-2">
-        <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
-          <SearchIcon className="size-4 text-muted-foreground shrink-0" />
-          <input
-            type="text"
-            placeholder="Cari meja ..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full text-sm outline-none placeholder:text-muted-foreground"
-          />
-        </div>
+        <SearchField value={search} onChange={setSearch} placeholder="Cari meja ..." />
       </div>
 
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center py-20">
-          <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
-        </div>
+        <PageLoader />
       ) : error ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
-          <p className="text-sm text-destructive">{error}</p>
-          <button onClick={fetchTables} className="text-sm text-primary underline">
-            Coba lagi
-          </button>
-        </div>
+        <LoadErrorState message={error} onRetry={fetchTables} />
       ) : (
-        <div className={`grid ${gridCols} gap-3 transition-all duration-200`}>
-
+        <div className={`grid ${gridColumnsClass} gap-3 transition-all duration-200`}>
           {!search && (
-            <div
-              onClick={() => setShowAddModal(true)}
+            <button
+              onClick={() => setIsAddModalOpen(true)}
               className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-foreground/20 hover:border-primary transition-colors cursor-pointer min-h-[180px]"
             >
               <CirclePlusIcon className="size-6 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Tambah meja</span>
-            </div>
+            </button>
           )}
 
-          {filtered.map((table) => (
-            <TableCard
-              key={table.id}
-              table={table}
-              onDelete={setDeleteTarget}
-            />
+          {visibleTables.map((table) => (
+            <TableCard key={table.id} table={table} onDelete={setTableToDelete} />
           ))}
         </div>
       )}
 
-      {showAddModal && (
-        <AddTableModal
-          onGenerate={handleGenerate}
-          onClose={() => setShowAddModal(false)}
-        />
+      {isAddModalOpen && (
+        <AddTableModal onCreateTable={handleCreateTable} onClose={() => setIsAddModalOpen(false)} />
       )}
 
-      {deleteTarget && (
-        <DeleteTableModal
-          tableCode={`T-${String(deleteTarget.number).padStart(2, "0")}`}
-          onConfirm={handleDelete}
-          onClose={() => setDeleteTarget(null)}
+      {tableToDelete && (
+        <ConfirmDeleteDialog
+          title="Hapus meja ini?"
+          description={
+            <>
+              Meja <span className="font-semibold text-foreground">{formatTableCode(tableToDelete.number)}</span> akan
+              dihapus beserta QR code-nya. Data yang dihapus tidak dapat dipulihkan.
+            </>
+          }
+          isDeleting={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onClose={() => setTableToDelete(null)}
         />
       )}
-
     </div>
   )
 }

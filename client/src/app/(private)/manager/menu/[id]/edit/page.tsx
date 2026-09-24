@@ -1,46 +1,35 @@
 "use client"
 
-import { MenuForm, MenuFormData } from "@/components/[role]/manager/menu/menu-form"
+import { MenuForm } from "@/components/[role]/manager/menu/menu-form"
+import { BackLink } from "@/components/shared/back-link"
+import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
+import { toMenuFormData, type MenuFormValues } from "@/lib/menu"
 import { menuService } from "@/services/menu.service"
-import { Menu } from "@/types/menu"
-import { ChevronLeftIcon, Loader2Icon } from "lucide-react"
-import Link from "next/link"
+import type { Menu } from "@/types/menu"
 import { useRouter } from "next/navigation"
 import { use, useEffect, useState } from "react"
 import { toast } from "sonner"
 
-export default function ManagerEditMenuPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params)
-  const id = Number(resolvedParams.id)
-
+export default function ManagerMenuEditPage({ params }: { params: Promise<{ id: string }> }) {
+  const menuId = Number(use(params).id)
   const router = useRouter()
   const [menu, setMenu] = useState<Menu | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
-    menuService.getById(id)
+    menuService.getById(menuId)
       .then(setMenu)
-      .catch(() => setLoadError(true))
+      .catch(() => setMenu(null))
       .finally(() => setIsLoading(false))
-  }, [id])
+  }, [menuId])
 
-  const handleSubmit = async (form: MenuFormData) => {
+  const handleSubmit = async (values: MenuFormValues) => {
     setIsSubmitting(true)
     try {
-      const formData = new FormData()
-      formData.append("name", form.name)
-      formData.append("price", String(form.price))
-      formData.append("cost", String(form.cost ?? 0))
-      formData.append("type", String(form.type))
-      if (form.status !== undefined && form.status !== "") formData.append("status", form.status)
-      if (form.description) formData.append("description", form.description)
-      if (form.image) formData.append("image", form.image)
-
-      await menuService.update(id, formData)
+      await menuService.update(menuId, toMenuFormData(values, { includeStatus: true }))
       toast.success("Menu berhasil diperbarui.")
-      router.push(`/manager/menu/${id}`)
+      router.push(`/manager/menu/${menuId}`)
     } catch {
       toast.error("Gagal memperbarui menu. Silakan coba lagi.")
     } finally {
@@ -48,32 +37,24 @@ export default function ManagerEditMenuPage({ params }: { params: Promise<{ id: 
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center py-20">
-        <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
+  if (isLoading) return <PageLoader />
 
-  if (loadError || !menu) {
+  if (!menu) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center py-20 gap-4 text-center">
-        <p className="text-destructive font-medium">Gagal memuat data menu.</p>
-        <Link href="/manager/menu" className="text-primary hover:underline text-sm font-medium">
-          Kembali ke Daftar Menu
-        </Link>
-      </div>
+      <LoadErrorState
+        message="Gagal memuat data menu."
+        retryLabel="Kembali ke Daftar Menu"
+        onRetry={() => router.push("/manager/menu")}
+      />
     )
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <Link href={`/manager/menu/${id}`} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-fit px-4">
-        <ChevronLeftIcon className="size-4" />
-        Batal
-      </Link>
-      <MenuForm onSubmit={handleSubmit} isSubmitting={isSubmitting} initialData={menu} />
+      <div className="px-4">
+        <BackLink href={`/manager/menu/${menuId}`} label="Batal" />
+      </div>
+      <MenuForm initialMenu={menu} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
     </div>
   )
 }

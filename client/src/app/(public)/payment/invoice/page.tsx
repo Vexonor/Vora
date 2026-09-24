@@ -1,9 +1,12 @@
 "use client"
 
-import { orderService } from "@/services/order.service"
+import { formatNumber, formatRupiah } from "@/lib/format"
 import { canViewInvoice } from "@/lib/invoice-access"
-import { downloadInvoiceAsPDF } from "@/lib/invoice-download"
+import { downloadInvoiceAsPdf } from "@/lib/invoice-download"
+import { getOrderItemName } from "@/lib/order"
 import { getOrderPlace } from "@/lib/order-place"
+import { splitTaxFromTotal, TAX_RATE } from "@/lib/pricing"
+import { orderService } from "@/services/order.service"
 import { OrderStatus, type Order } from "@/types/order"
 import { DownloadIcon, Loader2Icon, MailIcon, ReceiptTextIcon } from "lucide-react"
 import { useSearchParams } from "next/navigation"
@@ -12,15 +15,24 @@ import { format } from "date-fns"
 import { id } from "date-fns/locale"
 import { toast } from "sonner"
 
-const InvoiceContent = () => {
+const RECEIPT_TOP_EDGE_CLIP_PATH = "polygon(0% 100%, 5% 0%, 10% 100%, 15% 0%, 20% 100%, 25% 0%, 30% 100%, 35% 0%, 40% 100%, 45% 0%, 50% 100%, 55% 0%, 60% 100%, 65% 0%, 70% 100%, 75% 0%, 80% 100%, 85% 0%, 90% 100%, 95% 0%, 100% 100%)"
+const RECEIPT_BOTTOM_EDGE_CLIP_PATH = "polygon(0% 0%, 5% 100%, 10% 0%, 15% 100%, 20% 0%, 25% 100%, 30% 0%, 35% 100%, 40% 0%, 45% 100%, 50% 0%, 55% 100%, 60% 0%, 65% 100%, 70% 0%, 75% 100%, 80% 0%, 85% 100%, 90% 0%, 95% 100%, 100% 0%)"
+
+function FullScreenLoader() {
+  return (
+    <div className="w-full h-dvh bg-primary flex items-center justify-center">
+      <Loader2Icon className="size-10 animate-spin text-primary-foreground" />
+    </div>
+  )
+}
+
+function InvoiceView() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("orderId")
-  
+
   const [order, setOrder] = useState<Order | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [email, setEmail] = useState("")
   const [isSending, setIsSending] = useState(false)
 
@@ -32,19 +44,19 @@ const InvoiceContent = () => {
 
     setIsSending(true)
     try {
-      const res = await fetch("/api/send-invoice", {
+      const response = await fetch("/api/send-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), orderId: currentOrder.id }),
       })
-      if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.error ?? "Gagal mengirim email.")
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null)
+        throw new Error(errorBody?.error ?? "Gagal mengirim email.")
       }
       toast.success(`Invoice berhasil dikirim ke ${email.trim()}.`)
       setEmail("")
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal mengirim email. Coba lagi.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal mengirim email. Coba lagi.")
     } finally {
       setIsSending(false)
     }
@@ -53,26 +65,17 @@ const InvoiceContent = () => {
   useEffect(() => {
     if (!orderId) {
       setIsLoading(false)
-      setErrorMsg("Parameter orderId tidak ditemukan di URL")
+      setLoadError("Parameter orderId tidak ditemukan di URL")
       return
     }
 
     orderService.getById(parseInt(orderId, 10))
-      .then(data => setOrder(data))
-      .catch(err => {
-        console.error("Failed to fetch order invoice:", err)
-        setErrorMsg(err.message || "Gagal mengambil data dari server")
-      })
+      .then(setOrder)
+      .catch((error) => setLoadError(error instanceof Error ? error.message : "Gagal mengambil data dari server"))
       .finally(() => setIsLoading(false))
   }, [orderId])
 
-  if (isLoading) {
-    return (
-      <div className="w-full h-dvh bg-primary flex items-center justify-center">
-        <Loader2Icon className="size-10 animate-spin text-primary-foreground" />
-      </div>
-    )
-  }
+  if (isLoading) return <FullScreenLoader />
 
   if (!order) {
     return (
@@ -80,7 +83,7 @@ const InvoiceContent = () => {
         <ReceiptTextIcon className="size-16 opacity-50" />
         <h2 className="text-xl font-bold">Invoice Tidak Ditemukan</h2>
         <p>Pesanan tidak ditemukan atau link tidak valid.</p>
-        {errorMsg && <p className="text-sm text-red-300 mt-2">Error: {errorMsg} (orderId: {orderId})</p>}
+        {loadError && <p className="text-sm text-red-300 mt-2">Error: {loadError} (orderId: {orderId})</p>}
       </div>
     )
   }
@@ -102,14 +105,13 @@ const InvoiceContent = () => {
     )
   }
 
-  const subtotal = order.total_price / 1.10
-  const tax = order.total_price - subtotal
+  const { subtotal, tax } = splitTaxFromTotal(Number(order.total_price))
 
   return (
     <div className="w-full min-h-dvh bg-primary py-8 px-4">
       <div className="max-w-md mx-auto relative">
-        <div className="absolute -top-2 left-0 right-0 h-4 bg-white" style={{ clipPath: 'polygon(0% 100%, 5% 0%, 10% 100%, 15% 0%, 20% 100%, 25% 0%, 30% 100%, 35% 0%, 40% 100%, 45% 0%, 50% 100%, 55% 0%, 60% 100%, 65% 0%, 70% 100%, 75% 0%, 80% 100%, 85% 0%, 90% 100%, 95% 0%, 100% 100%)' }}></div>
-        
+        <div className="absolute -top-2 left-0 right-0 h-4 bg-white" style={{ clipPath: RECEIPT_TOP_EDGE_CLIP_PATH }} />
+
         <div className="bg-white px-6 py-10 flex flex-col items-center shadow-xl">
           <div className="w-full flex flex-col items-center gap-1 text-xs text-foreground text-center font-medium mb-8">
             <span className="text-xl font-bold uppercase tracking-wider mb-2">Cat-a Log POS</span>
@@ -117,7 +119,7 @@ const InvoiceContent = () => {
             <p className="text-muted-foreground">Jl. Ruko Greenland No.9-11 Blok R, Tlk. Tering, Kec. Batam Kota, Batam</p>
             <span className="text-muted-foreground">TEL: 0812-9501-2089</span>
           </div>
-          
+
           <div className="w-full flex flex-col gap-2">
             <div className="flex justify-between items-end border-b border-dashed border-foreground/30 pb-4 mb-2">
               <span className="text-2xl text-foreground font-bold">{getOrderPlace(order).name}</span>
@@ -155,12 +157,12 @@ const InvoiceContent = () => {
               <tbody className="flex flex-col gap-3">
                 {order.items?.map((item) => (
                   <tr key={item.id} className="w-full flex flex-wrap items-start">
-                    <td className="flex-[2] text-start pr-2">
-                      <div className="font-medium text-foreground">{item.menu?.name || `Menu #${item.menu_id}`}</div>
-                      <div className="text-xs text-muted-foreground">{item.quantity} x {new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(item.price)}</div>
+                    <td className="flex-2 text-start pr-2">
+                      <div className="font-medium text-foreground">{getOrderItemName(item)}</div>
+                      <div className="text-xs text-muted-foreground">{item.quantity} x {formatNumber(item.price)}</div>
                     </td>
                     <td className="flex-1 text-end font-medium">
-                      {new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(item.total_price)}
+                      {formatNumber(item.total_price)}
                     </td>
                   </tr>
                 ))}
@@ -174,17 +176,17 @@ const InvoiceContent = () => {
               <tbody className="flex flex-col gap-2">
                 <tr className="w-full flex justify-between items-center">
                   <td className="text-start">Subtotal</td>
-                  <td className="text-end">{new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(subtotal)}</td>
+                  <td className="text-end">{formatNumber(subtotal)}</td>
                 </tr>
                 <tr className="w-full flex justify-between items-center">
-                  <td className="text-start">PPN (10%)</td>
-                  <td className="text-end">{new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(tax)}</td>
+                  <td className="text-start">PPN ({TAX_RATE * 100}%)</td>
+                  <td className="text-end">{formatNumber(tax)}</td>
                 </tr>
               </tbody>
             </table>
             <div className="flex justify-between items-center mt-3 pt-3 border-t border-foreground/10 text-lg text-foreground font-bold">
               <span>Total</span>
-              <span>{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.total_price)}</span>
+              <span>{formatRupiah(order.total_price)}</span>
             </div>
             <div className="w-full my-4 border-t border-dashed border-foreground/30" />
           </div>
@@ -197,12 +199,12 @@ const InvoiceContent = () => {
           </div>
         </div>
 
-        <div className="absolute -bottom-2 left-0 right-0 h-4 bg-white" style={{ clipPath: 'polygon(0% 0%, 5% 100%, 10% 0%, 15% 100%, 20% 0%, 25% 100%, 30% 0%, 35% 100%, 40% 0%, 45% 100%, 50% 0%, 55% 100%, 60% 0%, 65% 100%, 70% 0%, 75% 100%, 80% 0%, 85% 100%, 90% 0%, 95% 100%, 100% 0%)' }}></div>
+        <div className="absolute -bottom-2 left-0 right-0 h-4 bg-white" style={{ clipPath: RECEIPT_BOTTOM_EDGE_CLIP_PATH }} />
       </div>
 
       <div className="max-w-md mx-auto mt-8 px-4 pb-8 flex flex-col gap-3">
         <button
-          onClick={() => downloadInvoiceAsPDF(order)}
+          onClick={() => downloadInvoiceAsPdf(order)}
           className="w-full flex items-center justify-center gap-2 bg-white text-primary font-semibold py-3 rounded-xl shadow-md hover:bg-white/90 active:scale-95 transition-all"
         >
           <DownloadIcon className="size-4" />
@@ -220,7 +222,7 @@ const InvoiceContent = () => {
               inputMode="email"
               placeholder="nama@email.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               disabled={isSending}
               className="flex-1 rounded-lg bg-white px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-60"
             />
@@ -239,16 +241,10 @@ const InvoiceContent = () => {
   )
 }
 
-export default function Invoice() {
+export default function InvoicePage() {
   return (
-    <Suspense
-      fallback={
-        <div className="w-full h-dvh bg-primary flex items-center justify-center">
-          <Loader2Icon className="size-10 animate-spin text-primary-foreground" />
-        </div>
-      }
-    >
-      <InvoiceContent />
+    <Suspense fallback={<FullScreenLoader />}>
+      <InvoiceView />
     </Suspense>
   )
 }

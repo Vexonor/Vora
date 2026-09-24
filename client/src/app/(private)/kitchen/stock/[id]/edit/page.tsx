@@ -5,11 +5,5 @@ import { use } from "react"
 
 export default function KitchenStockEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-
-  return (
-    <StockEditView
-      id={Number(id)}
-      backPath={`/kitchen/stock/${id}`}
-    />
-  )
+  return <StockEditView stockId={Number(id)} basePath="/kitchen/stock" />
 }

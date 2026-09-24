@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { formatDate, formatThousands, stripNonDigits } from "@/lib/format"
 import { sellingReportService } from "@/services/selling-report.service"
 import type { SellingReport } from "@/types/selling-report"
-import { formatThousands, digitsOnly } from "@/lib/currency"
 import { Loader2Icon, SaveIcon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -17,24 +17,21 @@ type Props = {
   onClose: () => void
 }
 
-const formatDate = (d: string) =>
-  new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
-
 export function OperationalCostModal({ report, onSaved, onClose }: Props) {
-  const [value, setValue] = useState(
+  const [operationalCost, setOperationalCost] = useState(
     report.operational_cost != null ? String(Number(report.operational_cost)) : "",
   )
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
   const handleSave = async () => {
-    if (value.trim() === "" || isNaN(Number(value)) || Number(value) < 0) {
+    if (operationalCost === "") {
       setError("Masukkan angka modal yang valid (minimal 0).")
       return
     }
     setIsSaving(true)
     try {
-      await sellingReportService.updateOperationalCost(report.id, Number(value))
+      await sellingReportService.updateOperationalCost(report.id, Number(operationalCost))
       toast.success("Modal operasional berhasil disimpan.")
       await onSaved()
       onClose()
@@ -45,8 +42,12 @@ export function OperationalCostModal({ report, onSaved, onClose }: Props) {
     }
   }
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen && !isSaving) onClose()
+  }
+
   return (
-    <Dialog open onOpenChange={(o) => !o && !isSaving && onClose()}>
+    <Dialog open onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Modal Operasional Harian</DialogTitle>
@@ -62,8 +63,11 @@ export function OperationalCostModal({ report, onSaved, onClose }: Props) {
               type="text"
               inputMode="numeric"
               placeholder="Misal: 850.000"
-              value={formatThousands(value)}
-              onChange={(e) => { setValue(digitsOnly(e.target.value)); setError(null) }}
+              value={formatThousands(operationalCost)}
+              onChange={(event) => {
+                setOperationalCost(stripNonDigits(event.target.value))
+                setError(null)
+              }}
               autoFocus
               aria-invalid={!!error}
             />

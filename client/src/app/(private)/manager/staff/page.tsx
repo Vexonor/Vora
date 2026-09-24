@@ -2,39 +2,40 @@
 
 import { AddStaffModal } from "@/components/[role]/manager/staff/add-staff-modal"
 import { StaffTable } from "@/components/[role]/manager/staff/staff-table"
-import { StaffFilterDropdown } from "@/components/shared/staff/staff-filter-dropdown"
-import { authService } from "@/services/auth.service"
-import { userService } from "@/services/user.service"
-import type { User } from "@/types/user"
+import { FilterDropdown } from "@/components/shared/filter-dropdown"
+import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
+import { SearchField } from "@/components/shared/search-field"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useLatestRequest } from "@/hooks/use-latest-request"
-import { Loader2Icon, SearchIcon, UserPlusIcon } from "lucide-react"
+import { USER_ROLE_OPTIONS } from "@/lib/user-role"
+import { userService } from "@/services/user.service"
+import type { User } from "@/types/user"
+import { UserPlusIcon } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
-import { toast } from "sonner"
 
 const PAGE_SIZE = 20
 
-export default function StaffPage() {
-  const [staffs, setStaffs] = useState<User[]>([])
+export default function ManagerStaffPage() {
+  const [staffMembers, setStaffMembers] = useState<User[]>([])
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<number[]>([])
   const [currentPage, setCurrentPage] = useState(1)
-  const [showAddModal, setShowAddModal] = useState(false)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const debouncedSearch = useDebouncedValue(search, 400)
   const startRequest = useLatestRequest()
 
-  const fetchStaffs = useCallback(async (q: string, roles: number[]) => {
+  const fetchStaffMembers = useCallback(async (searchTerm: string, roles: number[]) => {
     const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
       const data = await userService.getAll({
-        q: q || undefined,
+        q: searchTerm || undefined,
         roles: roles.length > 0 ? roles : undefined,
       })
-      if (isLatest()) setStaffs(Array.isArray(data) ? data : [])
+      if (isLatest()) setStaffMembers(Array.isArray(data) ? data : [])
     } catch {
       if (isLatest()) setError("Gagal memuat data staf.")
     } finally {
@@ -43,53 +44,34 @@ export default function StaffPage() {
   }, [startRequest])
 
   useEffect(() => {
-    fetchStaffs(debouncedSearch, roleFilter)
-  }, [fetchStaffs, debouncedSearch, roleFilter])
+    fetchStaffMembers(debouncedSearch, roleFilter)
+  }, [fetchStaffMembers, debouncedSearch, roleFilter])
 
-  const handleSearch = (value: string) => {
+  const reloadStaffMembers = () => fetchStaffMembers(debouncedSearch, roleFilter)
+
+  const handleDelete = async (staff: User) => {
+    await userService.remove(staff.id)
+    setStaffMembers((previous) => previous.filter((member) => member.id !== staff.id))
+  }
+
+  const handleSearchChange = (value: string) => {
     setSearch(value)
     setCurrentPage(1)
   }
 
-  const handleFilterApply = (roles: number[]) => {
+  const handleRoleFilterApply = (roles: number[]) => {
     setRoleFilter(roles)
     setCurrentPage(1)
   }
 
-  const totalPages = Math.max(1, Math.ceil(staffs.length / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(staffMembers.length / PAGE_SIZE))
   const visiblePage = Math.min(currentPage, totalPages)
-
-  const handleAdd = async (form: { username: string; email: string; role: string | "" }): Promise<{ error: string | null; defaultPassword?: string }> => {
-    try {
-      const newUser = await authService.register({
-        username: form.username,
-        email: form.email,
-        role: Number(form.role),
-      })
-      fetchStaffs(debouncedSearch, roleFilter)
-      return { error: null, defaultPassword: newUser.default_password }
-    } catch {
-      return { error: "Gagal menambahkan staf. Silakan coba lagi." }
-    }
-  }
-
-  const handleDelete = async (staff: User) => {
-    try {
-      await userService.remove(staff.id)
-      setStaffs((prev) => prev.filter((s) => s.id !== staff.id))
-      toast.success("Staf berhasil dihapus.")
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? "Gagal menghapus staf. Coba lagi.")
-    }
-  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => setIsAddModalOpen(true)}
           className="flex items-center gap-2 bg-secondary text-primary text-sm font-semibold px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors"
         >
           <UserPlusIcon className="size-4" />
@@ -97,49 +79,38 @@ export default function StaffPage() {
         </button>
 
         <div className="flex items-center gap-2">
-          <StaffFilterDropdown selected={roleFilter} onApply={handleFilterApply} />
-          <div className="flex items-center gap-2 border border-foreground/30 rounded-lg px-3 py-2 w-52 focus-within:border-primary transition-colors">
-            <SearchIcon className="size-4 text-muted-foreground shrink-0" />
-            <input
-              type="text"
-              placeholder="Cari staff ..."
-              value={search}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full text-sm outline-none placeholder:text-muted-foreground"
-            />
-          </div>
+          <FilterDropdown
+            title="Role"
+            options={USER_ROLE_OPTIONS}
+            selectedValues={roleFilter}
+            onApply={handleRoleFilterApply}
+          />
+          <SearchField value={search} onChange={handleSearchChange} placeholder="Cari staff ..." />
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center py-20">
-          <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
-        </div>
+        <PageLoader />
       ) : error ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20">
-          <p className="text-sm text-destructive">{error}</p>
-          <button onClick={() => fetchStaffs(debouncedSearch, roleFilter)} className="text-sm text-primary underline">
-            Coba lagi
-          </button>
-        </div>
+        <LoadErrorState message={error} onRetry={reloadStaffMembers} />
       ) : (
         <StaffTable
-          staffs={staffs}
+          staffMembers={staffMembers}
           currentPage={visiblePage}
-          onPageChange={setCurrentPage}
           totalPages={totalPages}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
           onDelete={handleDelete}
-          onUpdated={() => fetchStaffs(debouncedSearch, roleFilter)}
+          onUpdated={reloadStaffMembers}
         />
       )}
 
-      {showAddModal && (
+      {isAddModalOpen && (
         <AddStaffModal
-          onSubmit={handleAdd}
-          onClose={() => setShowAddModal(false)}
+          onCreated={reloadStaffMembers}
+          onClose={() => setIsAddModalOpen(false)}
         />
       )}
-
     </div>
   )
 }

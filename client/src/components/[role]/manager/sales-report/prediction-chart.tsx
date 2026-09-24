@@ -1,5 +1,6 @@
 "use client"
 
+import { formatDate, formatRupiahCompact } from "@/lib/format"
 import { useLatestRequest } from "@/hooks/use-latest-request"
 import { aiPredictionService } from "@/services/ai-prediction.service"
 import type { HistoryItem, ModelEvaluation, PredictionItem } from "@/types/ai-prediction"
@@ -18,23 +19,12 @@ import {
   type TooltipProps,
 } from "recharts"
 
-type Range = 7 | 14 | 30
+type PredictionRangeDays = 7 | 14 | 30
 
 const SHOW_MODEL_EVALUATION =
   process.env.NEXT_PUBLIC_SHOW_MODEL_EVALUATION === "true"
 
-const formatCurrency = (v: number) => {
-  if (v >= 1_000_000) return `Rp ${(v / 1_000_000).toFixed(1)}jt`
-  if (v >= 1_000) return `Rp ${(v / 1_000).toFixed(0)}rb`
-  return `Rp ${v.toLocaleString("id-ID")}`
-}
-
-const formatDate = (d: string) => {
-  const date = new Date(d)
-  return date.toLocaleDateString("id-ID", { day: "numeric", month: "short" })
-}
-
-const r2Color = (r2: number) => {
+const getR2ColorClass = (r2: number) => {
   if (r2 >= 0.8) return "text-emerald-600"
   if (r2 >= 0.6) return "text-amber-500"
   return "text-red-500"
@@ -53,34 +43,34 @@ interface ChartPoint {
 function buildChartData(
   history: HistoryItem[],
   predictions: PredictionItem[],
-  range: Range,
+  range: PredictionRangeDays,
 ): ChartPoint[] {
-  const histPoints: ChartPoint[] = history.slice(-14).map((h) => ({
-    date: h.date,
-    label: formatDate(h.date),
-    hist_revenue: h.gross_revenue,
-    hist_profit: h.net_profit,
+  const historyPoints: ChartPoint[] = history.slice(-14).map((historyItem) => ({
+    date: historyItem.date,
+    label: formatDate(historyItem.date, "dayMonth"),
+    hist_revenue: historyItem.gross_revenue,
+    hist_profit: historyItem.net_profit,
     isPrediction: false,
   }))
 
-  const predPoints: ChartPoint[] = predictions.slice(0, range).map((p) => ({
-    date: p.date,
-    label: formatDate(p.date),
-    pred_revenue: p.gross_revenue,
-    pred_profit: p.net_profit,
+  const predictionPoints: ChartPoint[] = predictions.slice(0, range).map((prediction) => ({
+    date: prediction.date,
+    label: formatDate(prediction.date, "dayMonth"),
+    pred_revenue: prediction.gross_revenue,
+    pred_profit: prediction.net_profit,
     isPrediction: true,
   }))
 
-  if (histPoints.length > 0 && predPoints.length > 0) {
-    const last = histPoints[histPoints.length - 1]
-    predPoints[0] = {
-      ...predPoints[0],
-      hist_revenue: last.hist_revenue,
-      hist_profit: last.hist_profit,
+  if (historyPoints.length > 0 && predictionPoints.length > 0) {
+    const lastHistoryPoint = historyPoints[historyPoints.length - 1]
+    predictionPoints[0] = {
+      ...predictionPoints[0],
+      hist_revenue: lastHistoryPoint.hist_revenue,
+      hist_profit: lastHistoryPoint.hist_profit,
     }
   }
 
-  return [...histPoints, ...predPoints]
+  return [...historyPoints, ...predictionPoints]
 }
 
 const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
@@ -91,7 +81,7 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
       {payload.map((entry) => (
         <p key={String(entry.dataKey)} style={{ color: entry.color }} className="flex justify-between gap-6">
           <span>{entry.name}</span>
-          <span className="font-medium">{formatCurrency(Number(entry.value))}</span>
+          <span className="font-medium">{formatRupiahCompact(Number(entry.value))}</span>
         </p>
       ))}
     </div>
@@ -106,7 +96,7 @@ function EvaluationSection({ evaluation }: { evaluation: ModelEvaluation }) {
     { key: "total_items_sold", label: "Item Terjual" },
   ] as const
 
-  const hasMetrics = metrics.some((m) => evaluation[m.key] != null)
+  const hasMetrics = metrics.some((metric) => evaluation[metric.key] != null)
 
   return (
     <div className="border border-foreground/10 rounded-xl p-4 bg-muted/20">
@@ -126,23 +116,23 @@ function EvaluationSection({ evaluation }: { evaluation: ModelEvaluation }) {
         <>
           <div className="grid grid-cols-4 gap-2">
             {metrics.map(({ key, label }) => {
-              const m = evaluation[key]
-              if (!m) return null
+              const metric = evaluation[key]
+              if (!metric) return null
               return (
                 <div key={key} className="bg-white rounded-lg p-2.5 border border-foreground/5">
                   <p className="text-[10px] text-muted-foreground mb-1.5 font-medium">{label}</p>
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">RMSE</span>
-                      <span className="font-medium">{m.rmse.toLocaleString("id-ID")}</span>
+                      <span className="font-medium">{metric.rmse.toLocaleString("id-ID")}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">MAE</span>
-                      <span className="font-medium">{m.mae.toLocaleString("id-ID")}</span>
+                      <span className="font-medium">{metric.mae.toLocaleString("id-ID")}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">R²</span>
-                      <span className={`font-bold ${r2Color(m.r2)}`}>{m.r2.toFixed(3)}</span>
+                      <span className={`font-bold ${getR2ColorClass(metric.r2)}`}>{metric.r2.toFixed(3)}</span>
                     </div>
                   </div>
                 </div>
@@ -164,12 +154,12 @@ export function PredictionChart() {
     predictions: PredictionItem[]
     evaluation: ModelEvaluation
   } | null>(null)
-  const [range, setRange] = useState<Range>(30)
+  const [range, setRange] = useState<PredictionRangeDays>(30)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const startRequest = useLatestRequest()
 
-  const load = useCallback(async (days: Range) => {
+  const fetchPrediction = useCallback(async (days: PredictionRangeDays) => {
     const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
@@ -181,23 +171,23 @@ export function PredictionChart() {
         predictions: result.predictions,
         evaluation: result.evaluation,
       })
-    } catch (err) {
-      if (isLatest()) setError(err instanceof Error ? err.message : "Gagal memuat prediksi")
+    } catch (fetchError) {
+      if (isLatest()) setError(fetchError instanceof Error ? fetchError.message : "Gagal memuat prediksi")
     } finally {
       if (isLatest()) setIsLoading(false)
     }
   }, [startRequest])
 
-  useEffect(() => { load(range) }, [load, range])
+  useEffect(() => { fetchPrediction(range) }, [fetchPrediction, range])
 
   const chartData = data ? buildChartData(data.history, data.predictions, range) : []
   const todayLabel = data?.history?.length
-    ? formatDate(data.history[data.history.length - 1].date)
+    ? formatDate(data.history[data.history.length - 1].date, "dayMonth")
     : undefined
 
-  const totalPredRevenue = data?.predictions.slice(0, range).reduce((s, p) => s + p.gross_revenue, 0) ?? 0
-  const totalPredProfit = data?.predictions.slice(0, range).reduce((s, p) => s + p.net_profit, 0) ?? 0
-  const totalPredTx = data?.predictions.slice(0, range).reduce((s, p) => s + p.total_transaction, 0) ?? 0
+  const totalPredRevenue = data?.predictions.slice(0, range).reduce((total, prediction) => total + prediction.gross_revenue, 0) ?? 0
+  const totalPredProfit = data?.predictions.slice(0, range).reduce((total, prediction) => total + prediction.net_profit, 0) ?? 0
+  const totalPredTx = data?.predictions.slice(0, range).reduce((total, prediction) => total + prediction.total_transaction, 0) ?? 0
 
   return (
     <div className="bg-white rounded-xl border border-foreground/10 p-5 flex flex-col gap-5">
@@ -215,21 +205,21 @@ export function PredictionChart() {
 
         <div className="flex items-center gap-2">
           <div className="flex bg-muted/40 rounded-lg p-0.5 text-xs font-medium">
-            {([7, 14, 30] as Range[]).map((r) => (
+            {([7, 14, 30] as PredictionRangeDays[]).map((days) => (
               <button
-                key={r}
-                onClick={() => setRange(r)}
+                key={days}
+                onClick={() => setRange(days)}
                 className={`px-3 py-1.5 rounded-md transition-colors ${
-                  range === r ? "bg-white shadow text-primary" : "text-muted-foreground hover:text-foreground"
+                  range === days ? "bg-white shadow text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {r} hari
+                {days} hari
               </button>
             ))}
           </div>
 
           <button
-            onClick={() => load(range)}
+            onClick={() => fetchPrediction(range)}
             disabled={isLoading}
             className="p-2 rounded-lg border border-foreground/10 hover:bg-muted/40 transition-colors disabled:opacity-50"
           >
@@ -241,13 +231,13 @@ export function PredictionChart() {
       {data && !isLoading && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: `Prediksi Pendapatan (${range}h)`, value: formatCurrency(totalPredRevenue), color: "text-primary" },
-            { label: `Prediksi Laba Bersih (${range}h)`, value: formatCurrency(totalPredProfit), color: "text-emerald-600" },
+            { label: `Prediksi Pendapatan (${range}h)`, value: formatRupiahCompact(totalPredRevenue), color: "text-primary" },
+            { label: `Prediksi Laba Bersih (${range}h)`, value: formatRupiahCompact(totalPredProfit), color: "text-emerald-600" },
             { label: `Prediksi Transaksi (${range}h)`, value: Math.round(totalPredTx).toLocaleString("id-ID"), color: "text-foreground" },
-          ].map((c) => (
-            <div key={c.label} className="bg-muted/30 rounded-lg p-3">
-              <p className="text-xs text-muted-foreground mb-1">{c.label}</p>
-              <p className={`font-bold text-base ${c.color}`}>{c.value}</p>
+          ].map((card) => (
+            <div key={card.label} className="bg-muted/30 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground mb-1">{card.label}</p>
+              <p className={`font-bold text-base ${card.color}`}>{card.value}</p>
             </div>
           ))}
         </div>
@@ -265,7 +255,7 @@ export function PredictionChart() {
             <p className="text-sm text-destructive font-medium">{error}</p>
             <p className="text-xs text-muted-foreground">Pastikan AI service (Python) sudah berjalan di port 8090</p>
             <button
-              onClick={() => load(range)}
+              onClick={() => fetchPrediction(range)}
               className="text-xs text-primary underline mt-1"
             >
               Coba lagi
@@ -288,7 +278,7 @@ export function PredictionChart() {
                 axisLine={false}
               />
               <YAxis
-                tickFormatter={(v) => formatCurrency(v)}
+                tickFormatter={formatRupiahCompact}
                 tick={{ fontSize: 10, fill: "#9ca3af" }}
                 tickLine={false}
                 axisLine={false}

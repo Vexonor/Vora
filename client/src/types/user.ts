@@ -21,8 +21,3 @@ export enum UserRole {
   MANAGER = 2,
 }
 
-export const USER_ROLE_LABELS: Record<number, string> = {
-  [UserRole.CASHIER]: "Kasir",
-  [UserRole.KITCHEN]: "Kitchen",
-  [UserRole.MANAGER]: "Manager",
-};

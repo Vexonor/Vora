@@ -1,5 +1,6 @@
 "use client"
 
+import { formatDate, formatNumber } from "@/lib/format"
 import { useLatestRequest } from "@/hooks/use-latest-request"
 import { sellingTrendService } from "@/services/selling-trend.service"
 import type { AccuracyResponse, MetricKey } from "@/types/selling-trend"
@@ -16,17 +17,12 @@ import {
   YAxis,
 } from "recharts"
 
-const METRICS: { key: MetricKey; label: string }[] = [
+const METRIC_OPTIONS: { key: MetricKey; label: string }[] = [
   { key: "gross_revenue", label: "Pendapatan Kotor" },
   { key: "net_profit", label: "Laba Bersih" },
   { key: "total_transaction", label: "Jumlah Transaksi" },
   { key: "total_items_sold", label: "Item Terjual" },
 ]
-
-const formatDate = (d: string) =>
-  new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short" })
-
-const formatNumber = (v: number) => v.toLocaleString("id-ID", { maximumFractionDigits: 0 })
 
 export function PredictionAccuracyChart() {
   const [metric, setMetric] = useState<MetricKey>("gross_revenue")
@@ -35,12 +31,12 @@ export function PredictionAccuracyChart() {
   const [error, setError] = useState<string | null>(null)
   const startRequest = useLatestRequest()
 
-  const load = useCallback(async (m: MetricKey) => {
+  const fetchAccuracy = useCallback(async (selectedMetric: MetricKey) => {
     const isLatest = startRequest()
     setIsLoading(true)
     setError(null)
     try {
-      const result = await sellingTrendService.getAccuracy({ metric: m })
+      const result = await sellingTrendService.getAccuracy({ metric: selectedMetric })
       if (isLatest()) setData(result)
     } catch {
       if (isLatest()) setError("Gagal memuat data akurasi.")
@@ -49,12 +45,12 @@ export function PredictionAccuracyChart() {
     }
   }, [startRequest])
 
-  useEffect(() => { load(metric) }, [load, metric])
+  useEffect(() => { fetchAccuracy(metric) }, [fetchAccuracy, metric])
 
-  const chartData = (data?.series ?? []).map((p) => ({
-    label: formatDate(p.target_date),
-    predicted: p.predicted,
-    actual: p.actual,
+  const chartData = (data?.series ?? []).map((point) => ({
+    label: formatDate(point.target_date, "dayMonth"),
+    predicted: point.predicted,
+    actual: point.actual,
   }))
 
   const summary = data?.summary
@@ -74,15 +70,15 @@ export function PredictionAccuracyChart() {
         </div>
 
         <div className="flex bg-muted/40 rounded-lg p-0.5 text-xs font-medium flex-wrap">
-          {METRICS.map((m) => (
+          {METRIC_OPTIONS.map((option) => (
             <button
-              key={m.key}
-              onClick={() => setMetric(m.key)}
+              key={option.key}
+              onClick={() => setMetric(option.key)}
               className={`px-3 py-1.5 rounded-md transition-colors ${
-                metric === m.key ? "bg-white shadow text-primary" : "text-muted-foreground hover:text-foreground"
+                metric === option.key ? "bg-white shadow text-primary" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {m.label}
+              {option.label}
             </button>
           ))}
         </div>
@@ -95,10 +91,10 @@ export function PredictionAccuracyChart() {
             { label: "MAPE", value: summary?.mape != null ? `${summary.mape.toFixed(1)}%` : "—", color: "text-foreground" },
             { label: "MAE", value: summary?.mae != null ? formatNumber(summary.mae) : "—", color: "text-foreground" },
             { label: "RMSE", value: summary?.rmse != null ? formatNumber(summary.rmse) : "—", color: "text-foreground" },
-          ].map((c) => (
-            <div key={c.label} className="bg-muted/30 rounded-lg p-3">
-              <p className="text-xs text-muted-foreground mb-1">{c.label}</p>
-              <p className={`font-bold text-base ${c.color}`}>{c.value}</p>
+          ].map((card) => (
+            <div key={card.label} className="bg-muted/30 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground mb-1">{card.label}</p>
+              <p className={`font-bold text-base ${card.color}`}>{card.value}</p>
             </div>
           ))}
         </div>
@@ -113,7 +109,7 @@ export function PredictionAccuracyChart() {
         ) : error ? (
           <div className="h-full flex flex-col items-center justify-center gap-2 text-center px-4">
             <p className="text-sm text-destructive font-medium">{error}</p>
-            <button onClick={() => load(metric)} className="text-xs text-primary underline mt-1">
+            <button onClick={() => fetchAccuracy(metric)} className="text-xs text-primary underline mt-1">
               Coba lagi
             </button>
           </div>
@@ -128,8 +124,8 @@ export function PredictionAccuracyChart() {
             <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#9ca3af" }} tickLine={false} axisLine={false} />
-              <YAxis tickFormatter={(v) => formatNumber(v)} tick={{ fontSize: 10, fill: "#9ca3af" }} tickLine={false} axisLine={false} width={70} />
-              <Tooltip formatter={(v: number) => formatNumber(v)} />
+              <YAxis tickFormatter={(value) => formatNumber(value)} tick={{ fontSize: 10, fill: "#9ca3af" }} tickLine={false} axisLine={false} width={70} />
+              <Tooltip formatter={(value: number) => formatNumber(value)} />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="actual" name="Aktual" stroke="#F49250" strokeWidth={2} dot={false} connectNulls />
               <Line type="monotone" dataKey="predicted" name="Prediksi" stroke="#f59e0b" strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls />
