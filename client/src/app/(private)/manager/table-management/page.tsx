@@ -7,66 +7,43 @@ import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { SearchField } from "@/components/shared/search-field"
 import { useSidebar } from "@/components/ui/sidebar"
 import { formatTableCode } from "@/lib/order-place"
-import { tableService } from "@/services/table.service"
+import { useCreateTable, useDeleteTable, useTableList } from "@/hooks/queries/use-tables"
 import type { Table } from "@/types/table"
 import { CirclePlusIcon } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 
 export default function ManagerTableManagementPage() {
   const { open: isSidebarOpen } = useSidebar()
-  const [tables, setTables] = useState<Table[]>([])
   const [search, setSearch] = useState("")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [tableToDelete, setTableToDelete] = useState<Table | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchTables = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await tableService.getAll({ order_by: "created_at", direction: "DESC" })
-      setTables(Array.isArray(data) ? data : [])
-    } catch {
-      setError("Gagal memuat data meja.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchTables()
-  }, [fetchTables])
+  const tableListQuery = useTableList()
+  const createTable = useCreateTable()
+  const deleteTable = useDeleteTable()
+  const tables = tableListQuery.data ?? []
 
   const visibleTables = tables.filter((table) => table.number.toString().includes(search.trim()))
 
   const handleCreateTable = async (tableNumber: number): Promise<string | null> => {
     if (tables.some((table) => table.number === tableNumber)) return `Meja nomor ${tableNumber} sudah ada.`
-
     try {
-      const createdTable = await tableService.create({ number: tableNumber })
-      setTables((previous) => [...previous, createdTable].sort((a, b) => a.number - b.number))
+      await createTable.mutateAsync(tableNumber)
       return null
     } catch {
       return "Gagal menambahkan meja. Silakan coba lagi."
     }
   }
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = () => {
     if (!tableToDelete) return
-    setIsDeleting(true)
-    try {
-      await tableService.remove(tableToDelete.id)
-      setTables((previous) => previous.filter((table) => table.id !== tableToDelete.id))
-      toast.success("Meja berhasil dihapus.")
-      setTableToDelete(null)
-    } catch {
-      toast.error("Gagal menghapus meja. Coba lagi.")
-    } finally {
-      setIsDeleting(false)
-    }
+    deleteTable.mutate(tableToDelete.id, {
+      onSuccess: () => {
+        toast.success("Meja berhasil dihapus.")
+        setTableToDelete(null)
+      },
+      onError: () => toast.error("Gagal menghapus meja. Coba lagi."),
+    })
   }
 
   const gridColumnsClass = isSidebarOpen
@@ -79,10 +56,10 @@ export default function ManagerTableManagementPage() {
         <SearchField value={search} onChange={setSearch} placeholder="Cari meja ..." />
       </div>
 
-      {isLoading ? (
+      {tableListQuery.isPending ? (
         <PageLoader />
-      ) : error ? (
-        <LoadErrorState message={error} onRetry={fetchTables} />
+      ) : tableListQuery.isError ? (
+        <LoadErrorState message="Gagal memuat data meja." onRetry={() => tableListQuery.refetch()} />
       ) : (
         <div className={`grid ${gridColumnsClass} gap-3 transition-all duration-200`}>
           {!search && (
@@ -114,7 +91,7 @@ export default function ManagerTableManagementPage() {
               dihapus beserta QR code-nya. Data yang dihapus tidak dapat dipulihkan.
             </>
           }
-          isDeleting={isDeleting}
+          isDeleting={deleteTable.isPending}
           onConfirm={handleConfirmDelete}
           onClose={() => setTableToDelete(null)}
         />

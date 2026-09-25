@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { FormField } from "@/components/ui/form-field"
 import { Input } from "@/components/ui/input"
+import { useCreateSellingReport } from "@/hooks/queries/use-selling-reports"
 import { getApiErrorMessage } from "@/lib/api-error"
 import { formatNumber, formatThousands, stripNonDigits } from "@/lib/format"
-import { sellingReportService } from "@/services/selling-report.service"
 import { Loader2Icon, SaveIcon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -51,15 +51,10 @@ function validateReportForm(values: ReportFormValues): ReportFormErrors {
   return errors
 }
 
-type Props = {
-  onCreated: () => void | Promise<void>
-  onClose: () => void
-}
-
-export function AddReportModal({ onCreated, onClose }: Props) {
+export function AddReportModal({ onClose }: { onClose: () => void }) {
   const [values, setValues] = useState<ReportFormValues>(EMPTY_VALUES)
   const [errors, setErrors] = useState<ReportFormErrors>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const createSellingReport = useCreateSellingReport()
 
   const updateField = (field: keyof ReportFormValues, value: string) => {
     setValues((previous) => ({ ...previous, [field]: value }))
@@ -69,15 +64,14 @@ export function AddReportModal({ onCreated, onClose }: Props) {
   const estimatedNetProfit =
     Number(values.grossRevenue || 0) - Number(values.unitCost || 0) - Number(values.operationalCost || 0)
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const validationErrors = validateReportForm(values)
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
     }
-    setIsSubmitting(true)
-    try {
-      await sellingReportService.create({
+    createSellingReport.mutate(
+      {
         title: values.title.trim(),
         date: values.date,
         total_transaction: Number(values.totalTransactions),
@@ -85,15 +79,15 @@ export function AddReportModal({ onCreated, onClose }: Props) {
         unit_cost: Number(values.unitCost),
         operational_cost: Number(values.operationalCost),
         gross_revenue: Number(values.grossRevenue),
-      })
-      toast.success("Laporan berhasil dibuat.")
-      await onCreated()
-      onClose()
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, "Gagal membuat laporan. Silakan coba lagi."))
-    } finally {
-      setIsSubmitting(false)
-    }
+      },
+      {
+        onSuccess: () => {
+          toast.success("Laporan berhasil dibuat.")
+          onClose()
+        },
+        onError: (error) => toast.error(getApiErrorMessage(error, "Gagal membuat laporan. Silakan coba lagi.")),
+      },
+    )
   }
 
   const renderMoneyInput = (field: keyof ReportFormValues, placeholder: string) => (
@@ -177,11 +171,11 @@ export function AddReportModal({ onCreated, onClose }: Props) {
             <Button variant="outline" onClick={onClose}>Batal</Button>
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={createSellingReport.isPending}
               className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
             >
-              {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
-              {isSubmitting ? "Menyimpan..." : "Simpan Laporan"}
+              {createSellingReport.isPending ? <Loader2Icon className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
+              {createSellingReport.isPending ? "Menyimpan..." : "Simpan Laporan"}
             </Button>
           </div>
 

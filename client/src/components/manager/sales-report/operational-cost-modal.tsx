@@ -4,42 +4,36 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useUpdateOperationalCost } from "@/hooks/queries/use-selling-reports"
 import { formatDate, formatThousands, stripNonDigits } from "@/lib/format"
-import { sellingReportService } from "@/services/selling-report.service"
 import type { SellingReport } from "@/types/selling-report"
 import { Loader2Icon, SaveIcon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
-type Props = {
-  report: SellingReport
-  onSaved: () => void | Promise<void>
-  onClose: () => void
-}
-
-export function OperationalCostModal({ report, onSaved, onClose }: Props) {
+export function OperationalCostModal({ report, onClose }: { report: SellingReport; onClose: () => void }) {
   const [operationalCost, setOperationalCost] = useState(
     report.operational_cost != null ? String(Number(report.operational_cost)) : "",
   )
   const [error, setError] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const updateOperationalCost = useUpdateOperationalCost()
+  const isSaving = updateOperationalCost.isPending
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (operationalCost === "") {
       setError("Masukkan angka modal yang valid (minimal 0).")
       return
     }
-    setIsSaving(true)
-    try {
-      await sellingReportService.updateOperationalCost(report.id, Number(operationalCost))
-      toast.success("Modal operasional berhasil disimpan.")
-      await onSaved()
-      onClose()
-    } catch {
-      toast.error("Gagal menyimpan modal operasional. Coba lagi.")
-    } finally {
-      setIsSaving(false)
-    }
+    updateOperationalCost.mutate(
+      { reportId: report.id, operationalCost: Number(operationalCost) },
+      {
+        onSuccess: () => {
+          toast.success("Modal operasional berhasil disimpan.")
+          onClose()
+        },
+        onError: () => toast.error("Gagal menyimpan modal operasional. Coba lagi."),
+      },
+    )
   }
 
   const handleOpenChange = (isOpen: boolean) => {

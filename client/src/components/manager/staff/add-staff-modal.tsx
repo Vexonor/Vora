@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useRegisterStaff } from "@/hooks/queries/use-staff"
 import { getApiErrorMessage } from "@/lib/api-error"
-import { authService } from "@/services/auth.service"
 import { CheckCircleIcon, CopyIcon, Loader2Icon, UserPlusIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -14,15 +14,10 @@ import {
   type StaffFormValues,
 } from "./staff-form-fields"
 
-type Props = {
-  onCreated: () => void
-  onClose: () => void
-}
-
-export function AddStaffModal({ onCreated, onClose }: Props) {
+export function AddStaffModal({ onClose }: { onClose: () => void }) {
   const [values, setValues] = useState<StaffFormValues>({ username: "", email: "", role: "" })
   const [errors, setErrors] = useState<StaffFormErrors>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const registerStaff = useRegisterStaff()
   const [defaultPassword, setDefaultPassword] = useState<string | null>(null)
   const [isPasswordCopied, setIsPasswordCopied] = useState(false)
   const copiedResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -38,26 +33,19 @@ export function AddStaffModal({ onCreated, onClose }: Props) {
     setErrors((previous) => ({ ...previous, [field]: undefined }))
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const validationErrors = validateStaffForm(values)
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
     }
-    setIsSubmitting(true)
-    try {
-      const createdStaff = await authService.register({
-        username: values.username.trim(),
-        email: values.email.trim(),
-        role: Number(values.role),
-      })
-      setDefaultPassword(createdStaff.default_password)
-      onCreated()
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, "Gagal menambahkan staf. Silakan coba lagi."))
-    } finally {
-      setIsSubmitting(false)
-    }
+    registerStaff.mutate(
+      { username: values.username.trim(), email: values.email.trim(), role: Number(values.role) },
+      {
+        onSuccess: (createdStaff) => setDefaultPassword(createdStaff.default_password),
+        onError: (error) => toast.error(getApiErrorMessage(error, "Gagal menambahkan staf. Silakan coba lagi.")),
+      },
+    )
   }
 
   const handleCopyPassword = async () => {
@@ -116,11 +104,11 @@ export function AddStaffModal({ onCreated, onClose }: Props) {
             <Button variant="outline" onClick={onClose}>Batal</Button>
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={registerStaff.isPending}
               className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
             >
-              {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : <UserPlusIcon className="size-4" />}
-              {isSubmitting ? "Menambahkan..." : "Tambah Staff"}
+              {registerStaff.isPending ? <Loader2Icon className="size-4 animate-spin" /> : <UserPlusIcon className="size-4" />}
+              {registerStaff.isPending ? "Menambahkan..." : "Tambah Staff"}
             </Button>
           </div>
         </div>

@@ -3,17 +3,14 @@
 import { BackLink } from "@/components/shared/back-link"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { useStockDetail } from "@/hooks/queries/use-stocks"
+import { useUnitList } from "@/hooks/queries/use-units"
 import { formatDate } from "@/lib/format"
 import { getStockName } from "@/lib/stock"
 import { getStockStatusDisplay } from "@/lib/stock-status"
-import { stockService } from "@/services/stock.service"
-import { unitService } from "@/services/unit.service"
-import type { Stock } from "@/types/stock"
-import type { Unit } from "@/types/unit"
 import { PencilIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
 
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -33,38 +30,17 @@ type Props = {
 
 export function StockDetailView({ stockId, basePath }: Props) {
   const router = useRouter()
-  const [stock, setStock] = useState<Stock | null>(null)
-  const [units, setUnits] = useState<Unit[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const stockQuery = useStockDetail(stockId)
+  const unitListQuery = useUnitList()
+  const stock = stockQuery.data
+  const units = unitListQuery.data ?? []
 
-  const fetchStockDetail = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const [stockData, unitList] = await Promise.all([
-        stockService.getById(stockId),
-        unitService.getAll(),
-      ])
-      setStock(stockData)
-      setUnits(unitList)
-    } catch {
-      setError("Gagal memuat data bahan.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [stockId])
+  if (stockQuery.isPending) return <PageLoader />
 
-  useEffect(() => {
-    fetchStockDetail()
-  }, [fetchStockDetail])
-
-  if (isLoading) return <PageLoader />
-
-  if (error || !stock) {
+  if (stockQuery.isError || !stock) {
     return (
       <LoadErrorState
-        message={error ?? "Data tidak ditemukan."}
+        message="Gagal memuat data bahan."
         retryLabel="Kembali"
         onRetry={() => router.push(basePath)}
       />

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { unitService } from "@/services/unit.service"
+import { useSaveUnit } from "@/hooks/queries/use-units"
 import type { Unit } from "@/types/unit"
 import { Loader2Icon } from "lucide-react"
 import { useState } from "react"
@@ -12,32 +12,29 @@ import { toast } from "sonner"
 
 type Props = {
   unitToEdit: Unit | null
-  onSaved: () => void
   onClose: () => void
 }
 
-export function UnitFormDialog({ unitToEdit, onSaved, onClose }: Props) {
+export function UnitFormDialog({ unitToEdit, onClose }: Props) {
   const [name, setName] = useState(unitToEdit?.name ?? "")
   const [abbreviation, setAbbreviation] = useState(unitToEdit?.abbreviation ?? "")
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const saveUnit = useSaveUnit()
+  const isSubmitting = saveUnit.isPending
   const isEditMode = unitToEdit !== null
   const canSubmit = name.trim() !== "" && abbreviation.trim() !== "" && !isSubmitting
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!canSubmit) return
-    const payload = { name: name.trim(), abbreviation: abbreviation.trim() }
-    setIsSubmitting(true)
-    try {
-      if (isEditMode) await unitService.update(unitToEdit.id, payload)
-      else await unitService.create(payload)
-      toast.success("Satuan berhasil disimpan.")
-      onSaved()
-      onClose()
-    } catch {
-      toast.error("Gagal menyimpan satuan. Coba lagi.")
-    } finally {
-      setIsSubmitting(false)
-    }
+    saveUnit.mutate(
+      { unitId: unitToEdit?.id ?? null, request: { name: name.trim(), abbreviation: abbreviation.trim() } },
+      {
+        onSuccess: () => {
+          toast.success("Satuan berhasil disimpan.")
+          onClose()
+        },
+        onError: () => toast.error("Gagal menyimpan satuan. Coba lagi."),
+      },
+    )
   }
 
   return (

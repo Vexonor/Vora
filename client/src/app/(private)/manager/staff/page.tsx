@@ -5,67 +5,34 @@ import { StaffTable } from "@/components/manager/staff/staff-table"
 import { FilterDropdown } from "@/components/shared/filter-dropdown"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { SearchField } from "@/components/shared/search-field"
+import { useStaffList } from "@/hooks/queries/use-staff"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { useLatestRequest } from "@/hooks/use-latest-request"
+import { usePaginationState } from "@/hooks/use-pagination-state"
+import { getPaginationView, paginate } from "@/lib/pagination"
 import { USER_ROLE_OPTIONS } from "@/lib/user-role"
-import { userService } from "@/services/user.service"
-import type { User } from "@/types/user"
 import { UserPlusIcon } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
-
-const PAGE_SIZE = 20
+import { useState } from "react"
 
 export default function ManagerStaffPage() {
-  const [staffMembers, setStaffMembers] = useState<User[]>([])
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<number[]>([])
-  const [currentPage, setCurrentPage] = useState(1)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const debouncedSearch = useDebouncedValue(search, 400)
-  const startRequest = useLatestRequest()
+  const debouncedSearch = useDebouncedValue(search.trim(), 400)
+  const pagination = usePaginationState()
 
-  const fetchStaffMembers = useCallback(async (searchTerm: string, roles: number[]) => {
-    const isLatest = startRequest()
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await userService.getAll({
-        q: searchTerm || undefined,
-        roles: roles.length > 0 ? roles : undefined,
-      })
-      if (isLatest()) setStaffMembers(Array.isArray(data) ? data : [])
-    } catch {
-      if (isLatest()) setError("Gagal memuat data staf.")
-    } finally {
-      if (isLatest()) setIsLoading(false)
-    }
-  }, [startRequest])
-
-  useEffect(() => {
-    fetchStaffMembers(debouncedSearch, roleFilter)
-  }, [fetchStaffMembers, debouncedSearch, roleFilter])
-
-  const reloadStaffMembers = () => fetchStaffMembers(debouncedSearch, roleFilter)
-
-  const handleDelete = async (staff: User) => {
-    await userService.remove(staff.id)
-    setStaffMembers((previous) => previous.filter((member) => member.id !== staff.id))
-  }
+  const staffListQuery = useStaffList({ search: debouncedSearch, roles: roleFilter })
+  const staffMembers = staffListQuery.data ?? []
+  const { currentPage, totalPages } = getPaginationView(pagination.requestedPage, pagination.pageSize, staffMembers.length)
 
   const handleSearchChange = (value: string) => {
     setSearch(value)
-    setCurrentPage(1)
+    pagination.resetToFirstPage()
   }
 
   const handleRoleFilterApply = (roles: number[]) => {
     setRoleFilter(roles)
-    setCurrentPage(1)
+    pagination.resetToFirstPage()
   }
-
-  const totalPages = Math.max(1, Math.ceil(staffMembers.length / PAGE_SIZE))
-  const visiblePage = Math.min(currentPage, totalPages)
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
@@ -89,28 +56,22 @@ export default function ManagerStaffPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {staffListQuery.isPending ? (
         <PageLoader />
-      ) : error ? (
-        <LoadErrorState message={error} onRetry={reloadStaffMembers} />
+      ) : staffListQuery.isError ? (
+        <LoadErrorState message="Gagal memuat data staf." onRetry={() => staffListQuery.refetch()} />
       ) : (
         <StaffTable
-          staffMembers={staffMembers}
-          currentPage={visiblePage}
+          staffMembers={paginate(staffMembers, currentPage, pagination.pageSize)}
+          currentPage={currentPage}
           totalPages={totalPages}
-          pageSize={PAGE_SIZE}
-          onPageChange={setCurrentPage}
-          onDelete={handleDelete}
-          onUpdated={reloadStaffMembers}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.setRequestedPage}
+          onPageSizeChange={pagination.setPageSize}
         />
       )}
 
-      {isAddModalOpen && (
-        <AddStaffModal
-          onCreated={reloadStaffMembers}
-          onClose={() => setIsAddModalOpen(false)}
-        />
-      )}
+      {isAddModalOpen && <AddStaffModal onClose={() => setIsAddModalOpen(false)} />}
     </div>
   )
 }

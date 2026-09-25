@@ -4,67 +4,34 @@ import { MenuTable } from "@/components/manager/menu/menu-table"
 import { FilterDropdown } from "@/components/shared/filter-dropdown"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { SearchField } from "@/components/shared/search-field"
+import { useMenuList } from "@/hooks/queries/use-menus"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { useLatestRequest } from "@/hooks/use-latest-request"
+import { usePaginationState } from "@/hooks/use-pagination-state"
 import { MENU_STATUS_OPTIONS } from "@/lib/menu-status"
-import { menuService } from "@/services/menu.service"
-import type { Menu } from "@/types/menu"
+import { getPaginationView, paginate } from "@/lib/pagination"
 import { CirclePlusIcon } from "lucide-react"
 import Link from "next/link"
-import { useCallback, useEffect, useState } from "react"
-
-const PAGE_SIZE = 20
+import { useState } from "react"
 
 export default function ManagerMenuListPage() {
-  const [menus, setMenus] = useState<Menu[]>([])
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<number[]>([])
-  const [currentPage, setCurrentPage] = useState(1)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const debouncedSearch = useDebouncedValue(search, 400)
-  const startRequest = useLatestRequest()
+  const debouncedSearch = useDebouncedValue(search.trim(), 400)
+  const pagination = usePaginationState()
 
-  const fetchMenus = useCallback(async (searchTerm: string, statuses: number[]) => {
-    const isLatest = startRequest()
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await menuService.getAll({
-        q: searchTerm || undefined,
-        statuses: statuses.length > 0 ? statuses : undefined,
-      })
-      if (isLatest()) setMenus(data)
-    } catch {
-      if (isLatest()) setError("Gagal memuat data menu.")
-    } finally {
-      if (isLatest()) setIsLoading(false)
-    }
-  }, [startRequest])
-
-  useEffect(() => {
-    fetchMenus(debouncedSearch, statusFilter)
-  }, [fetchMenus, debouncedSearch, statusFilter])
-
-  const reloadMenus = () => fetchMenus(debouncedSearch, statusFilter)
-
-  const handleDelete = async (menu: Menu) => {
-    await menuService.remove(menu.id)
-    reloadMenus()
-  }
+  const menuListQuery = useMenuList({ search: debouncedSearch, statuses: statusFilter })
+  const menus = menuListQuery.data ?? []
+  const { currentPage, totalPages } = getPaginationView(pagination.requestedPage, pagination.pageSize, menus.length)
 
   const handleSearchChange = (value: string) => {
     setSearch(value)
-    setCurrentPage(1)
+    pagination.resetToFirstPage()
   }
 
   const handleStatusFilterApply = (statuses: number[]) => {
     setStatusFilter(statuses)
-    setCurrentPage(1)
+    pagination.resetToFirstPage()
   }
-
-  const totalPages = Math.max(1, Math.ceil(menus.length / PAGE_SIZE))
-  const visiblePage = Math.min(currentPage, totalPages)
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
@@ -88,18 +55,18 @@ export default function ManagerMenuListPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {menuListQuery.isPending ? (
         <PageLoader />
-      ) : error ? (
-        <LoadErrorState message={error} onRetry={reloadMenus} />
+      ) : menuListQuery.isError ? (
+        <LoadErrorState message="Gagal memuat data menu." onRetry={() => menuListQuery.refetch()} />
       ) : (
         <MenuTable
-          menus={menus}
-          currentPage={visiblePage}
+          menus={paginate(menus, currentPage, pagination.pageSize)}
+          currentPage={currentPage}
           totalPages={totalPages}
-          pageSize={PAGE_SIZE}
-          onPageChange={setCurrentPage}
-          onDelete={handleDelete}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.setRequestedPage}
+          onPageSizeChange={pagination.setPageSize}
         />
       )}
     </div>

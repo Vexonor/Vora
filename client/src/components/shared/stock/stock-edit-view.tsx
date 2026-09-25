@@ -3,11 +3,9 @@
 import { BackLink } from "@/components/shared/back-link"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { StockForm } from "@/components/shared/stock/stock-form"
+import { useStockDetail, useUpdateStock } from "@/hooks/queries/use-stocks"
 import { toStockFormValues, toStockRequest, type StockFormValues } from "@/lib/stock"
-import { stockService } from "@/services/stock.service"
-import type { Stock } from "@/types/stock"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 type Props = {
@@ -17,50 +15,25 @@ type Props = {
 
 export function StockEditView({ stockId, basePath }: Props) {
   const router = useRouter()
-  const [stock, setStock] = useState<Stock | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const stockQuery = useStockDetail(stockId)
+  const updateStock = useUpdateStock()
   const detailPath = `${basePath}/${stockId}`
 
-  const fetchStock = useCallback(async () => {
-    setIsLoading(true)
-    setLoadError(null)
-    try {
-      setStock(await stockService.getById(stockId))
-    } catch {
-      setLoadError("Gagal memuat data bahan.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [stockId])
-
-  useEffect(() => {
-    fetchStock()
-  }, [fetchStock])
-
   const handleSubmit = async (values: StockFormValues) => {
-    setIsSubmitting(true)
     try {
-      await stockService.update(stockId, toStockRequest(values))
+      await updateStock.mutateAsync({ stockId, request: toStockRequest(values) })
       toast.success("Perubahan bahan berhasil disimpan.")
       router.push(detailPath)
     } catch {
       toast.error("Gagal menyimpan perubahan. Silakan coba lagi.")
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
-  if (isLoading) return <PageLoader />
+  if (stockQuery.isPending) return <PageLoader />
 
-  if (!stock) {
+  if (!stockQuery.data) {
     return (
-      <LoadErrorState
-        message={loadError ?? "Data tidak ditemukan."}
-        retryLabel="Kembali"
-        onRetry={() => router.push(basePath)}
-      />
+      <LoadErrorState message="Gagal memuat data bahan." retryLabel="Kembali" onRetry={() => router.push(basePath)} />
     )
   }
 
@@ -70,8 +43,8 @@ export function StockEditView({ stockId, basePath }: Props) {
         <BackLink href={detailPath} />
       </div>
       <StockForm
-        initialValues={toStockFormValues(stock)}
-        isSubmitting={isSubmitting}
+        initialValues={toStockFormValues(stockQuery.data)}
+        isSubmitting={updateStock.isPending}
         submitLabel="Simpan Perubahan"
         onSubmit={handleSubmit}
       />

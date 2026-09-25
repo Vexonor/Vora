@@ -8,15 +8,15 @@ import { ReportTable } from "@/components/manager/sales-report/report-table"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { SearchField } from "@/components/shared/search-field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useSellingReportList } from "@/hooks/queries/use-selling-reports"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { useLatestRequest } from "@/hooks/use-latest-request"
+import { usePaginationState } from "@/hooks/use-pagination-state"
 import { formatDate, formatNumber, formatRupiahInMillions } from "@/lib/format"
-import { sellingReportService } from "@/services/selling-report.service"
+import { getPaginationView, paginate } from "@/lib/pagination"
 import type { SellingReport } from "@/types/selling-report"
 import { PlusIcon } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 
-const PAGE_SIZE = 20
 const ALL_OPTION = "all"
 const MISSING_COST_LOOKBACK_DAYS = 30
 
@@ -48,65 +48,34 @@ function findReportsMissingOperationalCost(reports: SellingReport[]) {
 }
 
 export default function ManagerSalesReportPage() {
-  const [reports, setReports] = useState<SellingReport[]>([])
   const [search, setSearch] = useState("")
   const [monthFilter, setMonthFilter] = useState("")
   const [yearFilter, setYearFilter] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [isMissingCostBannerDismissed, setIsMissingCostBannerDismissed] = useState(false)
   const [reportToEditCost, setReportToEditCost] = useState<SellingReport | null>(null)
-  const debouncedSearch = useDebouncedValue(search, 400)
-  const startRequest = useLatestRequest()
+  const debouncedSearch = useDebouncedValue(search.trim(), 400)
+  const pagination = usePaginationState()
 
-  const fetchReports = useCallback(async (searchTerm: string, month: string, year: string) => {
-    const isLatest = startRequest()
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await sellingReportService.getAll({
-        q: searchTerm || undefined,
-        month: month || undefined,
-        year: year || undefined,
-      })
-      if (isLatest()) setReports(Array.isArray(data) ? data : [])
-    } catch {
-      if (isLatest()) setError("Gagal memuat laporan penjualan.")
-    } finally {
-      if (isLatest()) setIsLoading(false)
-    }
-  }, [startRequest])
-
-  useEffect(() => {
-    fetchReports(debouncedSearch, monthFilter, yearFilter)
-  }, [fetchReports, debouncedSearch, monthFilter, yearFilter])
-
-  const reloadReports = () => fetchReports(debouncedSearch, monthFilter, yearFilter)
-
-  const handleDelete = async (report: SellingReport) => {
-    await sellingReportService.remove(report.id)
-    reloadReports()
-  }
+  const reportListQuery = useSellingReportList({ search: debouncedSearch, month: monthFilter, year: yearFilter })
+  const reports = reportListQuery.data ?? []
+  const { currentPage, totalPages } = getPaginationView(pagination.requestedPage, pagination.pageSize, reports.length)
 
   const handleSearchChange = (value: string) => {
     setSearch(value)
-    setCurrentPage(1)
+    pagination.resetToFirstPage()
   }
 
   const handleMonthChange = (month: string) => {
     setMonthFilter(month === ALL_OPTION ? "" : month)
-    setCurrentPage(1)
+    pagination.resetToFirstPage()
   }
 
   const handleYearChange = (year: string) => {
     setYearFilter(year === ALL_OPTION ? "" : year)
-    setCurrentPage(1)
+    pagination.resetToFirstPage()
   }
 
-  const totalPages = Math.max(1, Math.ceil(reports.length / PAGE_SIZE))
-  const visiblePage = Math.min(currentPage, totalPages)
   const summary = summarizeReports(reports)
   const reportsMissingCost = findReportsMissingOperationalCost(reports)
   const latestReportMissingCost = reportsMissingCost[0]
@@ -193,32 +162,26 @@ export default function ManagerSalesReportPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {reportListQuery.isPending ? (
         <PageLoader />
-      ) : error ? (
-        <LoadErrorState message={error} onRetry={reloadReports} />
+      ) : reportListQuery.isError ? (
+        <LoadErrorState message="Gagal memuat laporan penjualan." onRetry={() => reportListQuery.refetch()} />
       ) : (
         <ReportTable
-          reports={reports}
-          currentPage={visiblePage}
+          reports={paginate(reports, currentPage, pagination.pageSize)}
+          currentPage={currentPage}
           totalPages={totalPages}
-          pageSize={PAGE_SIZE}
-          onPageChange={setCurrentPage}
-          onDelete={handleDelete}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.setRequestedPage}
+          onPageSizeChange={pagination.setPageSize}
           onEditOperationalCost={setReportToEditCost}
         />
       )}
 
-      {isAddModalOpen && (
-        <AddReportModal onCreated={reloadReports} onClose={() => setIsAddModalOpen(false)} />
-      )}
+      {isAddModalOpen && <AddReportModal onClose={() => setIsAddModalOpen(false)} />}
 
       {reportToEditCost && (
-        <OperationalCostModal
-          report={reportToEditCost}
-          onSaved={reloadReports}
-          onClose={() => setReportToEditCost(null)}
-        />
+        <OperationalCostModal report={reportToEditCost} onClose={() => setReportToEditCost(null)} />
       )}
     </div>
   )

@@ -10,10 +10,9 @@ import { Input } from "@/components/ui/input"
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover"
+import { useUnitList } from "@/hooks/queries/use-units"
 import type { StockFormValues } from "@/lib/stock"
 import { cn } from "@/lib/utils"
-import { unitService } from "@/services/unit.service"
-import type { Unit } from "@/types/unit"
 import { BoxIcon, CheckIcon, ChevronsUpDownIcon, Loader2Icon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -36,18 +35,16 @@ type Props = {
 }
 
 export function StockForm({ initialValues = EMPTY_VALUES, isSubmitting, submitLabel = "Tambah Bahan", onSubmit }: Props) {
-  const [units, setUnits] = useState<Unit[]>([])
+  const unitListQuery = useUnitList()
+  const units = unitListQuery.data ?? []
+  const isLoadingUnits = unitListQuery.isPending
   const [isUnitPickerOpen, setIsUnitPickerOpen] = useState(false)
-  const [isLoadingUnits, setIsLoadingUnits] = useState(true)
   const [values, setValues] = useState<StockFormValues>(initialValues)
   const [errors, setErrors] = useState<StockFormErrors>({})
 
   useEffect(() => {
-    unitService.getAll()
-      .then(setUnits)
-      .catch(() => toast.error("Gagal memuat daftar satuan."))
-      .finally(() => setIsLoadingUnits(false))
-  }, [])
+    if (unitListQuery.isError) toast.error("Gagal memuat daftar satuan.")
+  }, [unitListQuery.isError])
 
   const updateField = (field: keyof StockFormValues, value: string) => {
     setValues((previous) => ({ ...previous, [field]: value }))

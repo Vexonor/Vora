@@ -3,43 +3,31 @@
 import { MenuForm } from "@/components/manager/menu/menu-form"
 import { BackLink } from "@/components/shared/back-link"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
+import { useMenuDetail, useUpdateMenu } from "@/hooks/queries/use-menus"
 import { toMenuFormData, type MenuFormValues } from "@/lib/menu"
-import { menuService } from "@/services/menu.service"
-import type { Menu } from "@/types/menu"
 import { useRouter } from "next/navigation"
-import { use, useEffect, useState } from "react"
+import { use } from "react"
 import { toast } from "sonner"
 
 export default function ManagerMenuEditPage({ params }: { params: Promise<{ id: string }> }) {
   const menuId = Number(use(params).id)
   const router = useRouter()
-  const [menu, setMenu] = useState<Menu | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  useEffect(() => {
-    menuService.getById(menuId)
-      .then(setMenu)
-      .catch(() => setMenu(null))
-      .finally(() => setIsLoading(false))
-  }, [menuId])
+  const menuQuery = useMenuDetail(menuId)
+  const updateMenu = useUpdateMenu()
 
   const handleSubmit = async (values: MenuFormValues) => {
-    setIsSubmitting(true)
     try {
-      await menuService.update(menuId, toMenuFormData(values, { includeStatus: true }))
+      await updateMenu.mutateAsync({ menuId, formData: toMenuFormData(values, { includeStatus: true }) })
       toast.success("Menu berhasil diperbarui.")
       router.push(`/manager/menu/${menuId}`)
     } catch {
       toast.error("Gagal memperbarui menu. Silakan coba lagi.")
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
-  if (isLoading) return <PageLoader />
+  if (menuQuery.isPending) return <PageLoader />
 
-  if (!menu) {
+  if (!menuQuery.data) {
     return (
       <LoadErrorState
         message="Gagal memuat data menu."
@@ -54,7 +42,7 @@ export default function ManagerMenuEditPage({ params }: { params: Promise<{ id: 
       <div className="px-4">
         <BackLink href={`/manager/menu/${menuId}`} label="Batal" />
       </div>
-      <MenuForm initialMenu={menu} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+      <MenuForm initialMenu={menuQuery.data} onSubmit={handleSubmit} isSubmitting={updateMenu.isPending} />
     </div>
   )
 }

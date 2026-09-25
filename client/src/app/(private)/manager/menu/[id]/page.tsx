@@ -3,30 +3,22 @@
 import { BackLink } from "@/components/shared/back-link"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { useMenuDetail } from "@/hooks/queries/use-menus"
 import { formatRupiah } from "@/lib/format"
 import { getMenuStatusDisplay } from "@/lib/menu-status"
-import { menuService } from "@/services/menu.service"
-import type { Menu } from "@/types/menu"
 import { PencilIcon } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { use, useEffect, useState } from "react"
+import { use } from "react"
 
 export default function ManagerMenuDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const menuId = Number(use(params).id)
   const router = useRouter()
-  const [menu, setMenu] = useState<Menu | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const menuQuery = useMenuDetail(menuId)
+  const menu = menuQuery.data
 
-  useEffect(() => {
-    menuService.getById(menuId)
-      .then(setMenu)
-      .catch(() => setMenu(null))
-      .finally(() => setIsLoading(false))
-  }, [menuId])
-
-  if (isLoading) return <PageLoader />
+  if (menuQuery.isPending) return <PageLoader />
 
   if (!menu) {
     return (

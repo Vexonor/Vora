@@ -1,3 +1,6 @@
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { PAGE_SIZE_OPTIONS } from "@/hooks/use-pagination-state"
+
 type PageItem = number | "ellipsis"
 
 function getPageItems(currentPage: number, totalPages: number): PageItem[] {
@@ -53,6 +56,30 @@ export function TablePagination({ currentPage, totalPages, onPageChange }: Props
       >
         Setelahnya ›
       </button>
+    </div>
+  )
+}
+
+type PageSizeSelectProps = {
+  pageSize: number
+  onPageSizeChange: (pageSize: number) => void
+}
+
+export function PageSizeSelect({ pageSize, onPageSizeChange }: PageSizeSelectProps) {
+  return (
+    <div className="flex items-center gap-2 pt-2 text-sm text-muted-foreground">
+      <span>Tampilkan</span>
+      <Select value={String(pageSize)} onValueChange={(value) => onPageSizeChange(Number(value))}>
+        <SelectTrigger className="h-8 w-20">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {PAGE_SIZE_OPTIONS.map((option) => (
+            <SelectItem key={option} value={String(option)}>{option}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <span>baris</span>
     </div>
   )
 }
