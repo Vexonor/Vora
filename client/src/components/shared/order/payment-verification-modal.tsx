@@ -7,13 +7,14 @@ import { getApiErrorMessage } from "@/lib/api-error"
 import { formatRupiah } from "@/lib/format"
 import { countOrderItems, getOrderItemName } from "@/lib/order"
 import { getOrderPlace } from "@/lib/order-place"
-import { paymentService } from "@/services/payment.service"
+import { usePaymentForOrder, useVerifyCashPayment } from "@/hooks/queries/use-payments"
+import { useRefreshOrderData } from "@/hooks/queries/use-orders"
 import type { Order } from "@/types/order"
 import type { CashPaymentResult, Payment } from "@/types/payment"
 import { PaymentType } from "@/types/payment"
 import { CheckCircle, Clock, CreditCard, Delete, Loader2, Wallet } from "lucide-react"
 import Image from "next/image"
-import { Fragment, useEffect, useState } from "react"
+import { Fragment, useState } from "react"
 import { OrderPlaceTile } from "./order-summary"
 
 type PaymentMethod = "cash" | "online"
@@ -220,63 +221,38 @@ function MissingOnlinePaymentInfo({ onClose }: { onClose: () => void }) {
 type Props = {
   order: Order
   onClose: () => void
-  onVerified?: () => void
 }
 
-export function PaymentVerificationModal({ order, onClose, onVerified }: Props) {
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("cash")
-  const [payment, setPayment] = useState<Payment | null>(null)
-  const [isLoadingPayment, setIsLoadingPayment] = useState(true)
-  const [hasPaymentLoadError, setHasPaymentLoadError] = useState(false)
-  const [paymentReloadKey, setPaymentReloadKey] = useState(0)
-  const [isMethodLocked, setIsMethodLocked] = useState(false)
-  const [isVerifyingCash, setIsVerifyingCash] = useState(false)
-  const [cashVerificationError, setCashVerificationError] = useState<string | null>(null)
-  const [cashPaymentResult, setCashPaymentResult] = useState<CashPaymentResult | null>(null)
+export function PaymentVerificationModal({ order, onClose }: Props) {
+  const [chosenMethod, setChosenMethod] = useState<PaymentMethod>("cash")
+  const paymentQuery = usePaymentForOrder(order.id)
+  const verifyCashPayment = useVerifyCashPayment()
+  const refreshOrderData = useRefreshOrderData()
 
   const place = getOrderPlace(order)
   const items = order.items ?? []
   const totalAmount = Number(order.total_price)
 
-  useEffect(() => {
-    const fetchPayment = async () => {
-      try {
-        const existingPayment = await paymentService.findByOrderId(order.id)
-        if (existingPayment) {
-          setPayment(existingPayment)
-          setSelectedMethod(existingPayment.type === PaymentType.ONLINE ? "online" : "cash")
-          setIsMethodLocked(true)
-        }
-      } catch {
-        setHasPaymentLoadError(true)
-      } finally {
-        setIsLoadingPayment(false)
-      }
-    }
+  const payment = paymentQuery.data ?? null
+  const isLoadingPayment = paymentQuery.isPending
+  const hasPaymentLoadError = paymentQuery.isError
+  const isMethodLocked = payment !== null
+  const selectedMethod: PaymentMethod = payment
+    ? payment.type === PaymentType.ONLINE ? "online" : "cash"
+    : chosenMethod
+  const cashPaymentResult = verifyCashPayment.data ?? null
+  const isVerifyingCash = verifyCashPayment.isPending
+  const cashVerificationError = verifyCashPayment.isError
+    ? getApiErrorMessage(verifyCashPayment.error, "Gagal verifikasi pembayaran. Coba lagi.")
+    : null
 
-    fetchPayment()
-  }, [order.id, paymentReloadKey])
+  const handleRetryLoadPayment = () => paymentQuery.refetch()
 
-  const handleRetryLoadPayment = () => {
-    setHasPaymentLoadError(false)
-    setIsLoadingPayment(true)
-    setPaymentReloadKey((key) => key + 1)
-  }
-
-  const handleCashPayment = async (receivedAmount: number) => {
-    setIsVerifyingCash(true)
-    setCashVerificationError(null)
-    try {
-      setCashPaymentResult(await paymentService.verifyCashPayment(order.id, receivedAmount))
-    } catch (error) {
-      setCashVerificationError(getApiErrorMessage(error, "Gagal verifikasi pembayaran. Coba lagi."))
-    } finally {
-      setIsVerifyingCash(false)
-    }
-  }
+  const handleCashPayment = (receivedAmount: number) =>
+    verifyCashPayment.mutate({ orderId: order.id, receivedAmount })
 
   const handleClose = () => {
-    if (cashPaymentResult) onVerified?.()
+    if (cashPaymentResult) refreshOrderData()
     onClose()
   }
 
@@ -385,7 +361,7 @@ export function PaymentVerificationModal({ order, onClose, onVerified }: Props) 
 
             <Select
               value={selectedMethod}
-              onValueChange={(method) => setSelectedMethod(method as PaymentMethod)}
+              onValueChange={(method) => setChosenMethod(method as PaymentMethod)}
               disabled={isMethodLocked || isLoadingPayment || hasPaymentLoadError || cashPaymentResult !== null}
             >
               <SelectTrigger className="w-full">

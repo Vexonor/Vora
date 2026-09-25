@@ -4,14 +4,16 @@ import { FilterDropdown } from "@/components/shared/filter-dropdown"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { SearchField } from "@/components/shared/search-field"
 import { useSidebar } from "@/components/ui/sidebar"
+import { useOrderList } from "@/hooks/queries/use-orders"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { useLatestRequest } from "@/hooks/use-latest-request"
+import { resolveOrderStatusFilter } from "@/lib/order-list-page"
 import { ORDER_STATUS_FILTER_OPTIONS } from "@/lib/order-status"
-import { orderService } from "@/services/order.service"
 import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import { OrderCard } from "./order-card"
+import { OrderGrid } from "./order-grid"
+import { PaymentVerificationModal } from "./payment-verification-modal"
 
 export type OrderStatusTab = {
   label: string
@@ -34,37 +36,14 @@ export function OrderPage({ statusTabs = DEFAULT_STATUS_TABS }: Props) {
   const [activeTabStatus, setActiveTabStatus] = useState<OrderStatus | null>(null)
   const [statusFilter, setStatusFilter] = useState<number[]>([])
   const [search, setSearch] = useState("")
-  const debouncedSearch = useDebouncedValue(search, 300)
+  const [orderToVerify, setOrderToVerify] = useState<Order | null>(null)
+  const debouncedSearch = useDebouncedValue(search.trim(), 300)
   const { open: isSidebarOpen } = useSidebar()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const startRequest = useLatestRequest()
 
-  const fetchOrders = useCallback(async (tabStatus: OrderStatus | null, searchTerm: string, statuses: number[]) => {
-    const isLatest = startRequest()
-    setIsLoading(true)
-    setError(null)
-    try {
-      const firstPage = await orderService.getPage({
-        page: 1,
-        limit: Number.MAX_SAFE_INTEGER,
-        statuses: statuses.length > 0 ? statuses : tabStatus !== null ? [tabStatus] : [],
-        search: searchTerm,
-      })
-      if (isLatest()) setOrders(firstPage.orders)
-    } catch {
-      if (isLatest()) setError("Gagal memuat data pesanan.")
-    } finally {
-      if (isLatest()) setIsLoading(false)
-    }
-  }, [startRequest])
-
-  useEffect(() => {
-    fetchOrders(activeTabStatus, debouncedSearch, statusFilter)
-  }, [fetchOrders, activeTabStatus, debouncedSearch, statusFilter])
-
-  const reloadOrders = () => fetchOrders(activeTabStatus, debouncedSearch, statusFilter)
+  const orderList = useOrderList({
+    statuses: resolveOrderStatusFilter(activeTabStatus, statusFilter),
+    search: debouncedSearch,
+  })
 
   const handleTabChange = (tabStatus: OrderStatus | null) => {
     setActiveTabStatus(tabStatus)
@@ -110,20 +89,28 @@ export function OrderPage({ statusTabs = DEFAULT_STATUS_TABS }: Props) {
         </div>
       </div>
 
-      {isLoading ? (
+      {orderList.isPending ? (
         <PageLoader />
-      ) : error ? (
-        <LoadErrorState message={error} onRetry={reloadOrders} />
-      ) : orders.length > 0 ? (
-        <div className={`grid ${gridColumnsClass} gap-4 transition-all duration-200`}>
-          {orders.map((order) => (
-            <OrderCard key={order.id} order={order} onPaymentVerified={reloadOrders} />
-          ))}
-        </div>
+      ) : orderList.isError ? (
+        <LoadErrorState message="Gagal memuat data pesanan." onRetry={() => orderList.refetch()} />
+      ) : orderList.orders.length > 0 ? (
+        <OrderGrid
+          orders={orderList.orders}
+          gridColumnsClass={gridColumnsClass}
+          renderOrder={(order) => <OrderCard order={order} onVerifyPayment={() => setOrderToVerify(order)} />}
+          hasNextPage={orderList.hasNextPage}
+          isFetchingNextPage={orderList.isFetchingNextPage}
+          hasNextPageError={orderList.isFetchNextPageError}
+          onLoadNextPage={() => orderList.fetchNextPage()}
+        />
       ) : (
         <div className="flex flex-1 items-center justify-center text-muted-foreground text-sm">
           Tidak ada pesanan ditemukan.
         </div>
+      )}
+
+      {orderToVerify && (
+        <PaymentVerificationModal order={orderToVerify} onClose={() => setOrderToVerify(null)} />
       )}
     </div>
   )

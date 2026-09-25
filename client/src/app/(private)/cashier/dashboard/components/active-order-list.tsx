@@ -4,10 +4,9 @@ import { countOrderItems } from "@/lib/order"
 import { getOrderPlace } from "@/lib/order-place"
 import { getOrderStatusDisplay } from "@/lib/order-status"
 import { TONE_OUTLINE_CLASS, TONE_SOLID_CLASS } from "@/lib/status-tone"
-import { dashboardService } from "@/services/dashboard.service"
+import { useCashierActiveOrders } from "@/hooks/queries/use-dashboard"
 import type { Order } from "@/types/order"
 import { Loader2Icon } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
 
 function ActiveOrderRow({ order }: { order: Order }) {
   const place = getOrderPlace(order)
@@ -36,30 +35,14 @@ function ActiveOrderRow({ order }: { order: Order }) {
   )
 }
 
-export function ActiveOrderList({ refreshKey }: { refreshKey: number }) {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  const fetchActiveOrders = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const data = await dashboardService.getActiveOrders()
-      setOrders(Array.isArray(data) ? data : [])
-    } catch {
-      setOrders([])
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchActiveOrders()
-  }, [fetchActiveOrders, refreshKey])
+export function ActiveOrderList() {
+  const activeOrdersQuery = useCashierActiveOrders()
+  const orders = activeOrdersQuery.data ?? []
 
   return (
     <div className="bg-white border border-foreground/40 rounded-lg p-4 flex flex-col gap-4">
       <h4 className="font-bold text-xl">Pesanan Aktif</h4>
-      {isLoading ? (
+      {activeOrdersQuery.isPending ? (
         <div className="flex items-center justify-center py-8">
           <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
         </div>

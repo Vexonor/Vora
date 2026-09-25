@@ -1,22 +1,18 @@
 "use client"
 
 import { FilterDropdown } from "@/components/shared/filter-dropdown"
+import { OrderGrid } from "@/components/shared/order/order-grid"
 import type { OrderStatusTab } from "@/components/shared/order/order-page"
 import { LoadErrorState, PageLoader } from "@/components/shared/page-state"
 import { SearchField } from "@/components/shared/search-field"
 import { useSidebar } from "@/components/ui/sidebar"
-import { useLatestRequest } from "@/hooks/use-latest-request"
-import { getApiErrorMessage } from "@/lib/api-error"
-import { getOrderPlace } from "@/lib/order-place"
+import { KITCHEN_ORDER_POLL_INTERVAL_MS, useOrderList } from "@/hooks/queries/use-orders"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { resolveOrderStatusFilter } from "@/lib/order-list-page"
 import { ORDER_STATUS_FILTER_OPTIONS } from "@/lib/order-status"
-import { orderService } from "@/services/order.service"
-import type { Order } from "@/types/order"
 import { OrderStatus } from "@/types/order"
-import { useCallback, useEffect, useState } from "react"
-import { toast } from "sonner"
+import { useState } from "react"
 import { KitchenOrderCard } from "./components/kitchen-order-card"
-
-const POLL_INTERVAL_MS = 10_000
 
 const KITCHEN_STATUS_TABS: OrderStatusTab[] = [
   { label: "Semua", status: null },
@@ -26,77 +22,17 @@ const KITCHEN_STATUS_TABS: OrderStatusTab[] = [
   { label: "Selesai", status: OrderStatus.COMPLETED },
 ]
 
-function matchesSearch(order: Order, normalizedSearch: string) {
-  if (!normalizedSearch) return true
-  const place = getOrderPlace(order)
-  return [place.code, place.name, order.customer_name ?? "", `#${order.id}`]
-    .join(" ")
-    .toLowerCase()
-    .includes(normalizedSearch)
-}
-
 export default function KitchenOrderPage() {
   const [activeTabStatus, setActiveTabStatus] = useState<OrderStatus | null>(null)
   const [statusFilter, setStatusFilter] = useState<number[]>([])
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search.trim(), 300)
   const { open: isSidebarOpen } = useSidebar()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const startRequest = useLatestRequest()
 
-  const fetchOrders = useCallback(async ({ isBackgroundRefresh = false } = {}) => {
-    const isLatest = startRequest()
-    if (!isBackgroundRefresh) {
-      setIsLoading(true)
-      setError(null)
-    }
-    try {
-      const data = await orderService.getAll()
-      if (isLatest()) setOrders(Array.isArray(data) ? data : [])
-    } catch {
-      if (isLatest() && !isBackgroundRefresh) setError("Gagal memuat data pesanan.")
-    } finally {
-      if (isLatest() && !isBackgroundRefresh) setIsLoading(false)
-    }
-  }, [startRequest])
-
-  useEffect(() => {
-    fetchOrders()
-  }, [fetchOrders])
-
-  useEffect(() => {
-    const refreshWhenVisible = () => {
-      if (document.visibilityState === "visible") fetchOrders({ isBackgroundRefresh: true })
-    }
-    const pollTimer = setInterval(refreshWhenVisible, POLL_INTERVAL_MS)
-    document.addEventListener("visibilitychange", refreshWhenVisible)
-    return () => {
-      clearInterval(pollTimer)
-      document.removeEventListener("visibilitychange", refreshWhenVisible)
-    }
-  }, [fetchOrders])
-
-  const handleUpdateStatus = async (orderId: number, nextStatus: number) => {
-    try {
-      await orderService.updateStatus(orderId, { status: nextStatus })
-      fetchOrders({ isBackgroundRefresh: true })
-    } catch {
-      toast.error("Gagal memperbarui status pesanan. Coba lagi.")
-    }
-  }
-
-  const handleCancelOrder = async (orderId: number, reason: string) => {
-    try {
-      await orderService.cancel(orderId, { reason })
-      toast.success("Pesanan berhasil dibatalkan.")
-      fetchOrders({ isBackgroundRefresh: true })
-      return true
-    } catch (cancelError) {
-      toast.error(getApiErrorMessage(cancelError, "Gagal membatalkan pesanan. Coba lagi."))
-      return false
-    }
-  }
+  const orderList = useOrderList(
+    { statuses: resolveOrderStatusFilter(activeTabStatus, statusFilter), search: debouncedSearch },
+    { pollIntervalMs: KITCHEN_ORDER_POLL_INTERVAL_MS },
+  )
 
   const handleTabChange = (tabStatus: OrderStatus | null) => {
     setActiveTabStatus(tabStatus)
@@ -107,13 +43,6 @@ export default function KitchenOrderPage() {
     setStatusFilter(statuses)
     if (statuses.length > 0) setActiveTabStatus(null)
   }
-
-  const normalizedSearch = search.trim().toLowerCase()
-  const visibleOrders = orders.filter((order) => {
-    const matchesTab = activeTabStatus === null || order.status === activeTabStatus
-    const matchesStatusFilter = statusFilter.length === 0 || statusFilter.includes(order.status)
-    return matchesTab && matchesStatusFilter && matchesSearch(order, normalizedSearch)
-  })
 
   const gridColumnsClass = isSidebarOpen
     ? "grid-cols-1 md:grid-cols-1 xl:grid-cols-3"
@@ -149,21 +78,20 @@ export default function KitchenOrderPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {orderList.isPending ? (
         <PageLoader />
-      ) : error ? (
-        <LoadErrorState message={error} onRetry={() => fetchOrders()} />
-      ) : visibleOrders.length > 0 ? (
-        <div className={`grid ${gridColumnsClass} gap-4 transition-all duration-200`}>
-          {visibleOrders.map((order) => (
-            <KitchenOrderCard
-              key={order.id}
-              order={order}
-              onUpdateStatus={handleUpdateStatus}
-              onCancel={handleCancelOrder}
-            />
-          ))}
-        </div>
+      ) : orderList.isError ? (
+        <LoadErrorState message="Gagal memuat data pesanan." onRetry={() => orderList.refetch()} />
+      ) : orderList.orders.length > 0 ? (
+        <OrderGrid
+          orders={orderList.orders}
+          gridColumnsClass={gridColumnsClass}
+          renderOrder={(order) => <KitchenOrderCard order={order} />}
+          hasNextPage={orderList.hasNextPage}
+          isFetchingNextPage={orderList.isFetchingNextPage}
+          hasNextPageError={orderList.isFetchNextPageError}
+          onLoadNextPage={() => orderList.fetchNextPage()}
+        />
       ) : (
         <div className="flex flex-1 items-center justify-center text-muted-foreground text-sm">
           Tidak ada pesanan ditemukan.

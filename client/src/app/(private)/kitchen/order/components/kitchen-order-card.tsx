@@ -1,47 +1,59 @@
 "use client"
 
 import { OrderSummary } from "@/components/shared/order/order-summary"
+import { useCancelOrder, useUpdateOrderStatus } from "@/hooks/queries/use-orders"
+import { getApiErrorMessage } from "@/lib/api-error"
 import { getOrderPlace } from "@/lib/order-place"
 import { canKitchenCancelOrder, getKitchenNextAction } from "@/lib/order-status"
 import type { Order } from "@/types/order"
 import { useState } from "react"
+import { toast } from "sonner"
 import { CancelOrderDialog } from "./cancel-order-dialog"
 import { CompleteOrderDialog } from "./complete-order-dialog"
 import { KitchenOrderDetailModal } from "./kitchen-order-detail-modal"
 
-type Props = {
-  order: Order
-  onUpdateStatus: (orderId: number, nextStatus: number) => void
-  onCancel: (orderId: number, reason: string) => Promise<boolean>
-}
-
-export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
+export function KitchenOrderCard({ order }: { order: Order }) {
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false)
-  const [isCanceling, setIsCanceling] = useState(false)
+  const updateOrderStatus = useUpdateOrderStatus()
+  const cancelOrder = useCancelOrder()
 
   const status = Number(order.status)
   const nextAction = getKitchenNextAction(status)
   const canCancel = canKitchenCancelOrder(status)
   const placeName = getOrderPlace(order).name
 
+  const moveToNextStatus = () => {
+    if (!nextAction) return
+    updateOrderStatus.mutate(
+      { orderId: order.id, status: nextAction.nextStatus },
+      { onError: () => toast.error("Gagal memperbarui status pesanan. Coba lagi.") },
+    )
+  }
+
   const handleAdvanceStatus = () => {
     if (!nextAction) return
     if (nextAction.requiresConfirmation) setIsCompleteDialogOpen(true)
-    else onUpdateStatus(order.id, nextAction.nextStatus)
+    else moveToNextStatus()
   }
 
   const handleConfirmComplete = () => {
-    if (nextAction) onUpdateStatus(order.id, nextAction.nextStatus)
+    moveToNextStatus()
     setIsCompleteDialogOpen(false)
   }
 
-  const handleConfirmCancel = async (reason: string) => {
-    setIsCanceling(true)
-    const isCanceled = await onCancel(order.id, reason)
-    setIsCanceling(false)
-    if (isCanceled) setIsCancelDialogOpen(false)
+  const handleConfirmCancel = (reason: string) => {
+    cancelOrder.mutate(
+      { orderId: order.id, reason },
+      {
+        onSuccess: () => {
+          toast.success("Pesanan berhasil dibatalkan.")
+          setIsCancelDialogOpen(false)
+        },
+        onError: (error) => toast.error(getApiErrorMessage(error, "Gagal membatalkan pesanan. Coba lagi.")),
+      },
+    )
   }
 
   return (
@@ -100,7 +112,7 @@ export function KitchenOrderCard({ order, onUpdateStatus, onCancel }: Props) {
       {isCancelDialogOpen && (
         <CancelOrderDialog
           placeName={placeName}
-          isSubmitting={isCanceling}
+          isSubmitting={cancelOrder.isPending}
           onConfirm={handleConfirmCancel}
           onClose={() => setIsCancelDialogOpen(false)}
         />

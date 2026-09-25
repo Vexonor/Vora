@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { canViewInvoice } from "@/lib/invoice-access"
 import { getOrderPlace } from "@/lib/order-place"
-import { orderService } from "@/services/order.service"
-import { OrderStatus, type Order } from "@/types/order"
+import { useOrderDetail } from "@/hooks/queries/use-orders"
+import { OrderStatus } from "@/types/order"
 import {
   BellIcon,
   CheckCircle2Icon,
@@ -17,9 +17,6 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
-
-const POLL_INTERVAL_MS = 8000
 
 const ORDER_PROGRESS_STEPS = [
   { status: OrderStatus.PENDING, label: "Menunggu", description: "Pesanan diterima", Icon: ClockIcon },
@@ -32,44 +29,21 @@ export default function OrderStatusPage() {
   const params = useParams<{ orderId: string }>()
   const orderId = Number(params?.orderId)
 
-  const [order, setOrder] = useState<Order | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchOrder = useCallback(async ({ isPolling = false } = {}) => {
-    try {
-      setOrder(await orderService.getById(orderId))
-      setError(null)
-    } catch (fetchError) {
-      if (isPolling) return
-      setError(fetchError instanceof Error ? fetchError.message : "Gagal memuat status pesanan")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [orderId])
-
-  useEffect(() => {
-    if (!orderId) {
-      setIsLoading(false)
-      setError("Nomor pesanan tidak valid")
-      return
-    }
-    fetchOrder()
-  }, [orderId, fetchOrder])
+  const orderQuery = useOrderDetail(orderId, { pollUntilFinal: true })
+  const order = orderQuery.data ?? null
+  const isValidOrderId = Number.isInteger(orderId) && orderId > 0
+  const isLoading = isValidOrderId && orderQuery.isPending
+  const error = !isValidOrderId
+    ? "Nomor pesanan tidak valid"
+    : orderQuery.isError && !order
+      ? orderQuery.error instanceof Error ? orderQuery.error.message : "Gagal memuat status pesanan"
+      : null
 
   const status = order ? Number(order.status) : null
   const isCanceled = status === OrderStatus.CANCELED
   const isFinalStatus = status === OrderStatus.COMPLETED || isCanceled
   const canPrintInvoice = order ? canViewInvoice(order) : false
   const currentStepIndex = ORDER_PROGRESS_STEPS.findIndex((step) => step.status === status)
-
-  useEffect(() => {
-    if (!orderId || isFinalStatus) return
-    const pollTimer = setInterval(() => {
-      if (document.visibilityState === "visible") fetchOrder({ isPolling: true })
-    }, POLL_INTERVAL_MS)
-    return () => clearInterval(pollTimer)
-  }, [orderId, isFinalStatus, fetchOrder])
 
   const invoiceLink = (
     <Link href={`/payment/invoice?orderId=${orderId}`} className="w-full">

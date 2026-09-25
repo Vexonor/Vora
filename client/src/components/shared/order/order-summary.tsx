@@ -49,7 +49,7 @@ export function OrderSummary({ order }: { order: Order }) {
           <span className="text-center">Jumlah</span>
           <span className="text-right">Harga</span>
         </div>
-        <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
+        <div className="flex flex-col gap-1 h-24 overflow-y-auto pr-1">
           {order.items?.map((item) => (
             <div key={item.id} className="grid grid-cols-3 text-sm">
               <span>{getOrderItemName(item)}</span>

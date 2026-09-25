@@ -8,16 +8,14 @@ import { DownloadIcon } from "lucide-react"
 import { useState } from "react"
 import { OrderDetailModal } from "./order-detail-modal"
 import { OrderSummary } from "./order-summary"
-import { PaymentVerificationModal } from "./payment-verification-modal"
 
 type Props = {
   order: Order
-  onPaymentVerified?: () => void
+  onVerifyPayment: () => void
 }
 
-export function OrderCard({ order, onPaymentVerified }: Props) {
+export function OrderCard({ order, onVerifyPayment }: Props) {
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const canVerifyPayment = !isOrderPaid(order) && Number(order.status) === OrderStatus.PENDING
 
   return (
@@ -34,7 +32,7 @@ export function OrderCard({ order, onPaymentVerified }: Props) {
               Detail Pesanan
             </button>
             <button
-              onClick={() => setIsPaymentModalOpen(true)}
+              onClick={onVerifyPayment}
               disabled={!canVerifyPayment}
               className="bg-secondary text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
             >
@@ -52,17 +50,6 @@ export function OrderCard({ order, onPaymentVerified }: Props) {
       </div>
 
       {isDetailOpen && <OrderDetailModal order={order} onClose={() => setIsDetailOpen(false)} />}
-
-      {isPaymentModalOpen && (
-        <PaymentVerificationModal
-          order={order}
-          onClose={() => setIsPaymentModalOpen(false)}
-          onVerified={() => {
-            setIsPaymentModalOpen(false)
-            onPaymentVerified?.()
-          }}
-        />
-      )}
     </>
   )
 }
