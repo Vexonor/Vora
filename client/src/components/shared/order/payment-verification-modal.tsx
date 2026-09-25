@@ -241,14 +241,14 @@ export function PaymentVerificationModal({ order, onClose, onVerified }: Props) 
   useEffect(() => {
     const fetchPayment = async () => {
       try {
-        const existingPayment = await paymentService.getByOrderId(order.id)
-        setPayment(existingPayment)
-        setSelectedMethod(existingPayment.type === PaymentType.ONLINE ? "online" : "cash")
-        setIsMethodLocked(true)
-      } catch (error: unknown) {
-        const status = (error as { response?: { status?: number } })?.response?.status
-        if (status === 404) setSelectedMethod("cash")
-        else setHasPaymentLoadError(true)
+        const existingPayment = await paymentService.findByOrderId(order.id)
+        if (existingPayment) {
+          setPayment(existingPayment)
+          setSelectedMethod(existingPayment.type === PaymentType.ONLINE ? "online" : "cash")
+          setIsMethodLocked(true)
+        }
+      } catch {
+        setHasPaymentLoadError(true)
       } finally {
         setIsLoadingPayment(false)
       }

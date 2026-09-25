@@ -46,15 +46,13 @@ export function OrderPage({ statusTabs = DEFAULT_STATUS_TABS }: Props) {
     setIsLoading(true)
     setError(null)
     try {
-      const data = await orderService.getAll({
-        ...(statuses.length > 0
-          ? { statuses }
-          : tabStatus !== null
-            ? { status: tabStatus }
-            : {}),
-        ...(searchTerm && { search: searchTerm }),
+      const firstPage = await orderService.getPage({
+        page: 1,
+        limit: Number.MAX_SAFE_INTEGER,
+        statuses: statuses.length > 0 ? statuses : tabStatus !== null ? [tabStatus] : [],
+        search: searchTerm,
       })
-      if (isLatest()) setOrders(Array.isArray(data) ? data : [])
+      if (isLatest()) setOrders(firstPage.orders)
     } catch {
       if (isLatest()) setError("Gagal memuat data pesanan.")
     } finally {

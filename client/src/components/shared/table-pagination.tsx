@@ -57,6 +57,3 @@ export function TablePagination({ currentPage, totalPages, onPageChange }: Props
   )
 }
 
-export function paginate<T>(items: T[], currentPage: number, pageSize: number) {
-  return items.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-}

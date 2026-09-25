@@ -57,3 +57,16 @@ export interface UpdateOrderStatusRequest {
 export interface CancelOrderRequest {
   reason: string;
 }
+
+export interface OrderPageParams {
+  page: number;
+  limit: number;
+  statuses: number[];
+  search: string;
+}
+
+export interface OrderPage {
+  orders: Order[];
+  count: number;
+  hasNextPage: boolean;
+}

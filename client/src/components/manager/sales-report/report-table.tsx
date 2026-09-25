@@ -1,7 +1,8 @@
 "use client"
 
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
-import { paginate, TablePagination } from "@/components/shared/table-pagination"
+import { TablePagination } from "@/components/shared/table-pagination"
+import { paginate } from "@/lib/pagination"
 import {
   DropdownMenu, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuTrigger,

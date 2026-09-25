@@ -129,7 +129,6 @@ source venv/Scripts/activate
 # 4. Jalankan service
 uvicorn main:app --reload --port 8090
 ```
-
 Service berjalan di `http://localhost:8090`.
 
 Endpoint utama:
