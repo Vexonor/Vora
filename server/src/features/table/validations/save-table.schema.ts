@@ -1,5 +1,5 @@
 import * as Joi from 'joi';
 
-export const createTableScheme = Joi.object({
+export const saveTableSchema = Joi.object({
   number: Joi.number().required(),
 }).options({ abortEarly: false });

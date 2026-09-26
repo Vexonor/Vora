@@ -4,66 +4,58 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Put,
   Query,
-  UseGuards,
 } from '@nestjs/common';
-import { CurrentUser } from 'src/core/decorators/current-user.decorator';
-import { JwtAuthGuard } from 'src/core/guards/jwt-auth.guard';
-import { JoiValidationParamPipe } from 'src/core/pipes/joi-validation-param.pipe';
+import type { ListQuery } from 'src/core/database/list-query';
+import { Auth, Roles } from 'src/core/decorators/auth.decorator';
+import { ResponseMessage } from 'src/core/decorators/response-message.decorator';
 import { JoiValidationPipe } from 'src/core/pipes/joi-validation.pipe';
-import { User } from '../user/models/user.model';
-import { CreateTableDto } from './dto/create-table.dto';
-import { UpdateTableDto } from './dto/update-table.dto';
-import { DiningTable } from './models/dining-table.model';
+import { STAFF_ROLES, UserRole } from '../user/enums/user-role.enum';
+import { SaveTableDto } from './dto/save-table.dto';
 import { TableService } from './table.service';
-import { tableIdParamSchema } from './validations/params/table-id.param';
-import { createTableScheme } from './validations/requests/create-table.request';
+import { saveTableSchema } from './validations/save-table.schema';
 
+@Auth(...STAFF_ROLES)
 @Controller()
 export class TableController {
   constructor(private readonly tableService: TableService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
-  create(
-    @Body(new JoiValidationPipe(createTableScheme))
-    createTableDto: CreateTableDto,
-    @CurrentUser() user: User,
-  ) {
-    return this.tableService.create(createTableDto, user);
+  @Roles(UserRole.MANAGER, UserRole.KITCHEN)
+  @ResponseMessage('Successfully created table')
+  create(@Body(new JoiValidationPipe(saveTableSchema)) dto: SaveTableDto) {
+    return this.tableService.create(dto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll(@Query() query, @CurrentUser() user: User) {
-    return this.tableService.findAll(query, user);
+  @ResponseMessage('Successfully get all tables')
+  findAll(@Query() query: ListQuery) {
+    return this.tableService.findAll(query);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async findOne(
-    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: DiningTable,
-  ) {
-    return this.tableService.findOne(table);
+  @ResponseMessage('Successfully get table')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.tableService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Put(':id')
-  async update(
-    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: DiningTable,
-    @Body(new JoiValidationPipe(createTableScheme))
-    updateTableDto: UpdateTableDto,
+  @Roles(UserRole.MANAGER, UserRole.KITCHEN)
+  @ResponseMessage('Successfully update table')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new JoiValidationPipe(saveTableSchema)) dto: SaveTableDto,
   ) {
-    return this.tableService.update(table, updateTableDto);
+    return this.tableService.update(id, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async remove(
-    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: DiningTable,
-  ) {
-    return this.tableService.remove(table);
+  @Roles(UserRole.MANAGER, UserRole.KITCHEN)
+  @ResponseMessage('Successfully delete table')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.tableService.remove(id);
   }
 }
