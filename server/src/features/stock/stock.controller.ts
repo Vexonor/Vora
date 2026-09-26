@@ -4,67 +4,58 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Put,
   Query,
-  UseGuards,
 } from '@nestjs/common';
-import { CurrentUser } from 'src/core/decorators/current-user.decorator';
-import { JwtAuthGuard } from 'src/core/guards/jwt-auth.guard';
-import { JoiValidationParamPipe } from 'src/core/pipes/joi-validation-param.pipe';
+import { Auth } from 'src/core/decorators/auth.decorator';
+import { ResponseMessage } from 'src/core/decorators/response-message.decorator';
 import { JoiValidationPipe } from 'src/core/pipes/joi-validation.pipe';
-import { User } from '../user/models/user.model';
-import { CreateStockDto } from './dto/create-stock.dto';
-import { UpdateStockDto } from './dto/update-stock.dto';
-import { Stock } from './models/stock.model';
+import { UserRole } from '../user/enums/user-role.enum';
+import { SaveStockDto } from './dto/save-stock.dto';
+import type { StockListQuery } from './models/stock.model';
 import { StockService } from './stock.service';
-import { stockIdParamSchema } from './validations/params/stock-id.param';
-import { createStockScheme } from './validations/requests/create-stock.request';
-import { updateStockScheme } from './validations/requests/update-stock.request';
+import {
+  createStockSchema,
+  updateStockSchema,
+} from './validations/save-stock.schema';
 
+@Auth(UserRole.MANAGER, UserRole.KITCHEN)
 @Controller()
 export class StockController {
   constructor(private readonly stockService: StockService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
-  create(
-    @Body(new JoiValidationPipe(createStockScheme))
-    createStockDto: CreateStockDto,
-    @CurrentUser() user: User,
-  ) {
-    return this.stockService.create(createStockDto, user);
+  @ResponseMessage('Successfully created stock')
+  create(@Body(new JoiValidationPipe(createStockSchema)) dto: SaveStockDto) {
+    return this.stockService.create(dto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll(@Query() query, @CurrentUser() user: User) {
-    return this.stockService.findAll(query, user);
+  @ResponseMessage('Successfully get all stocks')
+  findAll(@Query() query: StockListQuery) {
+    return this.stockService.findAll(query);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async findOne(
-    @Param('id', new JoiValidationParamPipe(stockIdParamSchema)) stock: Stock,
-  ) {
-    return this.stockService.findOne(stock);
+  @ResponseMessage('Successfully get stock')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.stockService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Put(':id')
-  async update(
-    @Param('id', new JoiValidationParamPipe(stockIdParamSchema)) stock: Stock,
-    @Body(new JoiValidationPipe(updateStockScheme))
-    updateStockDto: UpdateStockDto,
+  @ResponseMessage('Successfully update stock')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new JoiValidationPipe(updateStockSchema)) dto: SaveStockDto,
   ) {
-    return this.stockService.update(stock, updateStockDto);
+    return this.stockService.update(id, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async remove(
-    @Param('id', new JoiValidationParamPipe(stockIdParamSchema)) stock: Stock,
-  ) {
-    return this.stockService.remove(stock);
+  @ResponseMessage('Successfully delete stock')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.stockService.remove(id);
   }
 }

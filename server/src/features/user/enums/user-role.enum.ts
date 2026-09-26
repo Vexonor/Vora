@@ -22,6 +22,6 @@ const USER_ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export const getUserRoleLabel = (role: number) =>
-  USER_ROLE_LABELS[role as UserRole] ?? UNKNOWN_ENUM_LABEL;
+  USER_ROLE_LABELS[role] ?? UNKNOWN_ENUM_LABEL;
 
 export const getUserRoleOptions = () => toEnumOptions(USER_ROLE_LABELS);

@@ -18,6 +18,6 @@ const MENU_TYPE_LABELS: Record<MenuType, string> = {
 };
 
 export const getMenuTypeLabel = (type: number) =>
-  MENU_TYPE_LABELS[type as MenuType] ?? UNKNOWN_ENUM_LABEL;
+  MENU_TYPE_LABELS[type] ?? UNKNOWN_ENUM_LABEL;
 
 export const getMenuTypeOptions = () => toEnumOptions(MENU_TYPE_LABELS);

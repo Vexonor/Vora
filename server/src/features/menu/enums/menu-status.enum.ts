@@ -16,6 +16,6 @@ const MENU_STATUS_LABELS: Record<MenuStatus, string> = {
 };
 
 export const getMenuStatusLabel = (status: number) =>
-  MENU_STATUS_LABELS[status as MenuStatus] ?? UNKNOWN_ENUM_LABEL;
+  MENU_STATUS_LABELS[status] ?? UNKNOWN_ENUM_LABEL;
 
 export const getMenuStatusOptions = () => toEnumOptions(MENU_STATUS_LABELS);

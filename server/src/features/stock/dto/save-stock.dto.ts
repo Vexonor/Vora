@@ -1,7 +1,8 @@
-export class CreateStockDto {
+export class SaveStockDto {
   name: string;
   unit_id: number;
   quantity: number;
   minimum: number;
   maximum: number;
+  status?: number;
 }

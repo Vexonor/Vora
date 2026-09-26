@@ -20,6 +20,6 @@ const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 export const getOrderStatusLabel = (status: number) =>
-  ORDER_STATUS_LABELS[status as OrderStatus] ?? UNKNOWN_ENUM_LABEL;
+  ORDER_STATUS_LABELS[status] ?? UNKNOWN_ENUM_LABEL;
 
 export const getOrderStatusOptions = () => toEnumOptions(ORDER_STATUS_LABELS);

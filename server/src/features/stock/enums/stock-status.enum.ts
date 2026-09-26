@@ -20,6 +20,6 @@ const STOCK_STATUS_LABELS: Record<StockStatus, string> = {
 };
 
 export const getStockStatusLabel = (status: number) =>
-  STOCK_STATUS_LABELS[status as StockStatus] ?? UNKNOWN_ENUM_LABEL;
+  STOCK_STATUS_LABELS[status] ?? UNKNOWN_ENUM_LABEL;
 
 export const getStockStatusOptions = () => toEnumOptions(STOCK_STATUS_LABELS);

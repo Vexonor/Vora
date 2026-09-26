@@ -14,6 +14,6 @@ const ORDER_TYPE_LABELS: Record<OrderType, string> = {
 };
 
 export const getOrderTypeLabel = (type: number) =>
-  ORDER_TYPE_LABELS[type as OrderType] ?? UNKNOWN_ENUM_LABEL;
+  ORDER_TYPE_LABELS[type] ?? UNKNOWN_ENUM_LABEL;
 
 export const getOrderTypeOptions = () => toEnumOptions(ORDER_TYPE_LABELS);

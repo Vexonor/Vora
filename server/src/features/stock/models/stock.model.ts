@@ -6,9 +6,33 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
+import { Op, WhereOptions } from 'sequelize';
+import {
+  ListQuery,
+  toNumberList,
+  toPagination,
+  toSearchCondition,
+  toSortOrder,
+} from 'src/core/database/list-query';
 import { SOFT_DELETE_TABLE_OPTIONS } from 'src/core/database/table-options';
 import { Unit } from 'src/features/unit/models/unit.model';
 import { getStockStatusLabel, StockStatus } from '../enums/stock-status.enum';
+
+export interface StockListQuery extends ListQuery {
+  status?: unknown;
+}
+
+const SEARCHABLE_FIELDS = ['name'];
+const SORTABLE_FIELDS = [
+  'id',
+  'name',
+  'status',
+  'quantity',
+  'minimum',
+  'maximum',
+  'created_at',
+  'updated_at',
+];
 
 @Table({
   ...SOFT_DELETE_TABLE_OPTIONS,
@@ -16,8 +40,6 @@ import { getStockStatusLabel, StockStatus } from '../enums/stock-status.enum';
   modelName: 'stocks',
 })
 export class Stock extends Model {
-  static searchable = ['stocks.name'];
-
   @ForeignKey(() => Unit)
   @Column(DataType.BIGINT)
   unit_id: number;
@@ -45,21 +67,39 @@ export class Stock extends Model {
   @Column(DataType.BIGINT)
   maximum: number;
 
+  static resolveStatus(
+    currentStatus: number,
+    quantity: number,
+    minimum: number,
+  ): StockStatus {
+    if (Number(currentStatus) === StockStatus.DISCONTINUED) {
+      return StockStatus.DISCONTINUED;
+    }
+    if (Number(quantity) <= 0) return StockStatus.OUT_OF_STOCK;
+    if (Number(quantity) <= Number(minimum)) return StockStatus.LOW_STOCK;
+    return StockStatus.IN_STOCK;
+  }
+
   @BeforeSave
-  static assignStockStatus(stock: Stock) {
-    if (stock.status === StockStatus.DISCONTINUED) {
-      return;
-    }
+  static syncStatusWithQuantity(stock: Stock) {
+    stock.status = Stock.resolveStatus(
+      stock.status,
+      stock.quantity,
+      stock.minimum,
+    );
+  }
 
-    const currentQty = Number(stock.quantity);
-    const minQty = Number(stock.minimum);
+  static findForList(query: StockListQuery) {
+    const statuses = toNumberList(query.status);
+    const where: WhereOptions = {
+      ...toSearchCondition(query.q, SEARCHABLE_FIELDS),
+      ...(statuses && { status: { [Op.in]: statuses } }),
+    };
 
-    if (currentQty <= 0) {
-      stock.status = StockStatus.OUT_OF_STOCK;
-    } else if (currentQty <= minQty) {
-      stock.status = StockStatus.LOW_STOCK;
-    } else {
-      stock.status = StockStatus.IN_STOCK;
-    }
+    return Stock.findAndCountAll({
+      where,
+      order: toSortOrder(query, SORTABLE_FIELDS),
+      ...toPagination(query),
+    });
   }
 }

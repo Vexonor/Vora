@@ -14,6 +14,6 @@ const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
 };
 
 export const getPaymentTypeLabel = (type: number) =>
-  PAYMENT_TYPE_LABELS[type as PaymentType] ?? UNKNOWN_ENUM_LABEL;
+  PAYMENT_TYPE_LABELS[type] ?? UNKNOWN_ENUM_LABEL;
 
 export const getPaymentTypeOptions = () => toEnumOptions(PAYMENT_TYPE_LABELS);
