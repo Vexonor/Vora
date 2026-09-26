@@ -1,36 +1,27 @@
-enum UserRoleEnum {
+import {
+  toEnumOptions,
+  UNKNOWN_ENUM_LABEL,
+} from 'src/core/helpers/enum-option.helper';
+
+export enum UserRole {
   CASHIER = 0,
   KITCHEN = 1,
   MANAGER = 2,
 }
 
-export const getUserRoleEnumLabel = (userRoleEnum: UserRoleEnum) => {
-  switch (userRoleEnum) {
-    case UserRoleEnum.CASHIER:
-      return 'Cashier';
-    case UserRoleEnum.KITCHEN:
-      return 'Kitchen';
-    case UserRoleEnum.MANAGER:
-      return 'Manager';
-    default:
-      return 'Unknown';
-  }
+export const STAFF_ROLES = [
+  UserRole.CASHIER,
+  UserRole.KITCHEN,
+  UserRole.MANAGER,
+];
+
+const USER_ROLE_LABELS: Record<UserRole, string> = {
+  [UserRole.CASHIER]: 'Cashier',
+  [UserRole.KITCHEN]: 'Kitchen',
+  [UserRole.MANAGER]: 'Manager',
 };
 
-export const getUserRoleEnums = () => {
-  const enums = Object.entries(UserRoleEnum);
-  const result: Array<any> = [];
+export const getUserRoleLabel = (role: number) =>
+  USER_ROLE_LABELS[role as UserRole] ?? UNKNOWN_ENUM_LABEL;
 
-  for (const [_key, value] of enums) {
-    if (typeof value === 'number') {
-      result.push({
-        id: value,
-        name: getUserRoleEnumLabel(+value),
-      });
-    }
-  }
-
-  return result;
-};
-
-export default UserRoleEnum;
+export const getUserRoleOptions = () => toEnumOptions(USER_ROLE_LABELS);

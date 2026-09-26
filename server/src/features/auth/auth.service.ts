@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { ErrorCodeEnum } from 'src/core/enums/error-code.enum';
+import { ErrorCode } from 'src/core/enums/error-code.enum';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
 import { Op } from 'sequelize';
-import { User } from '../user/entities/user.entity';
-import UserRoleEnum from '../user/enums/user-role.enum';
+import { User } from '../user/models/user.model';
+import { UserRole } from '../user/enums/user-role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -150,7 +150,7 @@ export class AuthService {
       );
 
       if (!isValid) {
-        return this.response.fail(ErrorCodeEnum.INVALID_CURRENT_PASSWORD, 400);
+        return this.response.fail(ErrorCode.INVALID_CURRENT_PASSWORD, 400);
       }
 
       const hashed = await Bun.password.hash(dto.new_password, {
@@ -166,8 +166,8 @@ export class AuthService {
   }
 
   async register(createUserDto: CreateUserDto, currentUser: User) {
-    if (currentUser.role !== UserRoleEnum.MANAGER) {
-      return this.response.fail(ErrorCodeEnum.FORBIDDEN, 403);
+    if (currentUser.role !== UserRole.MANAGER) {
+      return this.response.fail(ErrorCode.FORBIDDEN, 403);
     }
     const transaction = await this.sequelize.transaction();
     try {

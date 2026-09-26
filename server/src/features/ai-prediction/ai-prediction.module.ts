@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { SellingReport } from '../selling-report/entities/selling-report.entity';
+import { SellingReport } from '../selling-report/models/selling-report.model';
 import { AiPredictionController } from './ai-prediction.controller';
 import { AiPredictionService } from './ai-prediction.service';
 

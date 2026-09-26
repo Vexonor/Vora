@@ -1,17 +1,17 @@
 import * as Joi from 'joi';
-import OrderTypeEnum from '../../enums/order-type.enum';
+import { OrderType } from '../../enums/order-type.enum';
 
 export const createOrderSchema = Joi.object({
   order_type: Joi.number()
-    .valid(OrderTypeEnum.DINE_IN, OrderTypeEnum.TAKE_AWAY)
-    .default(OrderTypeEnum.DINE_IN),
+    .valid(OrderType.DINE_IN, OrderType.TAKE_AWAY)
+    .default(OrderType.DINE_IN),
   table_id: Joi.number().when('order_type', {
-    is: OrderTypeEnum.TAKE_AWAY,
+    is: OrderType.TAKE_AWAY,
     then: Joi.optional().allow(null),
     otherwise: Joi.required(),
   }),
   customer_name: Joi.string().trim().max(100).when('order_type', {
-    is: OrderTypeEnum.TAKE_AWAY,
+    is: OrderType.TAKE_AWAY,
     then: Joi.required(),
     otherwise: Joi.allow('', null).optional(),
   }),

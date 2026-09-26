@@ -4,7 +4,7 @@ import { Op } from 'sequelize';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
-import { Menu } from './entities/menu.entity';
+import { Menu } from './models/menu.model';
 import { S3Service } from '../../core/modules/s3/s3.service';
 
 const S3_MENU_FOLDER = 'menus';

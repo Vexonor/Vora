@@ -1,6 +1,6 @@
 import * as Joi from 'joi';
-import { ErrorCodeEnum } from 'src/core/enums/error-code.enum';
-import { Unit } from '../../entities/unit.entity';
+import { ErrorCode } from 'src/core/enums/error-code.enum';
+import { Unit } from '../../models/unit.model';
 
 export const unitIdExternal = async (value) => {
   const unit = await Unit.findByPk(value);
@@ -9,7 +9,7 @@ export const unitIdExternal = async (value) => {
       'any.invalid-unit-id',
       [
         {
-          message: ErrorCodeEnum.UNIT_NOT_FOUND,
+          message: ErrorCode.UNIT_NOT_FOUND,
           path: ['id'],
           type: 'any.invalid-unit-id',
           context: {

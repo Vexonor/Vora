@@ -1,15 +1,15 @@
 import * as Joi from 'joi';
-import { ErrorCodeEnum } from 'src/core/enums/error-code.enum';
-import { Tables } from '../../entities/table.entity';
+import { ErrorCode } from 'src/core/enums/error-code.enum';
+import { DiningTable } from '../../models/dining-table.model';
 
 export const tableIdExternal = async (value) => {
-  const table = await Tables.findByPk(value);
+  const table = await DiningTable.findByPk(value);
   if (!table) {
     throw new Joi.ValidationError(
       'any.invalid-table-id',
       [
         {
-          message: ErrorCodeEnum.TABLE_NOT_FOUND,
+          message: ErrorCode.TABLE_NOT_FOUND,
           path: ['id'],
           type: 'any.invalid-table-id',
           context: {

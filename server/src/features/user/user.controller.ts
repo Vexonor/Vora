@@ -1,5 +1,5 @@
 import { Controller, Delete, Get, Param, Patch, Body, Query } from '@nestjs/common';
-import { JoiValidationPipe } from 'src/core/validators/joi-validation.pipe';
+import { JoiValidationPipe } from 'src/core/pipes/joi-validation.pipe';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { updateUserSchema } from './validations/request/update-user.request';

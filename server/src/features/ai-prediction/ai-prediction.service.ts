@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { SellingReport } from '../selling-report/entities/selling-report.entity';
+import { SellingReport } from '../selling-report/models/selling-report.model';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
 import { toLocalDateString } from 'src/core/helpers/date.helper';
 

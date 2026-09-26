@@ -3,11 +3,11 @@ import { InjectModel } from '@nestjs/sequelize';
 import { ConfigService } from '@nestjs/config';
 import { Sequelize } from 'sequelize-typescript';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
-import { Payment } from './entities/payment.entity';
-import { Order } from '../order/entities/order.entity';
-import { OrderItem } from '../order-item/entities/order-item.entity';
-import { Menu } from '../menu/entities/menu.entity';
-import PaymentTypeEnum from './enums/payment-type.enum';
+import { Payment } from './models/payment.model';
+import { Order } from '../order/models/order.model';
+import { OrderItem } from '../order/models/order-item.model';
+import { Menu } from '../menu/models/menu.model';
+import { PaymentType } from './enums/payment-type.enum';
 import { resolveCashPayment } from './cash-payment.util';
 import * as crypto from 'crypto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -86,7 +86,7 @@ export class PaymentService {
         midtrans_transaction_id: parameter.transaction_details.order_id,
         total: order.total_price,
         paid: 0,
-        type: PaymentTypeEnum.ONLINE,
+        type: PaymentType.ONLINE,
         payment_status: 'pending',
         snap_token: snapResponse.token,
         snap_redirect_url: snapResponse.redirect_url,
@@ -141,7 +141,7 @@ export class PaymentService {
           total,
           paid,
           change_amount,
-          type: PaymentTypeEnum.OFFLINE,
+          type: PaymentType.OFFLINE,
           payment_status: 'settlement',
         }, { transaction });
       } else {

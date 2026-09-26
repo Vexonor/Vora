@@ -1,39 +1,23 @@
-export enum MenuTypeEnum {
+import {
+  toEnumOptions,
+  UNKNOWN_ENUM_LABEL,
+} from 'src/core/helpers/enum-option.helper';
+
+export enum MenuType {
   FOOD = 1,
   HOT_DRINK = 2,
   COLD_DRINK = 3,
   SNACK = 4,
 }
 
-export const getMenuTypeEnumLabel = (menuTypeEnum: MenuTypeEnum) => {
-  switch (menuTypeEnum) {
-    case MenuTypeEnum.FOOD:
-      return 'Makanan';
-    case MenuTypeEnum.HOT_DRINK:
-      return 'Minuman Panas';
-    case MenuTypeEnum.COLD_DRINK:
-      return 'Minuman Dingin';
-    case MenuTypeEnum.SNACK:
-      return 'Cemilan';
-    default:
-      return 'Unknown';
-  }
+const MENU_TYPE_LABELS: Record<MenuType, string> = {
+  [MenuType.FOOD]: 'Makanan',
+  [MenuType.HOT_DRINK]: 'Minuman Panas',
+  [MenuType.COLD_DRINK]: 'Minuman Dingin',
+  [MenuType.SNACK]: 'Cemilan',
 };
 
-export const getMenuTypeEnums = () => {
-  const enums = Object.entries(MenuTypeEnum);
-  const result: Array<{ id: number; name: string }> = [];
+export const getMenuTypeLabel = (type: number) =>
+  MENU_TYPE_LABELS[type as MenuType] ?? UNKNOWN_ENUM_LABEL;
 
-  for (const [_key, value] of enums) {
-    if (typeof value === 'number') {
-      result.push({
-        id: value,
-        name: getMenuTypeEnumLabel(value as MenuTypeEnum),
-      });
-    }
-  }
-
-  return result;
-};
-
-export default MenuTypeEnum;
+export const getMenuTypeOptions = () => toEnumOptions(MENU_TYPE_LABELS);

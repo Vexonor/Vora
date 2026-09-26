@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Query } from '@nestjs/common';
-import { JoiValidationPipe } from 'src/core/validators/joi-validation.pipe';
+import { JoiValidationPipe } from 'src/core/pipes/joi-validation.pipe';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';

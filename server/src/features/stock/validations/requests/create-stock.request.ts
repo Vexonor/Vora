@@ -1,6 +1,6 @@
 import * as Joi from 'joi';
-import { ErrorCodeEnum } from 'src/core/enums/error-code.enum';
-import { Unit } from 'src/features/unit/entities/unit.entity';
+import { ErrorCode } from 'src/core/enums/error-code.enum';
+import { Unit } from 'src/features/unit/models/unit.model';
 
 export const createStockScheme = Joi.object({
   name: Joi.string().required().messages({
@@ -16,7 +16,7 @@ export const createStockScheme = Joi.object({
           'any.invalid-unit-id',
           [
             {
-              message: ErrorCodeEnum.UNIT_NOT_FOUND,
+              message: ErrorCode.UNIT_NOT_FOUND,
               path: ['id'],
               type: 'any.invalid-unit-id',
               context: {
@@ -31,12 +31,12 @@ export const createStockScheme = Joi.object({
       }
     }),
   quantity: Joi.number().required().min(0).messages({
-    'number.min': ErrorCodeEnum.QUANTITY_MUST_BE_POSITIVE,
+    'number.min': ErrorCode.QUANTITY_MUST_BE_POSITIVE,
   }),
   minimum: Joi.number().required().min(0).messages({
-    'number.min': ErrorCodeEnum.QUANTITY_MUST_BE_POSITIVE,
+    'number.min': ErrorCode.QUANTITY_MUST_BE_POSITIVE,
   }),
   maximum: Joi.number().required().min(Joi.ref('minimum')).messages({
-    'number.min': ErrorCodeEnum.MAXIMUM_CANNOT_BE_LESS_THAN_MINIMUM,
+    'number.min': ErrorCode.MAXIMUM_CANNOT_BE_LESS_THAN_MINIMUM,
   }),
 }).options({ abortEarly: false });

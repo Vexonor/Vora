@@ -3,10 +3,10 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { ConfigModule } from '@nestjs/config';
 import { PaymentService } from './payment.service';
 import { PaymentController } from './payment.controller';
-import { Payment } from './entities/payment.entity';
-import { Order } from '../order/entities/order.entity';
-import { OrderItem } from '../order-item/entities/order-item.entity';
-import { Menu } from '../menu/entities/menu.entity';
+import { Payment } from './models/payment.model';
+import { Order } from '../order/models/order.model';
+import { OrderItem } from '../order/models/order-item.model';
+import { Menu } from '../menu/models/menu.model';
 
 @Module({
   imports: [

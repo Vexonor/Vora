@@ -1,33 +1,19 @@
-export enum OrderTypeEnum {
+import {
+  toEnumOptions,
+  UNKNOWN_ENUM_LABEL,
+} from 'src/core/helpers/enum-option.helper';
+
+export enum OrderType {
   DINE_IN = 0,
   TAKE_AWAY = 1,
 }
 
-export const getOrderTypeEnumLabel = (orderTypeEnum: OrderTypeEnum) => {
-  switch (orderTypeEnum) {
-    case OrderTypeEnum.DINE_IN:
-      return 'Dine In';
-    case OrderTypeEnum.TAKE_AWAY:
-      return 'Take Away';
-    default:
-      return 'Unknown';
-  }
+const ORDER_TYPE_LABELS: Record<OrderType, string> = {
+  [OrderType.DINE_IN]: 'Dine In',
+  [OrderType.TAKE_AWAY]: 'Take Away',
 };
 
-export const getOrderTypeEnums = () => {
-  const enums = Object.entries(OrderTypeEnum);
-  const result: Array<{ id: number; name: string }> = [];
+export const getOrderTypeLabel = (type: number) =>
+  ORDER_TYPE_LABELS[type as OrderType] ?? UNKNOWN_ENUM_LABEL;
 
-  for (const [_key, value] of enums) {
-    if (typeof value === 'number') {
-      result.push({
-        id: value,
-        name: getOrderTypeEnumLabel(value as OrderTypeEnum),
-      });
-    }
-  }
-
-  return result;
-};
-
-export default OrderTypeEnum;
+export const getOrderTypeOptions = () => toEnumOptions(ORDER_TYPE_LABELS);

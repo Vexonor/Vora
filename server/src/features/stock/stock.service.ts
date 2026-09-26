@@ -1,15 +1,15 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { ErrorCodeEnum } from 'src/core/enums/error-code.enum';
+import { ErrorCode } from 'src/core/enums/error-code.enum';
 import { QueryBuilderHelper } from 'src/core/helpers/query-builder.helper';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
-import { User } from '../user/entities/user.entity';
-import UserRoleEnum from '../user/enums/user-role.enum';
+import { User } from '../user/models/user.model';
+import { UserRole } from '../user/enums/user-role.enum';
 import { CreateStockDto } from './dto/create-stock.dto';
 import { UpdateStockDto } from './dto/update-stock.dto';
-import { Stock } from './entities/stock.entity';
-import StockStatusEnum from './enums/stock-status.enum';
+import { Stock } from './models/stock.model';
+import { StockStatus } from './enums/stock-status.enum';
 
 @Injectable()
 export class StockService {
@@ -22,15 +22,15 @@ export class StockService {
 
   async create(createStockDto: CreateStockDto, currentUser: User) {
     if (
-      currentUser.role !== UserRoleEnum.MANAGER &&
-      currentUser.role !== UserRoleEnum.KITCHEN
+      currentUser.role !== UserRole.MANAGER &&
+      currentUser.role !== UserRole.KITCHEN
     ) {
-      return this.response.fail(ErrorCodeEnum.FORBIDDEN, HttpStatus.FORBIDDEN);
+      return this.response.fail(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN);
     }
     const transaction = await this.sequelize.transaction();
     try {
       const initialStatus = this.resolveStatus(
-        StockStatusEnum.IN_STOCK,
+        StockStatus.IN_STOCK,
         Number(createStockDto.quantity),
         Number(createStockDto.minimum),
       );
@@ -47,7 +47,7 @@ export class StockService {
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(
-        ErrorCodeEnum.STOCK_CREATE_FAILED,
+        ErrorCode.STOCK_CREATE_FAILED,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -55,10 +55,10 @@ export class StockService {
 
   async findAll(query: any, currentUser: User) {
     if (
-      currentUser.role !== UserRoleEnum.MANAGER &&
-      currentUser.role !== UserRoleEnum.KITCHEN
+      currentUser.role !== UserRole.MANAGER &&
+      currentUser.role !== UserRole.KITCHEN
     ) {
-      return this.response.fail(ErrorCodeEnum.FORBIDDEN, HttpStatus.FORBIDDEN);
+      return this.response.fail(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN);
     }
     try {
       const { count, data } = await new QueryBuilderHelper(
@@ -78,7 +78,7 @@ export class StockService {
       );
     } catch (error) {
       return this.response.fail(
-        ErrorCodeEnum.FAILED_GET_ALL_STOCKS,
+        ErrorCode.FAILED_GET_ALL_STOCKS,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -93,12 +93,12 @@ export class StockService {
     quantity: number,
     minimum: number,
   ): number {
-    if (currentStatus === StockStatusEnum.DISCONTINUED) {
-      return StockStatusEnum.DISCONTINUED;
+    if (currentStatus === StockStatus.DISCONTINUED) {
+      return StockStatus.DISCONTINUED;
     }
-    if (quantity <= 0) return StockStatusEnum.OUT_OF_STOCK;
-    if (quantity <= minimum) return StockStatusEnum.LOW_STOCK;
-    return StockStatusEnum.IN_STOCK;
+    if (quantity <= 0) return StockStatus.OUT_OF_STOCK;
+    if (quantity <= minimum) return StockStatus.LOW_STOCK;
+    return StockStatus.IN_STOCK;
   }
 
   async update(stock: Stock, updateStockDto: UpdateStockDto) {
@@ -123,7 +123,7 @@ export class StockService {
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(
-        ErrorCodeEnum.STOCK_UPDATE_FAILED,
+        ErrorCode.STOCK_UPDATE_FAILED,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -142,7 +142,7 @@ export class StockService {
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(
-        ErrorCodeEnum.STOCK_DELETE_FAILED,
+        ErrorCode.STOCK_DELETE_FAILED,
         HttpStatus.BAD_REQUEST,
       );
     }

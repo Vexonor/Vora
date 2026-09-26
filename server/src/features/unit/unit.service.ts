@@ -1,14 +1,14 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { ErrorCodeEnum } from 'src/core/enums/error-code.enum';
+import { ErrorCode } from 'src/core/enums/error-code.enum';
 import { QueryBuilderHelper } from 'src/core/helpers/query-builder.helper';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
-import { User } from '../user/entities/user.entity';
-import UserRoleEnum from '../user/enums/user-role.enum';
+import { User } from '../user/models/user.model';
+import { UserRole } from '../user/enums/user-role.enum';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateUnitDto } from './dto/update-unit.dto';
-import { Unit } from './entities/unit.entity';
+import { Unit } from './models/unit.model';
 
 @Injectable()
 export class UnitService {
@@ -21,10 +21,10 @@ export class UnitService {
 
   async create(createUnitDto: CreateUnitDto, currentUser: User) {
     if (
-      currentUser.role !== UserRoleEnum.MANAGER &&
-      currentUser.role !== UserRoleEnum.KITCHEN
+      currentUser.role !== UserRole.MANAGER &&
+      currentUser.role !== UserRole.KITCHEN
     ) {
-      return this.response.fail(ErrorCodeEnum.FORBIDDEN, HttpStatus.FORBIDDEN);
+      return this.response.fail(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN);
     }
     const transaction = await this.sequelize.transaction();
     try {
@@ -43,7 +43,7 @@ export class UnitService {
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(
-        ErrorCodeEnum.UNIT_CREATE_FAILED,
+        ErrorCode.UNIT_CREATE_FAILED,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -51,10 +51,10 @@ export class UnitService {
 
   async findAll(query: any, currentUser: User) {
     if (
-      currentUser.role !== UserRoleEnum.MANAGER &&
-      currentUser.role !== UserRoleEnum.KITCHEN
+      currentUser.role !== UserRole.MANAGER &&
+      currentUser.role !== UserRole.KITCHEN
     ) {
-      return this.response.fail(ErrorCodeEnum.FORBIDDEN, HttpStatus.FORBIDDEN);
+      return this.response.fail(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN);
     }
     try {
       const { count, data } = await new QueryBuilderHelper(
@@ -74,7 +74,7 @@ export class UnitService {
       );
     } catch (error) {
       return this.response.fail(
-        ErrorCodeEnum.FAILED_GET_ALL_UNITS,
+        ErrorCode.FAILED_GET_ALL_UNITS,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -89,7 +89,7 @@ export class UnitService {
       );
     } catch (error) {
       return this.response.fail(
-        ErrorCodeEnum.UNIT_NOT_FOUND,
+        ErrorCode.UNIT_NOT_FOUND,
         HttpStatus.NOT_FOUND,
       );
     }
@@ -108,7 +108,7 @@ export class UnitService {
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(
-        ErrorCodeEnum.UNIT_UPDATE_FAILED,
+        ErrorCode.UNIT_UPDATE_FAILED,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -127,7 +127,7 @@ export class UnitService {
     } catch (error) {
       await transaction.rollback();
       return this.response.fail(
-        ErrorCodeEnum.UNIT_DELETE_FAILED,
+        ErrorCode.UNIT_DELETE_FAILED,
         HttpStatus.BAD_REQUEST,
       );
     }

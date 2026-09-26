@@ -1,42 +1,25 @@
-export enum StockStatusEnum {
+import {
+  toEnumOptions,
+  UNKNOWN_ENUM_LABEL,
+} from 'src/core/helpers/enum-option.helper';
+
+export enum StockStatus {
   OUT_OF_STOCK = 0,
   IN_STOCK = 1,
   LOW_STOCK = 2,
   DISCONTINUED = 3,
-  ON_ORDER = 4
+  ON_ORDER = 4,
 }
 
-export const getStockStatusEnumLabel = (stockStatusEnum: StockStatusEnum) => {
-  switch (stockStatusEnum) {
-    case StockStatusEnum.OUT_OF_STOCK:
-      return "Habis";
-    case StockStatusEnum.IN_STOCK:
-      return "Tersedia";
-    case StockStatusEnum.LOW_STOCK:
-      return "Menipis";
-    case StockStatusEnum.DISCONTINUED:
-      return "Tidak Aktif";
-    case StockStatusEnum.ON_ORDER:
-      return "Menunggu Supplier";
-    default:
-      return "Unknown";
-  }
+const STOCK_STATUS_LABELS: Record<StockStatus, string> = {
+  [StockStatus.OUT_OF_STOCK]: 'Habis',
+  [StockStatus.IN_STOCK]: 'Tersedia',
+  [StockStatus.LOW_STOCK]: 'Menipis',
+  [StockStatus.DISCONTINUED]: 'Tidak Aktif',
+  [StockStatus.ON_ORDER]: 'Menunggu Supplier',
 };
 
-export const getStockStatusEnums = () => {
-  const enums = Object.entries(StockStatusEnum);
-  const result: Array<{ id: number; name: string }> = [];
+export const getStockStatusLabel = (status: number) =>
+  STOCK_STATUS_LABELS[status as StockStatus] ?? UNKNOWN_ENUM_LABEL;
 
-  for (const [_key, value] of enums) {
-    if (typeof value === "number") {
-      result.push({
-        id: value,
-        name: getStockStatusEnumLabel(value as StockStatusEnum),
-      });
-    }
-  }
-
-  return result;
-};
-
-export default StockStatusEnum;
+export const getStockStatusOptions = () => toEnumOptions(STOCK_STATUS_LABELS);

@@ -6,12 +6,12 @@ import { ResponseHelper } from 'src/core/helpers/response.helper';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
-import { Order } from './entities/order.entity';
-import { OrderItem } from '../order-item/entities/order-item.entity';
-import { Menu } from '../menu/entities/menu.entity';
-import { Tables } from 'src/features/table/entities/table.entity';
-import { Payment } from '../payment/entities/payment.entity';
-import OrderStatusEnum from './enums/order-status.enum';
+import { Order } from './models/order.model';
+import { OrderItem } from './models/order-item.model';
+import { Menu } from '../menu/models/menu.model';
+import { DiningTable } from 'src/features/table/models/dining-table.model';
+import { Payment } from '../payment/models/payment.model';
+import { OrderStatus } from './enums/order-status.enum';
 import { resolveOrderPlacement } from './order-placement.util';
 
 @Injectable()
@@ -22,7 +22,7 @@ export class OrderService {
     @InjectModel(Order) private readonly orderModel: typeof Order,
     @InjectModel(OrderItem) private readonly orderItemModel: typeof OrderItem,
     @InjectModel(Menu) private readonly menuModel: typeof Menu,
-    @InjectModel(Tables) private readonly tableModel: typeof Tables,
+    @InjectModel(DiningTable) private readonly tableModel: typeof DiningTable,
   ) {}
 
   async create(createOrderDto: CreateOrderDto) {
@@ -69,7 +69,7 @@ export class OrderService {
         order_type,
         customer_name,
         total_price: totalOrderPrice,
-        status: OrderStatusEnum.PENDING,
+        status: OrderStatus.PENDING,
       }, { transaction });
 
       await this.orderItemModel.bulkCreate(
@@ -158,8 +158,8 @@ export class OrderService {
     }
 
     const cancelableStatuses = [
-      OrderStatusEnum.PENDING,
-      OrderStatusEnum.PROCESSING,
+      OrderStatus.PENDING,
+      OrderStatus.PROCESSING,
     ];
     if (!cancelableStatuses.includes(Number(order.status))) {
       return this.response.fail(
@@ -170,7 +170,7 @@ export class OrderService {
 
     try {
       await order.update({
-        status: OrderStatusEnum.CANCELED,
+        status: OrderStatus.CANCELED,
         cancel_reason: dto.reason.trim(),
       });
       return this.response.success(order, 200, 'Successfully canceled order');

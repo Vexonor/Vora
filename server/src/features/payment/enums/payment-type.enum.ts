@@ -1,33 +1,19 @@
-export enum PaymentTypeEnum {
+import {
+  toEnumOptions,
+  UNKNOWN_ENUM_LABEL,
+} from 'src/core/helpers/enum-option.helper';
+
+export enum PaymentType {
   ONLINE = 0,
   OFFLINE = 1,
 }
 
-export const getPaymentTypeEnumLabel = (paymentTypeEnum: PaymentTypeEnum) => {
-  switch (paymentTypeEnum) {
-    case PaymentTypeEnum.ONLINE:
-      return 'Online';
-    case PaymentTypeEnum.OFFLINE:
-      return 'Offline';
-    default:
-      return 'Unknown';
-  }
+const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
+  [PaymentType.ONLINE]: 'Online',
+  [PaymentType.OFFLINE]: 'Offline',
 };
 
-export const getPaymentTypeEnums = () => {
-  const enums = Object.entries(PaymentTypeEnum);
-  const result: Array<{ id: number; name: string }> = [];
+export const getPaymentTypeLabel = (type: number) =>
+  PAYMENT_TYPE_LABELS[type as PaymentType] ?? UNKNOWN_ENUM_LABEL;
 
-  for (const [_key, value] of enums) {
-    if (typeof value === 'number') {
-      result.push({
-        id: value,
-        name: getPaymentTypeEnumLabel(value as PaymentTypeEnum),
-      });
-    }
-  }
-
-  return result;
-};
-
-export default PaymentTypeEnum;
+export const getPaymentTypeOptions = () => toEnumOptions(PAYMENT_TYPE_LABELS);

@@ -1,14 +1,14 @@
 import * as Joi from 'joi';
-import { ErrorCodeEnum } from 'src/core/enums/error-code.enum';
-import { User } from 'src/features/user/entities/user.entity';
-import UserRoleEnum from 'src/features/user/enums/user-role.enum';
+import { ErrorCode } from 'src/core/enums/error-code.enum';
+import { User } from 'src/features/user/models/user.model';
+import { UserRole } from 'src/features/user/enums/user-role.enum';
 
 export const registerSchema = Joi.object({
   username: Joi.string().required().min(3).max(30).alphanum().messages({
-    'string.min': ErrorCodeEnum.USERNAME_TOO_SHORT,
-    'string.max': ErrorCodeEnum.USERNAME_TOO_LONG,
-    'string.alphanum': ErrorCodeEnum.USERNAME_MUST_BE_ALPHANUMERIC,
-    'any.required': ErrorCodeEnum.USERNAME_REQUIRED,
+    'string.min': ErrorCode.USERNAME_TOO_SHORT,
+    'string.max': ErrorCode.USERNAME_TOO_LONG,
+    'string.alphanum': ErrorCode.USERNAME_MUST_BE_ALPHANUMERIC,
+    'any.required': ErrorCode.USERNAME_REQUIRED,
   }),
 
   email: Joi.string()
@@ -18,12 +18,12 @@ export const registerSchema = Joi.object({
       const user = await User.findOne({ where: { email: value } });
       if (user) {
         throw new Joi.ValidationError(
-          ErrorCodeEnum.EMAIL_ALREADY_REGISTERED,
+          ErrorCode.EMAIL_ALREADY_REGISTERED,
           [
             {
-              message: ErrorCodeEnum.EMAIL_ALREADY_REGISTERED,
+              message: ErrorCode.EMAIL_ALREADY_REGISTERED,
               path: ['email'],
-              type: ErrorCodeEnum.EMAIL_ALREADY_REGISTERED,
+              type: ErrorCode.EMAIL_ALREADY_REGISTERED,
               context: { key: 'email', label: 'email', value },
             },
           ],
@@ -34,11 +34,11 @@ export const registerSchema = Joi.object({
     }),
 
   role: Joi.number()
-    .valid(UserRoleEnum.CASHIER, UserRoleEnum.KITCHEN, UserRoleEnum.MANAGER)
+    .valid(UserRole.CASHIER, UserRole.KITCHEN, UserRole.MANAGER)
     .required()
     .messages({
-      'any.required': ErrorCodeEnum.ROLE_REQUIRED,
-      'any.only': ErrorCodeEnum.ROLE_INVALID,
+      'any.required': ErrorCode.ROLE_REQUIRED,
+      'any.only': ErrorCode.ROLE_INVALID,
     }),
 })
   .required()

@@ -1,7 +1,7 @@
 import * as Joi from 'joi';
-import UserRoleEnum from '../../enums/user-role.enum';
+import { UserRole } from '../../enums/user-role.enum';
 
-const roleValues = Object.values(UserRoleEnum).filter(
+const roleValues = Object.values(UserRole).filter(
   (v): v is number => typeof v === 'number',
 );
 

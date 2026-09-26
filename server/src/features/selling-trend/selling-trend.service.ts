@@ -4,8 +4,8 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
 import { AiPredictionService } from '../ai-prediction/ai-prediction.service';
-import { SellingReport } from '../selling-report/entities/selling-report.entity';
-import { SellingTrend } from './entities/selling-trend.entity';
+import { SellingReport } from '../selling-report/models/selling-report.model';
+import { SellingTrend } from './models/selling-trend.model';
 import {
   computeAccuracySummary,
   pickFreshestForecasts,

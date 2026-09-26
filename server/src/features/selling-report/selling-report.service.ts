@@ -3,12 +3,12 @@ import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/sequelize';
 import { col, fn, Op, where as seqWhere } from 'sequelize';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
-import { Menu } from '../menu/entities/menu.entity';
-import { OrderItem } from '../order-item/entities/order-item.entity';
-import { Order } from '../order/entities/order.entity';
-import { Payment } from '../payment/entities/payment.entity';
+import { Menu } from '../menu/models/menu.model';
+import { OrderItem } from '../order/models/order-item.model';
+import { Order } from '../order/models/order.model';
+import { Payment } from '../payment/models/payment.model';
 import { CreateSellingReportDto } from './dto/create-selling-report.dto';
-import { SellingReport } from './entities/selling-report.entity';
+import { SellingReport } from './models/selling-report.model';
 
 @Injectable()
 export class SellingReportService {

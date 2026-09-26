@@ -1,37 +1,54 @@
 import { Controller, Get } from '@nestjs/common';
-import { EnumService } from './enum.service';
+import { ResponseMessage } from 'src/core/decorators/response-message.decorator';
+import { getMenuStatusOptions } from '../menu/enums/menu-status.enum';
+import { getMenuTypeOptions } from '../menu/enums/menu-type.enum';
+import { getOrderStatusOptions } from '../order/enums/order-status.enum';
+import { getOrderTypeOptions } from '../order/enums/order-type.enum';
+import { getPaymentTypeOptions } from '../payment/enums/payment-type.enum';
+import { getStockStatusOptions } from '../stock/enums/stock-status.enum';
+import { getUserRoleOptions } from '../user/enums/user-role.enum';
 
 @Controller()
 export class EnumController {
-  constructor(private readonly enumService: EnumService) {}
-
   @Get('user-roles')
-  userRoles() {
-    return this.enumService.UserRole();
+  @ResponseMessage('Successfully retrieve user role enums')
+  getUserRoles() {
+    return getUserRoleOptions();
   }
 
   @Get('stock-statuses')
-  stockStatuses() {
-    return this.enumService.StockStatus();
+  @ResponseMessage('Successfully retrieve stock status enums')
+  getStockStatuses() {
+    return getStockStatusOptions();
   }
 
   @Get('menu-types')
-  menuTypes() {
-    return this.enumService.MenuType();
+  @ResponseMessage('Successfully retrieve menu type enums')
+  getMenuTypes() {
+    return getMenuTypeOptions();
   }
 
   @Get('menu-statuses')
-  menuStatuses() {
-    return this.enumService.MenuStatus();
+  @ResponseMessage('Successfully retrieve menu status enums')
+  getMenuStatuses() {
+    return getMenuStatusOptions();
   }
 
   @Get('order-statuses')
-  orderStatuses() {
-    return this.enumService.OrderStatus();
+  @ResponseMessage('Successfully retrieve order status enums')
+  getOrderStatuses() {
+    return getOrderStatusOptions();
+  }
+
+  @Get('order-types')
+  @ResponseMessage('Successfully retrieve order type enums')
+  getOrderTypes() {
+    return getOrderTypeOptions();
   }
 
   @Get('payment-types')
-  paymentTypes() {
-    return this.enumService.PaymentType();
+  @ResponseMessage('Successfully retrieve payment type enums')
+  getPaymentTypes() {
+    return getPaymentTypeOptions();
   }
 }

@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
-import { JoiValidationPipe } from 'src/core/validators/joi-validation.pipe';
+import { JoiValidationPipe } from 'src/core/pipes/joi-validation.pipe';
 import { SellingReportService } from './selling-report.service';
 import { CreateSellingReportDto } from './dto/create-selling-report.dto';
 import { createSellingReportSchema } from './validations/request/create-selling-report.request';

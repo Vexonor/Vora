@@ -11,12 +11,12 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/core/guards/jwt-auth.guard';
-import { JoiValidationParamPipe } from 'src/core/validators/joi-validation-param.pipe';
-import { JoiValidationPipe } from 'src/core/validators/joi-validation.pipe';
-import { User } from '../user/entities/user.entity';
+import { JoiValidationParamPipe } from 'src/core/pipes/joi-validation-param.pipe';
+import { JoiValidationPipe } from 'src/core/pipes/joi-validation.pipe';
+import { User } from '../user/models/user.model';
 import { CreateStockDto } from './dto/create-stock.dto';
 import { UpdateStockDto } from './dto/update-stock.dto';
-import { Stock } from './entities/stock.entity';
+import { Stock } from './models/stock.model';
 import { StockService } from './stock.service';
 import { stockIdParamSchema } from './validations/params/stock-id.param';
 import { createStockScheme } from './validations/requests/create-stock.request';

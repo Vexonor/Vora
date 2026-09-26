@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
-import { Order } from '../order/entities/order.entity';
-import { OrderItem } from '../order-item/entities/order-item.entity';
-import { Menu } from '../menu/entities/menu.entity';
-import { Tables } from '../table/entities/table.entity';
-import { Payment } from '../payment/entities/payment.entity';
-import OrderStatusEnum from '../order/enums/order-status.enum';
+import { Order } from '../order/models/order.model';
+import { OrderItem } from '../order/models/order-item.model';
+import { Menu } from '../menu/models/menu.model';
+import { DiningTable } from '../table/models/dining-table.model';
+import { Payment } from '../payment/models/payment.model';
+import { OrderStatus } from '../order/enums/order-status.enum';
 
 const isPaid = (order: Order) =>
   order.payment?.payment_status === 'settlement';
@@ -20,9 +20,9 @@ const getCreatedAt = (order: Order): Date =>
 type ChartPeriod = '7d' | '30d' | '6m';
 
 const ACTIVE_ORDER_STATUSES = [
-  OrderStatusEnum.PENDING,
-  OrderStatusEnum.PROCESSING,
-  OrderStatusEnum.READY,
+  OrderStatus.PENDING,
+  OrderStatus.PROCESSING,
+  OrderStatus.READY,
 ];
 
 @Injectable()
@@ -31,7 +31,7 @@ export class DashboardService {
     private response: ResponseHelper,
     @InjectModel(Order) private readonly orderModel: typeof Order,
     @InjectModel(Menu) private readonly menuModel: typeof Menu,
-    @InjectModel(Tables) private readonly tableModel: typeof Tables,
+    @InjectModel(DiningTable) private readonly tableModel: typeof DiningTable,
   ) {}
 
   async getManagerStats() {
@@ -50,8 +50,8 @@ export class DashboardService {
 
   async getCashierStats() {
     const [newOrders, processingOrders, totalOrders] = await Promise.all([
-      this.orderModel.count({ where: { status: OrderStatusEnum.PENDING } }),
-      this.orderModel.count({ where: { status: OrderStatusEnum.PROCESSING } }),
+      this.orderModel.count({ where: { status: OrderStatus.PENDING } }),
+      this.orderModel.count({ where: { status: OrderStatus.PROCESSING } }),
       this.orderModel.count(),
     ]);
 
@@ -173,7 +173,7 @@ export class DashboardService {
       .filter(isPaid)
       .reduce((sum, o) => sum + Number(o.total_price), 0);
     const canceledRevenue = orders
-      .filter((o) => Number(o.status) === OrderStatusEnum.CANCELED)
+      .filter((o) => Number(o.status) === OrderStatus.CANCELED)
       .reduce((sum, o) => sum + Number(o.total_price), 0);
 
     return this.response.success(

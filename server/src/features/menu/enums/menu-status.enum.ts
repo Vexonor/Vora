@@ -1,36 +1,21 @@
-export enum MenuStatusEnum {
+import {
+  toEnumOptions,
+  UNKNOWN_ENUM_LABEL,
+} from 'src/core/helpers/enum-option.helper';
+
+export enum MenuStatus {
   INACTIVE = 0,
   AVAILABLE = 1,
   SOLD_OUT = 2,
 }
 
-export const getMenuStatusEnumLabel = (menuStatusEnum: MenuStatusEnum) => {
-  switch (menuStatusEnum) {
-    case MenuStatusEnum.INACTIVE:
-      return 'Tidak Aktif';
-    case MenuStatusEnum.AVAILABLE:
-      return 'Tersedia';
-    case MenuStatusEnum.SOLD_OUT:
-      return 'Habis';
-    default:
-      return 'Unknown';
-  }
+const MENU_STATUS_LABELS: Record<MenuStatus, string> = {
+  [MenuStatus.INACTIVE]: 'Tidak Aktif',
+  [MenuStatus.AVAILABLE]: 'Tersedia',
+  [MenuStatus.SOLD_OUT]: 'Habis',
 };
 
-export const getMenuStatusEnums = () => {
-  const enums = Object.entries(MenuStatusEnum);
-  const result: Array<{ id: number; name: string }> = [];
+export const getMenuStatusLabel = (status: number) =>
+  MENU_STATUS_LABELS[status as MenuStatus] ?? UNKNOWN_ENUM_LABEL;
 
-  for (const [_key, value] of enums) {
-    if (typeof value === 'number') {
-      result.push({
-        id: value,
-        name: getMenuStatusEnumLabel(value as MenuStatusEnum),
-      });
-    }
-  }
-
-  return result;
-};
-
-export default MenuStatusEnum;
+export const getMenuStatusOptions = () => toEnumOptions(MENU_STATUS_LABELS);

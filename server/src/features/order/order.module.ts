@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { OrderService } from './order.service';
 import { OrderController } from './order.controller';
-import { Order } from './entities/order.entity';
-import { OrderItem } from '../order-item/entities/order-item.entity';
-import { Menu } from '../menu/entities/menu.entity';
-import { Tables } from 'src/features/table/entities/table.entity';
+import { Order } from './models/order.model';
+import { OrderItem } from './models/order-item.model';
+import { Menu } from '../menu/models/menu.model';
+import { DiningTable } from 'src/features/table/models/dining-table.model';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Order, OrderItem, Menu, Tables])],
+  imports: [SequelizeModule.forFeature([Order, OrderItem, Menu, DiningTable])],
   controllers: [OrderController],
   providers: [OrderService],
 })

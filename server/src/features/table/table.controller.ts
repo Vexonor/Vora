@@ -11,12 +11,12 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/core/guards/jwt-auth.guard';
-import { JoiValidationParamPipe } from 'src/core/validators/joi-validation-param.pipe';
-import { JoiValidationPipe } from 'src/core/validators/joi-validation.pipe';
-import { User } from '../user/entities/user.entity';
+import { JoiValidationParamPipe } from 'src/core/pipes/joi-validation-param.pipe';
+import { JoiValidationPipe } from 'src/core/pipes/joi-validation.pipe';
+import { User } from '../user/models/user.model';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
-import { Tables } from './entities/table.entity';
+import { DiningTable } from './models/dining-table.model';
 import { TableService } from './table.service';
 import { tableIdParamSchema } from './validations/params/table-id.param';
 import { createTableScheme } from './validations/requests/create-table.request';
@@ -44,7 +44,7 @@ export class TableController {
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   async findOne(
-    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: Tables,
+    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: DiningTable,
   ) {
     return this.tableService.findOne(table);
   }
@@ -52,7 +52,7 @@ export class TableController {
   @UseGuards(JwtAuthGuard)
   @Put(':id')
   async update(
-    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: Tables,
+    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: DiningTable,
     @Body(new JoiValidationPipe(createTableScheme))
     updateTableDto: UpdateTableDto,
   ) {
@@ -62,7 +62,7 @@ export class TableController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(
-    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: Tables,
+    @Param('id', new JoiValidationParamPipe(tableIdParamSchema)) table: DiningTable,
   ) {
     return this.tableService.remove(table);
   }

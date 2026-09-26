@@ -1,6 +1,6 @@
 import * as Joi from 'joi';
-import { ErrorCodeEnum } from 'src/core/enums/error-code.enum';
-import { Stock } from '../../entities/stock.entity';
+import { ErrorCode } from 'src/core/enums/error-code.enum';
+import { Stock } from '../../models/stock.model';
 
 export const stockIdExternal = async (value) => {
   const stock = await Stock.findByPk(value);
@@ -9,7 +9,7 @@ export const stockIdExternal = async (value) => {
       'any.invalid-stock-id',
       [
         {
-          message: ErrorCodeEnum.STOCK_NOT_FOUND,
+          message: ErrorCode.STOCK_NOT_FOUND,
           path: ['id'],
           type: 'any.invalid-stock-id',
           context: {

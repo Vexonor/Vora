@@ -1,4 +1,9 @@
-export enum OrderStatusEnum {
+import {
+  toEnumOptions,
+  UNKNOWN_ENUM_LABEL,
+} from 'src/core/helpers/enum-option.helper';
+
+export enum OrderStatus {
   PENDING = 0,
   PROCESSING = 1,
   READY = 2,
@@ -6,37 +11,15 @@ export enum OrderStatusEnum {
   CANCELED = 4,
 }
 
-export const getOrderStatusEnumLabel = (orderStatusEnum: OrderStatusEnum) => {
-  switch (orderStatusEnum) {
-    case OrderStatusEnum.PENDING:
-      return 'Menunggu';
-    case OrderStatusEnum.PROCESSING:
-      return 'Diproses';
-    case OrderStatusEnum.READY:
-      return 'Siap Disajikan';
-    case OrderStatusEnum.COMPLETED:
-      return 'Selesai';
-    case OrderStatusEnum.CANCELED:
-      return 'Dibatalkan';
-    default:
-      return 'Unknown';
-  }
+const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  [OrderStatus.PENDING]: 'Menunggu',
+  [OrderStatus.PROCESSING]: 'Diproses',
+  [OrderStatus.READY]: 'Siap Disajikan',
+  [OrderStatus.COMPLETED]: 'Selesai',
+  [OrderStatus.CANCELED]: 'Dibatalkan',
 };
 
-export const getOrderStatusEnums = () => {
-  const enums = Object.entries(OrderStatusEnum);
-  const result: Array<{ id: number; name: string }> = [];
+export const getOrderStatusLabel = (status: number) =>
+  ORDER_STATUS_LABELS[status as OrderStatus] ?? UNKNOWN_ENUM_LABEL;
 
-  for (const [_key, value] of enums) {
-    if (typeof value === 'number') {
-      result.push({
-        id: value,
-        name: getOrderStatusEnumLabel(value as OrderStatusEnum),
-      });
-    }
-  }
-
-  return result;
-};
-
-export default OrderStatusEnum;
+export const getOrderStatusOptions = () => toEnumOptions(ORDER_STATUS_LABELS);

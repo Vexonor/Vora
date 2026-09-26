@@ -9,10 +9,10 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { ImageUploadInterceptor } from 'src/core/interceptors/image-upload.interceptor';
 import { JwtAuthGuard } from 'src/core/guards/jwt-auth.guard';
 import { LocalAuthGuard } from 'src/core/guards/local-auth.guard';
-import { JoiValidationPipe } from 'src/core/validators/joi-validation.pipe';
+import { JoiValidationPipe } from 'src/core/pipes/joi-validation.pipe';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -47,17 +47,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
-  @UseInterceptors(
-    FileInterceptor('avatar', {
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-      fileFilter: (_req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-          return callback(new Error('Only image files are allowed!'), false);
-        }
-        callback(null, true);
-      },
-    }),
-  )
+  @UseInterceptors(ImageUploadInterceptor('avatar'))
   updateProfile(
     @Body() dto: UpdateProfileDto,
     @Request() req,

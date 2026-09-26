@@ -3,9 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { JwtStrategy } from 'src/core/startegies/jwt.strategy';
-import { LocalStrategy } from 'src/core/startegies/local.strategy';
-import { User } from '../user/entities/user.entity';
+import { JwtStrategy } from 'src/core/strategies/jwt.strategy';
+import { LocalStrategy } from 'src/core/strategies/local.strategy';
+import { User } from '../user/models/user.model';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 

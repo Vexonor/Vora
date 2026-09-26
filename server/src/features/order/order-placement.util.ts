@@ -1,7 +1,7 @@
-import OrderTypeEnum from './enums/order-type.enum';
+import { OrderType } from './enums/order-type.enum';
 
 export interface OrderPlacement {
-  order_type: OrderTypeEnum;
+  order_type: OrderType;
   table_id: number | null;
   customer_name: string | null;
 }
@@ -35,16 +35,16 @@ export function resolveOrderPlacement(
 ): OrderPlacementResult {
   const type =
     rawType === null || rawType === undefined
-      ? OrderTypeEnum.DINE_IN
+      ? OrderType.DINE_IN
       : Number(rawType);
 
-  if (type !== OrderTypeEnum.DINE_IN && type !== OrderTypeEnum.TAKE_AWAY) {
+  if (type !== OrderType.DINE_IN && type !== OrderType.TAKE_AWAY) {
     return { valid: false, message: 'Tipe pesanan tidak dikenal' };
   }
 
   const customer_name = toName(rawCustomerName);
 
-  if (type === OrderTypeEnum.TAKE_AWAY) {
+  if (type === OrderType.TAKE_AWAY) {
     if (!customer_name) {
       return {
         valid: false,

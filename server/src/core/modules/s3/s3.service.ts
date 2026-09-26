@@ -23,10 +23,10 @@ export class S3Service {
     @Inject(S3_CLIENT) private readonly s3Client: S3Client,
     private readonly configService: ConfigService,
   ) {
-    this.bucketName = this.configService.getOrThrow<string>('AWS_S3_BUCKET_NAME');
+    this.bucketName =
+      this.configService.getOrThrow<string>('AWS_S3_BUCKET_NAME');
     this.region = this.configService.getOrThrow<string>('AWS_S3_REGION');
   }
-
 
   async uploadFile(
     file: Express.Multer.File,

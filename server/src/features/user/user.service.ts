@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
 import { ResponseHelper } from 'src/core/helpers/response.helper';
-import { User } from './entities/user.entity';
+import { User } from './models/user.model';
 import { UpdateUserDto } from './dto/update-user.dto';
-import UserRoleEnum from './enums/user-role.enum';
+import { UserRole } from './enums/user-role.enum';
 
 @Injectable()
 export class UserService {
@@ -15,9 +15,9 @@ export class UserService {
 
   async findAll(query: { q?: string; role?: string } = {}) {
     const STAFF_ROLES = [
-      UserRoleEnum.CASHIER,
-      UserRoleEnum.KITCHEN,
-      UserRoleEnum.MANAGER,
+      UserRole.CASHIER,
+      UserRole.KITCHEN,
+      UserRole.MANAGER,
     ];
     let allowedRoles = STAFF_ROLES;
 
@@ -89,9 +89,9 @@ export class UserService {
       return this.response.fail(`User with ID ${id} not found`, 404);
     }
 
-    if (user.role === UserRoleEnum.MANAGER) {
+    if (user.role === UserRole.MANAGER) {
       const managerCount = await this.userModel.count({
-        where: { role: UserRoleEnum.MANAGER },
+        where: { role: UserRole.MANAGER },
       });
       if (managerCount <= 1) {
         return this.response.fail(

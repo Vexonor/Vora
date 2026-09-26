@@ -11,12 +11,12 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/core/guards/jwt-auth.guard';
-import { JoiValidationParamPipe } from 'src/core/validators/joi-validation-param.pipe';
-import { JoiValidationPipe } from 'src/core/validators/joi-validation.pipe';
-import { User } from '../user/entities/user.entity';
+import { JoiValidationParamPipe } from 'src/core/pipes/joi-validation-param.pipe';
+import { JoiValidationPipe } from 'src/core/pipes/joi-validation.pipe';
+import { User } from '../user/models/user.model';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateUnitDto } from './dto/update-unit.dto';
-import { Unit } from './entities/unit.entity';
+import { Unit } from './models/unit.model';
 import { UnitService } from './unit.service';
 import { unitIdParamSchema } from './validations/params/unit-id.param';
 import { createUnitScheme } from './validations/requests/create-unit.request';

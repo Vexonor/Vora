@@ -6,7 +6,9 @@ export const createS3Client = (configService: ConfigService): S3Client => {
     region: configService.getOrThrow<string>('AWS_S3_REGION'),
     credentials: {
       accessKeyId: configService.getOrThrow<string>('AWS_ACCESS_KEY_ID'),
-      secretAccessKey: configService.getOrThrow<string>('AWS_SECRET_ACCESS_KEY'),
+      secretAccessKey: configService.getOrThrow<string>(
+        'AWS_SECRET_ACCESS_KEY',
+      ),
     },
   });
 };

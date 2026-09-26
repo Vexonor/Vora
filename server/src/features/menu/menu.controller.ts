@@ -11,7 +11,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { ImageUploadInterceptor } from 'src/core/interceptors/image-upload.interceptor';
 import { MenuService } from './menu.service';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
@@ -21,17 +21,7 @@ export class MenuController {
   constructor(private readonly menuService: MenuService) {}
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('image', {
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-      fileFilter: (_req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|avif)$/)) {
-          return callback(new Error('Only image files are allowed!'), false);
-        }
-        callback(null, true);
-      },
-    }),
-  )
+  @UseInterceptors(ImageUploadInterceptor('image'))
   create(
     @Body() createMenuDto: CreateMenuDto,
     @UploadedFile() file?: Express.Multer.File,
@@ -50,17 +40,7 @@ export class MenuController {
   }
 
   @Put(':id')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-      fileFilter: (_req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|avif)$/)) {
-          return callback(new Error('Only image files are allowed!'), false);
-        }
-        callback(null, true);
-      },
-    }),
-  )
+  @UseInterceptors(ImageUploadInterceptor('image'))
   update(
     @Param('id') id: string,
     @Body() updateMenuDto: UpdateMenuDto,
