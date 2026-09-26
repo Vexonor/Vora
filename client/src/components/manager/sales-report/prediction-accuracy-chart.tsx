@@ -1,11 +1,10 @@
 "use client"
 
 import { formatDate, formatNumber } from "@/lib/format"
-import { useLatestRequest } from "@/hooks/use-latest-request"
-import { sellingTrendService } from "@/services/selling-trend.service"
-import type { AccuracyResponse, MetricKey } from "@/types/selling-trend"
+import { usePredictionAccuracy } from "@/hooks/queries/use-predictions"
+import type { MetricKey } from "@/types/selling-trend"
 import { GaugeIcon, InfoIcon, Loader2Icon } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import {
   CartesianGrid,
   Legend,
@@ -26,26 +25,10 @@ const METRIC_OPTIONS: { key: MetricKey; label: string }[] = [
 
 export function PredictionAccuracyChart() {
   const [metric, setMetric] = useState<MetricKey>("gross_revenue")
-  const [data, setData] = useState<AccuracyResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const startRequest = useLatestRequest()
-
-  const fetchAccuracy = useCallback(async (selectedMetric: MetricKey) => {
-    const isLatest = startRequest()
-    setIsLoading(true)
-    setError(null)
-    try {
-      const result = await sellingTrendService.getAccuracy({ metric: selectedMetric })
-      if (isLatest()) setData(result)
-    } catch {
-      if (isLatest()) setError("Gagal memuat data akurasi.")
-    } finally {
-      if (isLatest()) setIsLoading(false)
-    }
-  }, [startRequest])
-
-  useEffect(() => { fetchAccuracy(metric) }, [fetchAccuracy, metric])
+  const accuracyQuery = usePredictionAccuracy(metric)
+  const data = accuracyQuery.data ?? null
+  const isLoading = accuracyQuery.isPending
+  const error = accuracyQuery.isError ? "Gagal memuat data akurasi." : null
 
   const chartData = (data?.series ?? []).map((point) => ({
     label: formatDate(point.target_date, "dayMonth"),
@@ -109,7 +92,7 @@ export function PredictionAccuracyChart() {
         ) : error ? (
           <div className="h-full flex flex-col items-center justify-center gap-2 text-center px-4">
             <p className="text-sm text-destructive font-medium">{error}</p>
-            <button onClick={() => fetchAccuracy(metric)} className="text-xs text-primary underline mt-1">
+            <button onClick={() => accuracyQuery.refetch()} className="text-xs text-primary underline mt-1">
               Coba lagi
             </button>
           </div>

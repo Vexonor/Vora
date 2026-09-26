@@ -91,7 +91,7 @@ export function OrderPage({ statusTabs = DEFAULT_STATUS_TABS }: Props) {
 
       {orderList.isPending ? (
         <PageLoader />
-      ) : orderList.isError ? (
+      ) : orderList.isLoadingError ? (
         <LoadErrorState message="Gagal memuat data pesanan." onRetry={() => orderList.refetch()} />
       ) : orderList.orders.length > 0 ? (
         <OrderGrid

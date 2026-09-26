@@ -94,7 +94,7 @@ export function LoginForm({
           <Button
             type="submit"
             disabled={isLoading}
-            className="bg-secondary text-primary font-semibold hover:bg-secondary/90 flex items-center gap-2"
+            className="bg-secondary text-white font-semibold hover:bg-secondary/90 flex items-center gap-2"
           >
             {isLoading && <Loader2Icon className="size-4 animate-spin" />}
             {isLoading ? "Logging in..." : "Login"}

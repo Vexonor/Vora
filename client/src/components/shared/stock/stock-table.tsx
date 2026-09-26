@@ -20,10 +20,9 @@ type Props = {
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
   isRefreshing: boolean
-  onStockDeleted: () => void
 }
 
-export function StockTable({ stocks, basePath, onStockDeleted, ...pagination }: Props) {
+export function StockTable({ stocks, basePath, ...pagination }: Props) {
   const [stockToDelete, setStockToDelete] = useState<Stock | null>(null)
   const deleteStock = useDeleteStock()
 
@@ -33,7 +32,6 @@ export function StockTable({ stocks, basePath, onStockDeleted, ...pagination }: 
       onSuccess: () => {
         toast.success("Bahan berhasil dihapus.")
         setStockToDelete(null)
-        onStockDeleted()
       },
       onError: () => toast.error("Gagal menghapus bahan. Coba lagi."),
     })

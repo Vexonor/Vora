@@ -11,7 +11,11 @@ export function useTableList() {
 
 function useInvalidateTables() {
   const queryClient = useQueryClient()
-  return () => queryClient.invalidateQueries({ queryKey: queryKeys.tables.all })
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.tables.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
+    ])
 }
 
 export function useCreateTable() {

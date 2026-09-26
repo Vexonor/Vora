@@ -63,7 +63,7 @@ export function AddTableModal({ onCreateTable, onClose }: Props) {
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
+              className="bg-secondary text-white hover:bg-secondary/90 flex items-center gap-2"
             >
               {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : <CirclePlusIcon className="size-4" />}
               {isSubmitting ? "Membuat..." : "Generate QR"}

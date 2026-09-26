@@ -22,7 +22,11 @@ export function useMenuDetail(menuId: number) {
 
 function useInvalidateMenus() {
   const queryClient = useQueryClient()
-  return () => queryClient.invalidateQueries({ queryKey: queryKeys.menus.all })
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.menus.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
+    ])
 }
 
 export function useCreateMenu() {

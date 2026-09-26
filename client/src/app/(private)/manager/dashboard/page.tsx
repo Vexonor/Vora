@@ -5,13 +5,12 @@ import { OrderBarChart } from "@/components/manager/dashboard/order-bar-chart"
 import { RevenueBarChart } from "@/components/manager/dashboard/revenue-bar-chart"
 import { RevenueDonutChart } from "@/components/manager/dashboard/revenue-donut-chart"
 import { PageLoader } from "@/components/shared/page-state"
-import { useLatestRequest } from "@/hooks/use-latest-request"
-import { dashboardService } from "@/services/dashboard.service"
-import type { ChartPeriod, ManagerChartData, ManagerDashboardStats } from "@/types/dashboard"
+import { useManagerChart, useManagerStats } from "@/hooks/queries/use-dashboard"
+import type { ChartPeriod, ManagerChartData } from "@/types/dashboard"
 import { MenuIcon } from "@/components/icons/menu"
 import { ReceiptItemIcon } from "@/components/icons/receipt-item"
 import { TableIcon } from "@/components/icons/table"
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 const CHART_PERIOD_OPTIONS: { value: ChartPeriod; label: string; description: string }[] = [
@@ -26,47 +25,20 @@ const EMPTY_CHART_DATA: ManagerChartData = {
 }
 
 export default function ManagerDashboardPage() {
-  const [stats, setStats] = useState<ManagerDashboardStats | null>(null)
-  const [isLoadingStats, setIsLoadingStats] = useState(true)
-  const [chartData, setChartData] = useState<ManagerChartData>(EMPTY_CHART_DATA)
-  const [isLoadingChart, setIsLoadingChart] = useState(true)
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("7d")
-  const startChartRequest = useLatestRequest()
-
-  const fetchStats = useCallback(async () => {
-    try {
-      setStats(await dashboardService.getManagerStats())
-    } catch {
-      toast.error("Gagal memuat statistik dashboard.")
-    } finally {
-      setIsLoadingStats(false)
-    }
-  }, [])
-
-  const fetchChartData = useCallback(async (period: ChartPeriod) => {
-    const isLatest = startChartRequest()
-    setIsLoadingChart(true)
-    try {
-      const data = await dashboardService.getManagerChartData(period)
-      if (isLatest()) setChartData(data)
-    } catch {
-      if (isLatest()) setChartData(EMPTY_CHART_DATA)
-    } finally {
-      if (isLatest()) setIsLoadingChart(false)
-    }
-  }, [startChartRequest])
+  const statsQuery = useManagerStats()
+  const chartQuery = useManagerChart(chartPeriod)
+  const stats = statsQuery.data ?? null
+  const chartData = chartQuery.data ?? EMPTY_CHART_DATA
+  const isLoadingChart = chartQuery.isPending
 
   useEffect(() => {
-    fetchStats()
-  }, [fetchStats])
-
-  useEffect(() => {
-    fetchChartData(chartPeriod)
-  }, [chartPeriod, fetchChartData])
+    if (statsQuery.isError) toast.error("Gagal memuat statistik dashboard.")
+  }, [statsQuery.isError])
 
   const periodDescription = CHART_PERIOD_OPTIONS.find((option) => option.value === chartPeriod)?.description ?? ""
 
-  if (isLoadingStats) return <PageLoader />
+  if (statsQuery.isPending) return <PageLoader />
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

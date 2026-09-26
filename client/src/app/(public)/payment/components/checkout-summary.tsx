@@ -70,7 +70,7 @@ export function CheckoutSummary({ paymentType, onlinePaymentMethod, customerName
           <Button
             onClick={handleCheckout}
             disabled={isSubmitting || isMissingOnlineMethod}
-            className="w-full bg-secondary text-primary font-semibold rounded-lg p-6 hover:bg-secondary/90 transition-colors"
+            className="w-full bg-secondary text-white font-semibold rounded-lg p-6 hover:bg-secondary/90 transition-colors"
           >
             {isSubmitting ? (
               <div className="flex items-center gap-2">

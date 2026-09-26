@@ -70,7 +70,7 @@ export function KitchenOrderCard({ order }: { order: Order }) {
           </button>
           <button
             onClick={handleAdvanceStatus}
-            disabled={!nextAction}
+            disabled={!nextAction || updateOrderStatus.isPending}
             className="bg-secondary text-white text-sm font-semibold py-2 rounded-lg hover:bg-secondary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {nextAction?.label ?? "Selesaikan Pesanan"}

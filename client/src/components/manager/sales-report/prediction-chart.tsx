@@ -1,11 +1,10 @@
 "use client"
 
 import { formatDate, formatRupiahCompact } from "@/lib/format"
-import { useLatestRequest } from "@/hooks/use-latest-request"
-import { aiPredictionService } from "@/services/ai-prediction.service"
+import { usePredictionForecast } from "@/hooks/queries/use-predictions"
 import type { HistoryItem, ModelEvaluation, PredictionItem } from "@/types/ai-prediction"
 import { BotIcon, InfoIcon, Loader2Icon, RefreshCwIcon, TrendingUpIcon } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import {
   CartesianGrid,
   Legend,
@@ -149,36 +148,16 @@ function EvaluationSection({ evaluation }: { evaluation: ModelEvaluation }) {
 }
 
 export function PredictionChart() {
-  const [data, setData] = useState<{
-    history: HistoryItem[]
-    predictions: PredictionItem[]
-    evaluation: ModelEvaluation
-  } | null>(null)
   const [range, setRange] = useState<PredictionRangeDays>(30)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const startRequest = useLatestRequest()
-
-  const fetchPrediction = useCallback(async (days: PredictionRangeDays) => {
-    const isLatest = startRequest()
-    setIsLoading(true)
-    setError(null)
-    try {
-      const result = await aiPredictionService.predict(days)
-      if (!isLatest()) return
-      setData({
-        history: result.history,
-        predictions: result.predictions,
-        evaluation: result.evaluation,
-      })
-    } catch (fetchError) {
-      if (isLatest()) setError(fetchError instanceof Error ? fetchError.message : "Gagal memuat prediksi")
-    } finally {
-      if (isLatest()) setIsLoading(false)
-    }
-  }, [startRequest])
-
-  useEffect(() => { fetchPrediction(range) }, [fetchPrediction, range])
+  const forecastQuery = usePredictionForecast(range)
+  const data = forecastQuery.data ?? null
+  const isLoading = forecastQuery.isPending
+  const isRefreshing = forecastQuery.isFetching
+  const isPlaceholderData = forecastQuery.isPlaceholderData
+  const error = forecastQuery.isError
+    ? forecastQuery.error instanceof Error ? forecastQuery.error.message : "Gagal memuat prediksi"
+    : null
+  const fetchPrediction = () => forecastQuery.refetch()
 
   const chartData = data ? buildChartData(data.history, data.predictions, range) : []
   const todayLabel = data?.history?.length
@@ -219,17 +198,17 @@ export function PredictionChart() {
           </div>
 
           <button
-            onClick={() => fetchPrediction(range)}
-            disabled={isLoading}
+            onClick={fetchPrediction}
+            disabled={isRefreshing}
             className="p-2 rounded-lg border border-foreground/10 hover:bg-muted/40 transition-colors disabled:opacity-50"
           >
-            <RefreshCwIcon className={`size-3.5 text-muted-foreground ${isLoading ? "animate-spin" : ""}`} />
+            <RefreshCwIcon className={`size-3.5 text-muted-foreground ${isRefreshing ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
 
       {data && !isLoading && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className={`grid grid-cols-3 gap-3 ${isPlaceholderData ? "opacity-50" : ""}`}>
           {[
             { label: `Prediksi Pendapatan (${range}h)`, value: formatRupiahCompact(totalPredRevenue), color: "text-primary" },
             { label: `Prediksi Laba Bersih (${range}h)`, value: formatRupiahCompact(totalPredProfit), color: "text-emerald-600" },
@@ -249,13 +228,13 @@ export function PredictionChart() {
             <Loader2Icon className="size-5 animate-spin" />
             <span className="text-sm">Sedang menghasilkan data prediksi...</span>
           </div>
-        ) : error ? (
+        ) : error && !data ? (
           <div className="h-full flex flex-col items-center justify-center gap-2 text-center px-4">
             <TrendingUpIcon className="size-8 text-muted-foreground/30" />
             <p className="text-sm text-destructive font-medium">{error}</p>
             <p className="text-xs text-muted-foreground">Pastikan AI service (Python) sudah berjalan di port 8090</p>
             <button
-              onClick={() => fetchPrediction(range)}
+              onClick={fetchPrediction}
               className="text-xs text-primary underline mt-1"
             >
               Coba lagi

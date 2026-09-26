@@ -80,7 +80,7 @@ export default function KitchenOrderPage() {
 
       {orderList.isPending ? (
         <PageLoader />
-      ) : orderList.isError ? (
+      ) : orderList.isLoadingError ? (
         <LoadErrorState message="Gagal memuat data pesanan." onRetry={() => orderList.refetch()} />
       ) : orderList.orders.length > 0 ? (
         <OrderGrid

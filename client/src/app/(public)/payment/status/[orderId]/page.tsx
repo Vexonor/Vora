@@ -47,7 +47,7 @@ export default function OrderStatusPage() {
 
   const invoiceLink = (
     <Link href={`/payment/invoice?orderId=${orderId}`} className="w-full">
-      <Button className="w-full bg-secondary text-primary font-semibold py-3 rounded-lg gap-2">
+      <Button className="w-full bg-secondary text-white font-semibold py-3 rounded-lg gap-2">
         <ReceiptTextIcon className="size-5" />
         Lihat Struk (Invoice)
       </Button>

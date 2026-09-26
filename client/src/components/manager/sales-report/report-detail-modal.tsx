@@ -50,7 +50,7 @@ export function ReportDetailModal({ report, onClose }: Props) {
             </div>
           </div>
 
-          <Button onClick={onClose} className="w-full bg-secondary text-primary hover:bg-secondary/90">
+          <Button onClick={onClose} className="w-full bg-secondary text-white hover:bg-secondary/90">
             Tutup
           </Button>
         </div>

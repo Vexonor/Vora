@@ -172,7 +172,7 @@ export function AddReportModal({ onClose }: { onClose: () => void }) {
             <Button
               onClick={handleSubmit}
               disabled={createSellingReport.isPending}
-              className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
+              className="bg-secondary text-white hover:bg-secondary/90 flex items-center gap-2"
             >
               {createSellingReport.isPending ? <Loader2Icon className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
               {createSellingReport.isPending ? "Menyimpan..." : "Simpan Laporan"}

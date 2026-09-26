@@ -105,7 +105,7 @@ export function AddStaffModal({ onClose }: { onClose: () => void }) {
             <Button
               onClick={handleSubmit}
               disabled={registerStaff.isPending}
-              className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
+              className="bg-secondary text-white hover:bg-secondary/90 flex items-center gap-2"
             >
               {registerStaff.isPending ? <Loader2Icon className="size-4 animate-spin" /> : <UserPlusIcon className="size-4" />}
               {registerStaff.isPending ? "Menambahkan..." : "Tambah Staff"}

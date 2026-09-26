@@ -4,8 +4,7 @@ import { Tabs, TabsContent, TabsContents, TabsList, TabsTrigger } from "@/compon
 import { PageLoader } from "@/components/shared/page-state"
 import { useCart } from "@/hooks/use-cart"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { useLatestRequest } from "@/hooks/use-latest-request"
-import { menuService } from "@/services/menu.service"
+import { useMenuList } from "@/hooks/queries/use-menus"
 import type { Menu } from "@/types/menu"
 import { MenuType } from "@/types/menu"
 import { CoffeeIcon } from "@/components/icons/coffee"
@@ -13,7 +12,7 @@ import { CookieIcon } from "@/components/icons/cookie"
 import { DashboardIcon } from "@/components/icons/dashboard"
 import { DishIcon } from "@/components/icons/dish"
 import { DrinkIcon } from "@/components/icons/drink"
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import { MenuCard } from "./menu-card"
 
 type MenuCategory = {
@@ -58,29 +57,11 @@ function MenuGrid({ menus }: { menus: Menu[] }) {
 
 export function MenuCatalog({ search }: { search: string }) {
   const [selectedCategoryId, setSelectedCategoryId] = useState(MENU_CATEGORIES[0].id)
-  const [menus, setMenus] = useState<Menu[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const debouncedSearch = useDebouncedValue(search, 400)
-  const startRequest = useLatestRequest()
+  const debouncedSearch = useDebouncedValue(search.trim(), 400)
+  const menuListQuery = useMenuList({ search: debouncedSearch, statuses: [] })
+  const menus: Menu[] = menuListQuery.data ?? []
 
-  const fetchMenus = useCallback(async (searchTerm: string) => {
-    const isLatest = startRequest()
-    setIsLoading(true)
-    try {
-      const data = await menuService.getAll({ q: searchTerm.trim() || undefined })
-      if (isLatest()) setMenus(Array.isArray(data) ? data : [])
-    } catch {
-      if (isLatest()) setMenus([])
-    } finally {
-      if (isLatest()) setIsLoading(false)
-    }
-  }, [startRequest])
-
-  useEffect(() => {
-    fetchMenus(debouncedSearch)
-  }, [fetchMenus, debouncedSearch])
-
-  if (isLoading) return <PageLoader />
+  if (menuListQuery.isPending) return <PageLoader />
 
   return (
     <div className="flex w-full h-max flex-col gap-6 overflow-y-auto scrollbar-hide scroll-smooth">

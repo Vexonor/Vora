@@ -7,13 +7,13 @@ import { formatRupiah } from "@/lib/format"
 import { MENU_IMAGE_PLACEHOLDER } from "@/lib/menu-status"
 import { formatTableName } from "@/lib/order-place"
 import { addTaxToSubtotal, TAX_RATE } from "@/lib/pricing"
-import { menuService } from "@/services/menu.service"
+import { useMenuList } from "@/hooks/queries/use-menus"
+import { useRefreshOrderData } from "@/hooks/queries/use-orders"
+import { useTableList } from "@/hooks/queries/use-tables"
 import { orderService } from "@/services/order.service"
-import { tableService } from "@/services/table.service"
 import type { Menu } from "@/types/menu"
 import { MenuStatus, MenuType } from "@/types/menu"
 import { OrderType } from "@/types/order"
-import type { Table } from "@/types/table"
 import { Loader2, Minus, Plus, Search, ShoppingCart, Trash2 } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -41,14 +41,17 @@ const ORDER_TYPE_OPTIONS = [
 export default function CashierCreateOrderPage() {
   const router = useRouter()
 
-  const [tables, setTables] = useState<Table[]>([])
-  const [menus, setMenus] = useState<Menu[]>([])
+  const tableListQuery = useTableList()
+  const menuListQuery = useMenuList({ search: "", statuses: [] })
+  const refreshOrderData = useRefreshOrderData()
+  const tables = [...(tableListQuery.data ?? [])].sort((a, b) => a.number - b.number)
+  const menus = menuListQuery.data ?? []
+  const isPageLoading = tableListQuery.isPending || menuListQuery.isPending
   const [selectedTableId, setSelectedTableId] = useState("")
   const [customerName, setCustomerName] = useState("")
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [activeMenuType, setActiveMenuType] = useState<MenuType | null>(null)
   const [search, setSearch] = useState("")
-  const [isPageLoading, setIsPageLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [orderType, setOrderType] = useState<OrderType>(OrderType.DINE_IN)
   const [formError, setFormError] = useState<string | null>(null)
@@ -56,19 +59,10 @@ export default function CashierCreateOrderPage() {
   const isTakeAway = orderType === OrderType.TAKE_AWAY
 
   useEffect(() => {
-    const fetchTablesAndMenus = async () => {
-      try {
-        const [tableList, menuList] = await Promise.all([tableService.getAll(), menuService.getAll()])
-        setTables(tableList)
-        setMenus(menuList)
-      } catch {
-        toast.error("Gagal memuat data meja dan menu. Muat ulang halaman.")
-      } finally {
-        setIsPageLoading(false)
-      }
+    if (tableListQuery.isError || menuListQuery.isError) {
+      toast.error("Gagal memuat data meja dan menu. Muat ulang halaman.")
     }
-    fetchTablesAndMenus()
-  }, [])
+  }, [tableListQuery.isError, menuListQuery.isError])
 
   const addToCart = (menu: Menu) => {
     setCartItems((previous) => {
@@ -127,6 +121,7 @@ export default function CashierCreateOrderPage() {
         customer_name: customerName.trim() || undefined,
         items: cartItems.map((item) => ({ menu_id: item.menu.id, quantity: item.quantity })),
       })
+      refreshOrderData()
       router.push("/cashier/order")
     } catch {
       setFormError("Gagal membuat pesanan. Periksa koneksi lalu coba lagi.")
@@ -286,7 +281,7 @@ export default function CashierCreateOrderPage() {
         <Button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="w-full bg-secondary text-primary font-semibold py-5 shrink-0"
+          className="w-full bg-secondary text-white font-semibold py-5 shrink-0"
         >
           {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
           Buat Pesanan
@@ -354,7 +349,7 @@ export default function CashierCreateOrderPage() {
                     {cartQuantity === 0 ? (
                       <button
                         onClick={() => addToCart(menu)}
-                        className="w-full text-xs font-semibold py-1.5 rounded-lg bg-secondary text-primary hover:bg-secondary/90 transition-colors"
+                        className="w-full text-xs font-semibold py-1.5 rounded-lg bg-secondary text-white hover:bg-secondary/90 transition-colors"
                       >
                         + Tambah
                       </button>
@@ -369,7 +364,7 @@ export default function CashierCreateOrderPage() {
                         <span className="text-sm font-bold tabular-nums flex-1 text-center">{cartQuantity}</span>
                         <button
                           onClick={() => changeCartQuantity(menu.id, 1)}
-                          className="size-7 rounded-lg bg-secondary text-primary flex items-center justify-center hover:bg-secondary/90"
+                          className="size-7 rounded-lg bg-secondary text-white flex items-center justify-center hover:bg-secondary/90"
                         >
                           <Plus className="size-3.5" />
                         </button>

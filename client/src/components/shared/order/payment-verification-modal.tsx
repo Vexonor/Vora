@@ -92,7 +92,7 @@ function CashAmountNumpad({ totalAmount, isSubmitting, onPay }: CashAmountNumpad
       <Button
         onClick={() => onPay(receivedAmount)}
         disabled={isSubmitting || isUnderpaid}
-        className="w-full bg-secondary text-primary font-semibold rounded-lg py-2"
+        className="w-full bg-secondary text-white font-semibold rounded-lg py-2"
       >
         {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
         Bayar Sekarang
@@ -257,6 +257,7 @@ export function PaymentVerificationModal({ order, onClose }: Props) {
   }
 
   const renderPaymentPanel = () => {
+    if (cashPaymentResult) return <CashPaymentSuccess result={cashPaymentResult} onClose={handleClose} />
     if (isLoadingPayment) {
       return (
         <div className="flex justify-center items-center py-12">
@@ -281,7 +282,6 @@ export function PaymentVerificationModal({ order, onClose }: Props) {
         ? <OnlinePaymentInfo payment={payment} onClose={handleClose} />
         : <MissingOnlinePaymentInfo onClose={handleClose} />
     }
-    if (cashPaymentResult) return <CashPaymentSuccess result={cashPaymentResult} onClose={handleClose} />
     return (
       <>
         <CashAmountNumpad totalAmount={totalAmount} isSubmitting={isVerifyingCash} onPay={handleCashPayment} />

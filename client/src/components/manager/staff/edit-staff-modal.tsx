@@ -63,7 +63,7 @@ export function EditStaffModal({ staff, onClose }: { staff: User; onClose: () =>
             <Button
               onClick={handleSubmit}
               disabled={updateStaff.isPending}
-              className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
+              className="bg-secondary text-white hover:bg-secondary/90 flex items-center gap-2"
             >
               {updateStaff.isPending ? <Loader2Icon className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
               {updateStaff.isPending ? "Menyimpan..." : "Simpan"}

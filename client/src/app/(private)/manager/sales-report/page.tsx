@@ -127,7 +127,7 @@ export default function ManagerSalesReportPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 bg-secondary text-primary text-sm font-semibold px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors"
+          className="flex items-center gap-2 bg-secondary text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors"
         >
           <PlusIcon className="size-4" />
           Tambah Laporan

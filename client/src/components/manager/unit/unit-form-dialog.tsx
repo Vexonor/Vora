@@ -71,7 +71,7 @@ export function UnitFormDialog({ unitToEdit, onClose }: Props) {
               type="button"
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="bg-secondary text-primary hover:bg-secondary/90"
+              className="bg-secondary text-white hover:bg-secondary/90"
             >
               {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : "Simpan"}
             </Button>

@@ -18,7 +18,7 @@ export function CartDrawer() {
     <Drawer>
       <DrawerTrigger asChild>
         <Button variant="default" className="relative" aria-label="Buka keranjang">
-          <CartIcon className="size-6 text-primary" />
+          <CartIcon className="size-6 text-white" />
           {totalQuantity > 0 && (
             <Badge
               variant="default"
@@ -66,7 +66,7 @@ export function CartDrawer() {
               <Separator className="my-4" />
               <CartPriceSummary subtotal={subtotal} />
               <DrawerFooter className="px-0 gap-2 mb-8">
-                <Link href="/payment" className="bg-secondary text-primary font-semibold rounded-lg p-2 text-center">
+                <Link href="/payment" className="bg-secondary text-white font-semibold rounded-lg p-2 text-center">
                   Pesan Sekarang
                 </Link>
               </DrawerFooter>

@@ -36,7 +36,7 @@ export default function ManagerMenuDetailPage({ params }: { params: Promise<{ id
     <div className="flex flex-1 flex-col gap-6 p-4 pt-0 max-w-5xl">
       <div className="flex items-center justify-between">
         <BackLink href="/manager/menu" />
-        <Link href={`/manager/menu/${menuId}/edit`} className="flex items-center gap-2 bg-secondary text-primary hover:bg-secondary/90 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+        <Link href={`/manager/menu/${menuId}/edit`} className="flex items-center gap-2 bg-secondary text-white hover:bg-secondary/90 px-4 py-2 rounded-md text-sm font-medium transition-colors">
           <PencilIcon className="size-4" />
           Edit Menu
         </Link>

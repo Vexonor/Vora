@@ -32,6 +32,10 @@ export function StockListView({ basePath }: { basePath: string }) {
     stockListQuery.data?.count ?? 0,
   )
 
+  if (stockListQuery.data && pagination.requestedPage > totalPages) {
+    pagination.setRequestedPage(totalPages)
+  }
+
   const handleSearchChange = (value: string) => {
     setSearch(value)
     pagination.resetToFirstPage()
@@ -42,17 +46,12 @@ export function StockListView({ basePath }: { basePath: string }) {
     pagination.resetToFirstPage()
   }
 
-  const handleStockDeleted = () => {
-    const wasLastRowOnPage = stocks.length === 1 && pagination.requestedPage > 1
-    if (wasLastRowOnPage) pagination.setRequestedPage(pagination.requestedPage - 1)
-  }
-
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href={`${basePath}/create`}
-          className="flex items-center gap-2 bg-secondary text-primary text-sm font-semibold px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors"
+          className="flex items-center gap-2 bg-secondary text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors"
         >
           <BoxIcon className="size-4" />
           Tambah Bahan
@@ -83,7 +82,6 @@ export function StockListView({ basePath }: { basePath: string }) {
           onPageChange={pagination.setRequestedPage}
           onPageSizeChange={pagination.setPageSize}
           isRefreshing={stockListQuery.isPlaceholderData}
-          onStockDeleted={handleStockDeleted}
         />
       )}
     </div>

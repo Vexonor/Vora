@@ -6,11 +6,11 @@ import { downloadInvoiceAsPdf } from "@/lib/invoice-download"
 import { getOrderItemName } from "@/lib/order"
 import { getOrderPlace } from "@/lib/order-place"
 import { splitTaxFromTotal, TAX_RATE } from "@/lib/pricing"
-import { orderService } from "@/services/order.service"
+import { useOrderDetail } from "@/hooks/queries/use-orders"
 import { OrderStatus, type Order } from "@/types/order"
 import { DownloadIcon, Loader2Icon, MailIcon, ReceiptTextIcon } from "lucide-react"
 import { useSearchParams } from "next/navigation"
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useState } from "react"
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
 import { toast } from "sonner"
@@ -29,10 +29,19 @@ function FullScreenLoader() {
 function InvoiceView() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("orderId")
+  const parsedOrderId = Number(orderId)
+  const isValidOrderId = Number.isInteger(parsedOrderId) && parsedOrderId > 0
 
-  const [order, setOrder] = useState<Order | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const orderQuery = useOrderDetail(isValidOrderId ? parsedOrderId : 0)
+  const order = orderQuery.data ?? null
+  const isLoading = orderQuery.isLoading
+  const loadError = !orderId
+    ? "Parameter orderId tidak ditemukan di URL"
+    : !isValidOrderId
+      ? "Nomor pesanan tidak valid"
+      : orderQuery.isError
+        ? orderQuery.error instanceof Error ? orderQuery.error.message : "Gagal mengambil data dari server"
+        : null
   const [email, setEmail] = useState("")
   const [isSending, setIsSending] = useState(false)
 
@@ -61,19 +70,6 @@ function InvoiceView() {
       setIsSending(false)
     }
   }
-
-  useEffect(() => {
-    if (!orderId) {
-      setIsLoading(false)
-      setLoadError("Parameter orderId tidak ditemukan di URL")
-      return
-    }
-
-    orderService.getById(parseInt(orderId, 10))
-      .then(setOrder)
-      .catch((error) => setLoadError(error instanceof Error ? error.message : "Gagal mengambil data dari server"))
-      .finally(() => setIsLoading(false))
-  }, [orderId])
 
   if (isLoading) return <FullScreenLoader />
 
@@ -229,7 +225,7 @@ function InvoiceView() {
             <button
               onClick={() => handleSendEmail(order)}
               disabled={isSending}
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-primary hover:bg-secondary/90 active:scale-95 transition-all disabled:opacity-60 disabled:active:scale-100"
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white hover:bg-secondary/90 active:scale-95 transition-all disabled:opacity-60 disabled:active:scale-100"
             >
               {isSending ? <Loader2Icon className="size-4 animate-spin" /> : <MailIcon className="size-4" />}
               Kirim

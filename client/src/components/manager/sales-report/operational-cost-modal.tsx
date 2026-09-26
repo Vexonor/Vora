@@ -75,7 +75,7 @@ export function OperationalCostModal({ report, onClose }: { report: SellingRepor
             <Button
               onClick={handleSave}
               disabled={isSaving}
-              className="bg-secondary text-primary hover:bg-secondary/90 flex items-center gap-2"
+              className="bg-secondary text-white hover:bg-secondary/90 flex items-center gap-2"
             >
               {isSaving ? <Loader2Icon className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
               {isSaving ? "Menyimpan..." : "Simpan"}
