@@ -4,66 +4,55 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Put,
   Query,
-  UseGuards,
 } from '@nestjs/common';
-import { CurrentUser } from 'src/core/decorators/current-user.decorator';
-import { JwtAuthGuard } from 'src/core/guards/jwt-auth.guard';
-import { JoiValidationParamPipe } from 'src/core/pipes/joi-validation-param.pipe';
+import type { ListQuery } from 'src/core/database/list-query';
+import { Auth } from 'src/core/decorators/auth.decorator';
+import { ResponseMessage } from 'src/core/decorators/response-message.decorator';
 import { JoiValidationPipe } from 'src/core/pipes/joi-validation.pipe';
-import { User } from '../user/models/user.model';
-import { CreateUnitDto } from './dto/create-unit.dto';
-import { UpdateUnitDto } from './dto/update-unit.dto';
-import { Unit } from './models/unit.model';
+import { UserRole } from '../user/enums/user-role.enum';
+import { SaveUnitDto } from './dto/save-unit.dto';
 import { UnitService } from './unit.service';
-import { unitIdParamSchema } from './validations/params/unit-id.param';
-import { createUnitScheme } from './validations/requests/create-unit.request';
+import { saveUnitSchema } from './validations/save-unit.schema';
 
+@Auth(UserRole.MANAGER, UserRole.KITCHEN)
 @Controller()
 export class UnitController {
   constructor(private readonly unitService: UnitService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
-  create(
-    @Body(new JoiValidationPipe(createUnitScheme))
-    createUnitDto: CreateUnitDto,
-    @CurrentUser() user: User,
-  ) {
-    return this.unitService.create(createUnitDto, user);
+  @ResponseMessage('Successfully created unit')
+  create(@Body(new JoiValidationPipe(saveUnitSchema)) dto: SaveUnitDto) {
+    return this.unitService.create(dto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll(@Query() query, @CurrentUser() user: User) {
-    return this.unitService.findAll(query, user);
+  @ResponseMessage('Successfully get all units')
+  findAll(@Query() query: ListQuery) {
+    return this.unitService.findAll(query);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async findOne(
-    @Param('id', new JoiValidationParamPipe(unitIdParamSchema)) unit: Unit,
-  ) {
-    return this.unitService.findOne(unit);
+  @ResponseMessage('Successfully get unit')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.unitService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Put(':id')
-  async update(
-    @Param('id', new JoiValidationParamPipe(unitIdParamSchema)) unit: Unit,
-    @Body(new JoiValidationPipe(createUnitScheme))
-    updateUnitDto: UpdateUnitDto,
+  @ResponseMessage('Successfully update unit')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new JoiValidationPipe(saveUnitSchema)) dto: SaveUnitDto,
   ) {
-    return this.unitService.update(unit, updateUnitDto);
+    return this.unitService.update(id, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async remove(
-    @Param('id', new JoiValidationParamPipe(unitIdParamSchema)) unit: Unit,
-  ) {
-    return this.unitService.remove(unit);
+  @ResponseMessage('Successfully delete unit')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.unitService.remove(id);
   }
 }

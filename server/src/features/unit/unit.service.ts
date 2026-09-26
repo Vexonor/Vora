@@ -1,135 +1,35 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Sequelize } from 'sequelize-typescript';
+import { findByPkOrFail } from 'src/core/database/find-or-fail';
+import { ListQuery } from 'src/core/database/list-query';
 import { ErrorCode } from 'src/core/enums/error-code.enum';
-import { QueryBuilderHelper } from 'src/core/helpers/query-builder.helper';
-import { ResponseHelper } from 'src/core/helpers/response.helper';
-import { User } from '../user/models/user.model';
-import { UserRole } from '../user/enums/user-role.enum';
-import { CreateUnitDto } from './dto/create-unit.dto';
-import { UpdateUnitDto } from './dto/update-unit.dto';
+import { SaveUnitDto } from './dto/save-unit.dto';
 import { Unit } from './models/unit.model';
 
 @Injectable()
 export class UnitService {
-  constructor(
-    @InjectModel(Unit)
-    private unitModel: typeof Unit,
-    private response: ResponseHelper,
-    private sequelize: Sequelize,
-  ) {}
+  constructor(@InjectModel(Unit) private readonly unitModel: typeof Unit) {}
 
-  async create(createUnitDto: CreateUnitDto, currentUser: User) {
-    if (
-      currentUser.role !== UserRole.MANAGER &&
-      currentUser.role !== UserRole.KITCHEN
-    ) {
-      return this.response.fail(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN);
-    }
-    const transaction = await this.sequelize.transaction();
-    try {
-      const unit = await this.unitModel.create(
-        {
-          ...createUnitDto,
-        },
-        { transaction },
-      );
-      await transaction.commit();
-      return this.response.success(
-        unit,
-        HttpStatus.CREATED,
-        'Successfully created unit',
-      );
-    } catch (error) {
-      await transaction.rollback();
-      return this.response.fail(
-        ErrorCode.UNIT_CREATE_FAILED,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+  create(dto: SaveUnitDto) {
+    return this.unitModel.create({ ...dto });
   }
 
-  async findAll(query: any, currentUser: User) {
-    if (
-      currentUser.role !== UserRole.MANAGER &&
-      currentUser.role !== UserRole.KITCHEN
-    ) {
-      return this.response.fail(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN);
-    }
-    try {
-      const { count, data } = await new QueryBuilderHelper(
-        this.unitModel,
-        query,
-      ).getResult();
-
-      const result = {
-        count: count,
-        units: data,
-      };
-
-      return this.response.success(
-        result,
-        HttpStatus.OK,
-        'Successfully get all units',
-      );
-    } catch (error) {
-      return this.response.fail(
-        ErrorCode.FAILED_GET_ALL_UNITS,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+  async findAll(query: ListQuery) {
+    const { count, rows } = await this.unitModel.findForList(query);
+    return { count, units: rows };
   }
 
-  async findOne(unit: Unit) {
-    try {
-      return this.response.success(
-        unit,
-        HttpStatus.OK,
-        'Successfully get unit',
-      );
-    } catch (error) {
-      return this.response.fail(
-        ErrorCode.UNIT_NOT_FOUND,
-        HttpStatus.NOT_FOUND,
-      );
-    }
+  findOne(id: number) {
+    return findByPkOrFail(this.unitModel, id, [ErrorCode.UNIT_NOT_FOUND]);
   }
 
-  async update(unit: Unit, updateUnitDto: UpdateUnitDto) {
-    const transaction = await this.sequelize.transaction();
-    try {
-      await unit.update({ ...updateUnitDto }, { transaction });
-      await transaction.commit();
-      return this.response.success(
-        unit,
-        HttpStatus.OK,
-        'Successfully update unit',
-      );
-    } catch (error) {
-      await transaction.rollback();
-      return this.response.fail(
-        ErrorCode.UNIT_UPDATE_FAILED,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+  async update(id: number, dto: SaveUnitDto) {
+    const unit = await this.findOne(id);
+    return unit.update({ ...dto });
   }
 
-  async remove(unit: Unit) {
-    const transaction = await this.sequelize.transaction();
-    try {
-      await unit.destroy({ transaction });
-      await transaction.commit();
-      return this.response.success(
-        {},
-        HttpStatus.OK,
-        'Successfully delete unit',
-      );
-    } catch (error) {
-      await transaction.rollback();
-      return this.response.fail(
-        ErrorCode.UNIT_DELETE_FAILED,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+  async remove(id: number) {
+    const unit = await this.findOne(id);
+    await unit.destroy();
   }
 }
